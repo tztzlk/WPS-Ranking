@@ -21,13 +21,13 @@
 	</properties>
 
 	<modules>
-		<module>user-service</module>
 		<module>api-gateway</module>
 		<module>auth-service</module>
 		<module>parser-service</module>
 		<module>leaderboard-service</module>
 		<module>search-service</module>
 		<module>profile-service</module>
+		<module>eureka-server</module>
 	</modules>
 
 	<dependencies>
@@ -68,6 +68,28 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<!-- Spring Boot BOM -->
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>3.5.4</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>2023.0.3</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+
 
 	<build>
 		<plugins>

@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  auth-service:
+    build: .
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/authdb
+      - SPRING_DATASOURCE_USERNAME=youruser
+      - SPRING_DATASOURCE_PASSWORD=yourpass
+
+  db:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=authdb
+      - POSTGRES_USER=youruser
+      - POSTGRES_PASSWORD=yourpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

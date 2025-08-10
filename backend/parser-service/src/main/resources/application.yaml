@@ -1,0 +1,26 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: parser-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wcadb
+    username: postgres
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+security:
+  jwt:
+    secret: your_jwt_secret_key
+
+wca:
+  dump-url: https://www.worldcubeassociation.org/export/results/WCA_export.sql.zip  # Пример URL для скачивания дампа, настройте по необходимости
