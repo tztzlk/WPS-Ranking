@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cube.auth_service.AuthServiceApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.740 s -- in cube.auth_service.AuthServiceApplicationTests
