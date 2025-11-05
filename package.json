@@ -1,21 +1,19 @@
 {
-  "name": "wps",
+  "name": "wps-ranking",
   "version": "1.0.0",
-  "main": "backend/server.js",
+  "description": "WPS Ranking - Global speedcubing leaderboard platform",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
   },
-  "keywords": [],
-  "type": "module",
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@arcjet/node": "^1.0.0-beta.8",
-    "@neondatabase/serverless": "^1.0.1",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "morgan": "^1.10.0"
+  "keywords": ["speedcubing", "ranking", "wca", "leaderboard"],
+  "author": "WPS Ranking Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
