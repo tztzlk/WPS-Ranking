@@ -15,66 +15,6 @@ WPS Ranking provides a fair, balanced scoring system for speedcubers worldwide. 
 - **Real-time Updates**: Automatic integration with WCA data
 - **Responsive Design**: Dark mode theme optimized for all devices
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm
-- Git
-
-### Installation
-
-1. **Clone and setup:**
-```bash
-git clone <repository-url>
-cd WPS-Ranking
-chmod +x setup.sh
-./setup.sh
-```
-
-2. **Configure environment:**
-```bash
-# Edit backend/.env with your settings
-cp backend/env.example backend/.env
-```
-
-3. **Start development servers:**
-```bash
-npm run dev
-```
-
-4. **Access the application:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend**: React + TypeScript + Tailwind CSS
-- **Backend**: Node.js + Express + TypeScript
-- **API Integration**: WCA API
-- **Styling**: Tailwind CSS with dark mode
-- **Icons**: Lucide React
-
-### Project Structure
-```
-WPS Ranking/
-├── backend/           # Node.js API server
-│   ├── src/
-│   │   ├── routes/    # API endpoints
-│   │   ├── services/  # Business logic
-│   │   ├── types/     # TypeScript definitions
-│   │   └── middleware/
-│   └── package.json
-├── frontend/          # React application
-│   ├── src/
-│   │   ├── components/ # Reusable components
-│   │   ├── pages/     # Page components
-│   │   ├── services/  # API client
-│   │   └── types/     # TypeScript definitions
-│   └── package.json
-└── package.json       # Root package with scripts
-```
-
 ## 📊 WPS Formula
 
 The Weighted Performance Scale calculates scores using:
@@ -105,30 +45,7 @@ WPS Score = (sum of event scores / max possible score) × 100
 
 ## 🔧 Development
 
-### Available Scripts
 
-**Root level:**
-- `npm run dev` - Start both frontend and backend
-- `npm run build` - Build frontend for production
-- `npm start` - Start production backend
-
-**Backend:**
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Compile TypeScript
-- `npm start` - Start production server
-
-**Frontend:**
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-### API Endpoints
-
-- `GET /api/leaderboard` - Global leaderboard
-- `GET /api/profile/:wcaId` - Cuber profile
-- `GET /api/search?q=query` - Search cubers
-- `GET /api/about` - WPS information
-- `GET /api/health` - Health check
 
 ## 🌍 Data Source
 
@@ -159,14 +76,6 @@ All rankings are calculated using official data from the [World Cube Association
 - Event weight documentation
 - Philosophy and benefits
 - Interactive examples
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
 
 ## 📄 License
 
