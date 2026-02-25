@@ -4,6 +4,7 @@ import path from 'path';
 const CACHE_DIR = path.resolve(__dirname, '../../cache');
 const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
+const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 const LEADERBOARD_CACHE_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
 
 export interface ProfileCacheResult {
@@ -12,6 +13,26 @@ export interface ProfileCacheResult {
   countryId?: string;
   wps: number;
   generatedAt: string;
+}
+
+export interface ProfileBreakdownItem {
+  eventId: string;
+  worldRank: number;
+  weight: number;
+  eventScore: number;
+}
+
+export interface ProfileCalculation {
+  sumEventScores: number;
+  maxPossible: number;
+  eventsParticipated: number;
+}
+
+export interface ProfileBreakdown {
+  sumEventScores: number;
+  maxPossible: number;
+  eventsParticipated: number;
+  breakdown: ProfileBreakdownItem[];
 }
 
 function getGeneratedAt(): string {
@@ -56,4 +77,19 @@ export function getProfileByPersonId(personId: string): ProfileCacheResult | nul
     wps,
     generatedAt: getGeneratedAt(),
   };
+}
+
+/** Load WPS breakdown for a person from cache. Returns null if not found or file missing. */
+export function getProfileBreakdownByPersonId(personId: string): ProfileBreakdown | null {
+  const normalizedId = personId?.trim();
+  if (!normalizedId) return null;
+  if (!fs.existsSync(WPS_BREAKDOWN_PATH)) return null;
+  try {
+    const data: Record<string, ProfileBreakdown> = JSON.parse(
+      fs.readFileSync(WPS_BREAKDOWN_PATH, 'utf8')
+    );
+    return data[normalizedId] ?? null;
+  } catch {
+    return null;
+  }
 }

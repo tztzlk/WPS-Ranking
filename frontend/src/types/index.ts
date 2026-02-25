@@ -9,6 +9,19 @@ export interface LeaderboardEntry {
   totalEvents: number;
 }
 
+export interface WPSProfileCalculation {
+  sumEventScores: number;
+  maxPossible: number;
+  eventsParticipated: number;
+}
+
+export interface WPSProfileBreakdownItem {
+  eventId: string;
+  worldRank: number;
+  weight: number;
+  eventScore: number;
+}
+
 export interface WPSProfile {
   wcaId: string;
   name: string;
@@ -19,6 +32,10 @@ export interface WPSProfile {
   eventRanks: Record<string, number>;
   totalEvents: number;
   lastUpdated: string;
+  /** Present when requested with includeBreakdown=1 */
+  calculation?: WPSProfileCalculation | null;
+  /** Present when requested with includeBreakdown=1 */
+  breakdown?: WPSProfileBreakdownItem[];
 }
 
 export interface SearchResult {
@@ -36,6 +53,11 @@ export interface AboutData {
     description: string;
     calculation: string;
     normalization: string;
+    intro?: string;
+    steps?: string[];
+    formulaBlock?: string;
+    variables?: { label: string; meaning: string }[];
+    credits?: string;
   };
   philosophy: {
     fairness: string;

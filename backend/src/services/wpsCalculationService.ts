@@ -1,4 +1,18 @@
-import { WCAPerson, WCARecord, EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
+import { WCAPerson, EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
+
+export interface WPSBreakdownItem {
+  eventId: string;
+  worldRank: number;
+  weight: number;
+  eventScore: number;
+}
+
+export interface WPSBreakdown {
+  sumEventScores: number;
+  maxPossible: number;
+  eventsParticipated: number;
+  breakdown: WPSBreakdownItem[];
+}
 
 export class WPSCalculationService {
   /**
@@ -79,6 +93,36 @@ export class WPSCalculationService {
       }
     }
     return count;
+  }
+
+  /**
+   * Return full WPS calculation breakdown for transparency.
+   * Matches formula: EventScore(e) = w_e × (1/ln(R_e+1)) × 10, WPS = (Σ/MAX)×100.
+   */
+  getWPSBreakdown(person: WCAPerson): WPSBreakdown {
+    const breakdown: WPSBreakdownItem[] = [];
+    let sumEventScores = 0;
+
+    for (const [eventId, weight] of Object.entries(EVENT_WEIGHTS)) {
+      const record = person.personalRecords[eventId];
+      if (record && record.average && record.worldRank) {
+        const eventScore = this.calculateEventScore(record.worldRank, weight);
+        sumEventScores += eventScore;
+        breakdown.push({
+          eventId,
+          worldRank: record.worldRank,
+          weight,
+          eventScore,
+        });
+      }
+    }
+
+    return {
+      sumEventScores,
+      maxPossible: MAX_WPS_SCORE,
+      eventsParticipated: breakdown.length,
+      breakdown,
+    };
   }
 }
 
