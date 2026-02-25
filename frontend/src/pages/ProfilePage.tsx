@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award, Calculator } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, EVENT_NAMES, COUNTRY_FLAGS } from '../types';
+import { FormulaBox } from '../components/FormulaBox';
 
 export function ProfilePage() {
   const { wcaId } = useParams<{ wcaId: string }>();
@@ -38,9 +39,23 @@ export function ProfilePage() {
     return COUNTRY_FLAGS[country] || '🏳️';
   };
 
+  const hasBreakdown = Boolean(profile?.breakdown && profile.breakdown.length > 0);
+  const calculation = profile?.calculation;
+
   const getEventScores = () => {
     if (!profile) return [];
-    
+    if (hasBreakdown && profile.breakdown) {
+      return profile.breakdown
+        .slice()
+        .sort((a, b) => b.eventScore - a.eventScore)
+        .map((b) => ({
+          eventId: b.eventId,
+          eventName: EVENT_NAMES[b.eventId] || b.eventId,
+          score: b.eventScore,
+          rank: b.worldRank,
+          weight: b.weight,
+        }));
+    }
     return Object.entries(profile.eventScores)
       .filter(([_, score]) => score > 0)
       .sort(([_, a], [__, b]) => b - a)
@@ -48,7 +63,8 @@ export function ProfilePage() {
         eventId,
         eventName: EVENT_NAMES[eventId] || eventId,
         score,
-        rank: profile.eventRanks[eventId] || 0
+        rank: profile.eventRanks[eventId] || 0,
+        weight: 0,
       }));
   };
 
@@ -142,7 +158,54 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* Event Breakdown */}
+      {/* WPS Calculation — formula + breakdown table */}
+      <div className="card">
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+          <Calculator className="w-7 h-7 text-green-400" />
+          WPS Calculation
+        </h2>
+        <FormulaBox />
+        {calculation && (
+          <div className="mt-6 p-4 bg-gray-800/70 rounded-lg border border-gray-700">
+            <h3 className="text-lg font-semibold text-white mb-2">Totals</h3>
+            <ul className="space-y-1 text-gray-300 font-mono text-sm">
+              <li>Σ EventScore = {calculation.sumEventScores.toFixed(4)}</li>
+              <li>MAX = {calculation.maxPossible.toFixed(4)}</li>
+              <li>Final WPS = ({calculation.sumEventScores.toFixed(4)} / {calculation.maxPossible.toFixed(4)}) × 100 = {formatScore(profile.wpsScore)}</li>
+            </ul>
+          </div>
+        )}
+        {hasBreakdown && profile.breakdown && profile.breakdown.length > 0 && (
+          <div className="mt-6 overflow-x-auto">
+            <h3 className="text-lg font-semibold text-white mb-3">Per-event breakdown</h3>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-600">
+                  <th className="py-2 px-3 text-gray-300 font-semibold">Event</th>
+                  <th className="py-2 px-3 text-gray-300 font-semibold">World Rank</th>
+                  <th className="py-2 px-3 text-gray-300 font-semibold">Weight</th>
+                  <th className="py-2 px-3 text-gray-300 font-semibold">Event Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profile.breakdown
+                  .slice()
+                  .sort((a, b) => (EVENT_NAMES[a.eventId] || a.eventId).localeCompare(EVENT_NAMES[b.eventId] || b.eventId))
+                  .map((row) => (
+                    <tr key={row.eventId} className="border-b border-gray-700">
+                      <td className="py-2 px-3 text-white">{EVENT_NAMES[row.eventId] || row.eventId}</td>
+                      <td className="py-2 px-3 text-gray-300">{row.worldRank.toLocaleString()}</td>
+                      <td className="py-2 px-3 text-gray-300">{row.weight}</td>
+                      <td className="py-2 px-3 text-green-400 font-mono">{row.eventScore.toFixed(4)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Event Performance (cards when no breakdown) */}
       <div className="card">
         <h2 className="text-2xl font-bold text-white mb-6">Event Performance</h2>
         
@@ -151,7 +214,7 @@ export function ProfilePage() {
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No Event Data</h3>
             <p className="text-gray-400">
-              This cuber doesn't have any official WCA results yet.
+              This cuber doesn&apos;t have any official WCA results yet.
             </p>
           </div>
         ) : (

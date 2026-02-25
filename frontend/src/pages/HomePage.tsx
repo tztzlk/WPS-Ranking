@@ -16,10 +16,15 @@ export function HomePage() {
   const loadLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getLeaderboard(100, 0);
-      if (response.data) {
-        setLeaderboard(response.data);
-      }
+      const result = await apiService.getLeaderboardTop100();
+      setLeaderboard(result.items.map((item) => ({
+        rank: item.rank,
+        wcaId: item.personId,
+        name: item.name,
+        country: item.countryId ?? '',
+        wpsScore: item.wps,
+        totalEvents: 0,
+      })));
     } catch (err) {
       setError('Failed to load leaderboard');
       console.error('Error loading leaderboard:', err);

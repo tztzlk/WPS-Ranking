@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calculator, Target, Award, TrendingUp, Users, Globe } from 'lucide-react';
 import { apiService } from '../services/api';
 import { AboutData, EVENT_NAMES } from '../types';
+import { FormulaBox } from '../components/FormulaBox';
 
 export function AboutPage() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
@@ -84,40 +85,109 @@ export function AboutPage() {
         </div>
       </div>
 
-      {/* Formula */}
+      {/* WPS: What it is, formula, variables, interpretation, scope, credits */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-white mb-6">WPS Formula</h2>
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-2">How It Works</h3>
-            <p className="text-gray-300">{aboutData.formula.description}</p>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Calculation Steps</h4>
-            <div className="space-y-3 text-gray-300">
-              <div className="flex items-start space-x-3">
-                <span className="text-green-400 font-bold">1.</span>
-                <span>{aboutData.formula.calculation}</span>
+        <h2 className="text-2xl font-bold text-white mb-6">WPS — World Performance Score</h2>
+        <div className="space-y-8">
+          {/* Section 1 — What is WPS */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-3">What is WPS</h3>
+            <p className="text-gray-300 leading-relaxed">
+              WPS measures current all-around competitive strength using official WCA world rankings.
+              It uses each cuber&apos;s average (not single) results: for every included event, the current WCA world rank (average) is combined with an event weight and then normalized to a 0–100 scale.
+            </p>
+          </section>
+
+          {/* Section 2 — Mathematical Definition */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-3">Mathematical Definition</h3>
+            <FormulaBox />
+            <p className="mt-3 text-gray-400 text-sm text-center">
+              (ln denotes the natural logarithm.)
+            </p>
+          </section>
+
+          {/* Section 3 — Variable Definitions */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-3">Variable Definitions</h3>
+            <dl className="space-y-2 text-gray-300">
+              <div className="flex flex-wrap gap-2 items-baseline">
+                <dt className="text-green-400 font-mono shrink-0">R_e</dt>
+                <dd>— current WCA world rank (average) for event e</dd>
               </div>
-              <div className="flex items-start space-x-3">
-                <span className="text-green-400 font-bold">2.</span>
-                <span>{aboutData.formula.normalization}</span>
+              <div className="flex flex-wrap gap-2 items-baseline">
+                <dt className="text-green-400 font-mono shrink-0">w_e</dt>
+                <dd>— weight of event e</dd>
+              </div>
+              <div className="flex flex-wrap gap-2 items-baseline">
+                <dt className="text-green-400 font-mono shrink-0">ln</dt>
+                <dd>— natural logarithm</dd>
+              </div>
+              <div className="flex flex-wrap gap-2 items-baseline">
+                <dt className="text-green-400 font-mono shrink-0">MAX</dt>
+                <dd>— theoretical maximum score (rank 1 in all included events)</dd>
+              </div>
+            </dl>
+          </section>
+
+          {/* Section 4 — Interpretation */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-3">Interpretation</h3>
+            <ul className="space-y-2 text-gray-300 list-disc list-inside leading-relaxed">
+              <li>
+                <strong className="text-gray-200">Why logarithm?</strong> The natural logarithm is used so that improvements at the top (e.g. rank 5 → 2) have a larger impact than the same jump lower down (e.g. rank 100 → 97). This reflects diminishing returns between ranks and avoids over-rewarding a single dominant event.
+              </li>
+              <li>
+                <strong className="text-gray-200">Why multiple events?</strong> Event scores are summed. Doing well in more events increases your total raw score, so WPS rewards breadth as well as depth.
+              </li>
+              <li>
+                <strong className="text-gray-200">Why 0–100?</strong> The sum of event scores is divided by MAX (the score you would get with rank 1 in every included event) and multiplied by 100. This normalizes the scale so that 100 represents the theoretical maximum and scores are comparable across time as the set of events or weights evolves.
+              </li>
+            </ul>
+          </section>
+
+          {/* Section 5 — What WPS Measures / Does NOT Measure */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-3">What WPS Measures / What It Does Not Measure</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-800/70 rounded-lg p-4">
+                <h4 className="text-green-400 font-semibold mb-2">WPS measures</h4>
+                <ul className="text-gray-300 text-sm space-y-1 list-disc list-inside">
+                  <li>current competitive breadth across events</li>
+                  <li>performance across multiple events at the time of calculation</li>
+                </ul>
+              </div>
+              <div className="bg-gray-800/70 rounded-lg p-4">
+                <h4 className="text-amber-400/90 font-semibold mb-2">WPS does not measure</h4>
+                <ul className="text-gray-300 text-sm space-y-1 list-disc list-inside">
+                  <li>historical dominance or past peaks</li>
+                  <li>past world records or single/average PRs over time</li>
+                  <li>legacy or GOAT (greatest of all time) status</li>
+                </ul>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Example</h4>
+          {/* Section 6 — Credits / Inspiration */}
+          <section className="border-t border-gray-700 pt-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Credits / Inspiration</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              We thank <strong className="text-gray-300">STUCUBE</strong> for the original inspiration. The base idea of a weighted all-around ranking for speedcubers was inspired by his work. The formula used on this site was adapted and implemented independently using official WCA data; it is not an official WCA metric.
+            </p>
+          </section>
+
+          {/* Example (kept for concreteness) */}
+          <section className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-3">Example</h3>
             <p className="text-gray-300 mb-3">
-              If a cuber ranks #10 in 3x3x3 Cube (weight: 1.0) and #50 in 2x2x2 Cube (weight: 0.8):
+              If a cuber ranks #10 in 3x3x3 Cube (weight 1.0) and #50 in 2x2x2 Cube (weight 0.8), with natural logarithm ln:
             </p>
             <div className="font-mono text-sm text-gray-300 space-y-1">
-              <div>3x3x3 Score = 1.0 × (1 / log(10 + 1)) × 10 = 4.17</div>
-              <div>2x2x2 Score = 0.8 × (1 / log(50 + 1)) × 10 = 2.13</div>
-              <div>Total Score = (4.17 + 2.13) / 12.1 × 100 = 52.1</div>
+              <div>3x3x3 EventScore = 1.0 × (1 / ln(10 + 1)) × 10 ≈ 4.17</div>
+              <div>2x2x2 EventScore = 0.8 × (1 / ln(50 + 1)) × 10 ≈ 2.13</div>
+              <div>WPS = (4.17 + 2.13) / MAX × 100 (MAX depends on included events)</div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
 

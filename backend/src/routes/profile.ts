@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { getProfileByPersonId, ProfileCacheResult } from '../services/profileFromCache';
+import {
+  getProfileByPersonId,
+  getProfileBreakdownByPersonId,
+  ProfileCacheResult,
+} from '../services/profileFromCache';
 
 const router = Router();
 
@@ -9,11 +13,15 @@ function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
+function includeBreakdown(req: { query: Record<string, unknown> }): boolean {
+  const v = req.query.includeBreakdown;
+  return v === '1' || v === 'true';
+}
+
 /**
- * GET /api/profile?personId=<WCA_ID>
- * GET /api/profile/:wcaId
- * Returns profile from cache: personId, name, countryId, wps, generatedAt.
- * 404 if person not found.
+ * GET /api/profile?personId=<WCA_ID>&includeBreakdown=1
+ * GET /api/profile/:wcaId?includeBreakdown=1
+ * Returns profile from cache. When includeBreakdown=1, adds calculation and breakdown.
  */
 router.get('/', (req, res) => {
   const personId = (req.query.personId as string)?.trim();
@@ -30,7 +38,7 @@ router.get('/', (req, res) => {
     res.status(404).json({ error: 'Person not found' });
     return;
   }
-  res.json(toProfileResponse(profile));
+  res.json(toProfileResponse(profile, includeBreakdown(req)));
 });
 
 router.get('/:wcaId', (req, res) => {
@@ -44,21 +52,56 @@ router.get('/:wcaId', (req, res) => {
     res.status(404).json({ error: 'Person not found' });
     return;
   }
-  res.json(toProfileResponse(profile));
+  res.json(toProfileResponse(profile, includeBreakdown(req)));
 });
 
-function toProfileResponse(profile: ProfileCacheResult) {
-  return {
-    ...profile,
+function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) {
+  const base = {
+    personId: profile.personId,
+    name: profile.name,
+    countryId: profile.countryId,
+    wps: profile.wps,
+    generatedAt: profile.generatedAt,
     wcaId: profile.personId,
     country: profile.countryId,
     wpsScore: profile.wps,
-    generatedAt: profile.generatedAt,
     globalRank: 0,
-    eventScores: {},
-    eventRanks: {},
+    eventScores: {} as Record<string, number>,
+    eventRanks: {} as Record<string, number>,
     totalEvents: 0,
     lastUpdated: profile.generatedAt,
+  };
+
+  if (!withBreakdown) return base;
+
+  const breakdownData = getProfileBreakdownByPersonId(profile.personId);
+  if (!breakdownData) {
+    return {
+      ...base,
+      calculation: null,
+      breakdown: [],
+    };
+  }
+
+  const { sumEventScores, maxPossible, eventsParticipated, breakdown } = breakdownData;
+  const eventScores: Record<string, number> = {};
+  const eventRanks: Record<string, number> = {};
+  breakdown.forEach((b) => {
+    eventScores[b.eventId] = b.eventScore;
+    eventRanks[b.eventId] = b.worldRank;
+  });
+
+  return {
+    ...base,
+    totalEvents: eventsParticipated,
+    eventScores,
+    eventRanks,
+    calculation: {
+      sumEventScores,
+      maxPossible,
+      eventsParticipated,
+    },
+    breakdown,
   };
 }
 

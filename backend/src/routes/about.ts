@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { EVENT_WEIGHTS } from '../types';
+import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
 
 const router = Router();
 
@@ -12,9 +12,22 @@ router.get('/', (req, res) => {
     title: 'About WPS Ranking',
     description: 'Weighted Performance Scale - A fair ranking system for speedcubers',
     formula: {
-      description: 'WPS calculates a weighted score based on performance across all WCA events',
+      description: 'WPS measures your current all-around competitive strength using official WCA world rankings.',
       calculation: 'Each event score = weight × (1 / log(world_rank + 1)) × 10',
-      normalization: 'Final WPS score = (sum of event scores / max possible score) × 100'
+      normalization: 'Final WPS score = (sum of event scores / max possible score) × 100',
+      intro: 'WPS measures your current all-around competitive strength using official WCA world rankings.',
+      steps: [
+        'Each event contributes a score based on your world ranking in that event.',
+        'Higher ranks (e.g. top 10) contribute more to your score; lower ranks contribute less.',
+        'Scores from all events are combined and then normalized to a 0–100 scale.'
+      ],
+      formulaBlock: 'eventScore = weight × (1 / log(worldRank + 1)) × 10\n\nWPS = (sum of event scores / maxPossibleScore) × 100',
+      variables: [
+        { label: 'worldRank', meaning: 'Your official WCA world rank in that event' },
+        { label: 'weight', meaning: 'Event weight (based on popularity and difficulty)' },
+        { label: 'maxPossibleScore', meaning: 'Theoretical maximum sum if you were rank 1 in every event (normalization factor)' }
+      ],
+      credits: 'The idea for a weighted all-around ranking was inspired by the YouTuber STUCUBE. We thank him for the original concept. The formula used on this site has been further modified and adapted for our ranking system.'
     },
     philosophy: {
       fairness: 'Balances all events to prevent specialization bias',
@@ -22,7 +35,7 @@ router.get('/', (req, res) => {
       transparency: 'Open formula with clear event weights'
     },
     eventWeights: EVENT_WEIGHTS,
-    maxScore: Object.values(EVENT_WEIGHTS).reduce((sum, weight) => sum + weight, 0),
+    maxScore: MAX_WPS_SCORE,
     features: [
       'Global leaderboard of top 1000 speedcubers',
       'Fair weighting system based on event popularity and difficulty',

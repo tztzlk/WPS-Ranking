@@ -78,5 +78,8 @@ export const EVENT_WEIGHTS: Record<string, number> = {
   '333mbf': 0.3,   // 3x3x3 Multi-Blind
 };
 
-// Maximum possible WPS score (sum of all weights)
-export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
+/** MAX = Σ (w_e × (1/ln(2)) × 10). Matches EventScore when R_e = 1 for all events. */
+export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
+  (sum, w) => sum + w * (1 / Math.log(2)) * 10,
+  0
+);

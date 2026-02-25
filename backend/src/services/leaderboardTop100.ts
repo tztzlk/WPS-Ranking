@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
+import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
 
 const CACHE_DIR = path.resolve(__dirname, '../../cache');
 const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
@@ -10,15 +11,8 @@ const RANKS_AVERAGE_PATH = path.join(WCA_EXPORT_DIR, 'RanksAvarage.tsv');
 const OUTPUT_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
 const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
+const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 
-/** Event weights for WPS. Only events in this map are included. MVP: weight 1 for standard events. */
-const EVENT_WEIGHTS: Readonly<Record<string, number>> = {
-  '222': 1, '333': 1, '333bf': 1, '333fm': 1, '333ft': 1, '333mbf': 1, '333mbo': 1,
-  '333oh': 1, '444': 1, '444bf': 1, '555': 1, '555bf': 1, '666': 1, '777': 1,
-  'clock': 1, 'magic': 1, 'minx': 1, 'mmagic': 1, 'pyram': 1, 'skewb': 1, 'sq1': 1,
-};
-
-const LN2 = Math.log(2);
 const TOP_N = 100;
 
 export interface PersonInfo {
@@ -87,17 +81,23 @@ async function buildPersonMap(
   return personMap;
 }
 
-/** MAX_POSSIBLE = sum over included events of weight * (1/ln(2)) * 10 */
-function computeMaxPossible(): number {
-  let max = 0;
-  for (const weight of Object.values(EVENT_WEIGHTS)) {
-    max += weight * (1 / LN2) * 10;
-  }
-  return max;
+export interface BreakdownItem {
+  eventId: string;
+  worldRank: number;
+  weight: number;
+  eventScore: number;
 }
 
+export interface PersonWPSBreakdown {
+  sumEventScores: number;
+  maxPossible: number;
+  eventsParticipated: number;
+  breakdown: BreakdownItem[];
+}
+
+/** Accumulates sum and per-event breakdown per person. */
 async function streamRanksAndAccumulate(
-  scoreByPerson: Map<string, number>,
+  scoreAndBreakdownByPerson: Map<string, { sum: number; breakdown: BreakdownItem[] }>,
   onProgress?: (lineCount: number) => void
 ): Promise<void> {
   const stream = createReadStream(RANKS_AVERAGE_PATH, { encoding: 'utf8' });
@@ -132,8 +132,10 @@ async function streamRanksAndAccumulate(
     if (!Number.isFinite(worldRank) || worldRank < 1) continue;
 
     const eventScore = weight * (1 / Math.log(worldRank + 1)) * 10;
-    const prev = scoreByPerson.get(personId) ?? 0;
-    scoreByPerson.set(personId, prev + eventScore);
+    const prev = scoreAndBreakdownByPerson.get(personId) ?? { sum: 0, breakdown: [] };
+    prev.sum += eventScore;
+    prev.breakdown.push({ eventId, worldRank, weight, eventScore });
+    scoreAndBreakdownByPerson.set(personId, prev);
 
     lineCount++;
     if (onProgress && lineCount % 500000 === 0) onProgress(lineCount);
@@ -147,18 +149,17 @@ export async function generateTop100Leaderboard(
 
   const personMap = await buildPersonMap();
 
-  const scoreByPerson = new Map<string, number>();
-  await streamRanksAndAccumulate(scoreByPerson, onRanks);
+  const scoreAndBreakdownByPerson = new Map<string, { sum: number; breakdown: BreakdownItem[] }>();
+  await streamRanksAndAccumulate(scoreAndBreakdownByPerson, onRanks);
 
-  const maxPossible = computeMaxPossible();
-  if (maxPossible <= 0) {
-    throw new Error('MAX_POSSIBLE is 0; check EVENT_WEIGHTS');
+  if (MAX_WPS_SCORE <= 0) {
+    throw new Error('MAX_WPS_SCORE is 0; check EVENT_WEIGHTS');
   }
 
-  const entries: { personId: string; wps: number }[] = [];
-  for (const [personId, sum] of scoreByPerson) {
-    const wps = (sum / maxPossible) * 100;
-    entries.push({ personId, wps });
+  const entries: { personId: string; wps: number; sumEventScores: number; breakdown: BreakdownItem[] }[] = [];
+  for (const [personId, { sum, breakdown }] of scoreAndBreakdownByPerson) {
+    const wps = (sum / MAX_WPS_SCORE) * 100;
+    entries.push({ personId, wps, sumEventScores: sum, breakdown });
   }
 
   await fs.promises.mkdir(CACHE_DIR, { recursive: true });
@@ -174,12 +175,24 @@ export async function generateTop100Leaderboard(
   );
 
   const wpsIndex: Record<string, { wps: number }> = {};
+  const breakdownIndex: Record<string, PersonWPSBreakdown> = {};
   for (const e of entries) {
     wpsIndex[e.personId] = { wps: Math.round(e.wps * 100) / 100 };
+    breakdownIndex[e.personId] = {
+      sumEventScores: e.sumEventScores,
+      maxPossible: MAX_WPS_SCORE,
+      eventsParticipated: e.breakdown.length,
+      breakdown: e.breakdown,
+    };
   }
   await fs.promises.writeFile(
     WPS_INDEX_PATH,
     JSON.stringify(wpsIndex),
+    'utf8'
+  );
+  await fs.promises.writeFile(
+    WPS_BREAKDOWN_PATH,
+    JSON.stringify(breakdownIndex),
     'utf8'
   );
 
