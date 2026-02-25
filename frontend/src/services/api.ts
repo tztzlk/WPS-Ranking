@@ -40,9 +40,17 @@ export const apiService = {
     return response.data;
   },
 
-  /** Cached Top-100 leaderboard JSON from backend/cache/leaderboard.top100.json */
-  async getLeaderboardTop100(): Promise<LeaderboardCacheResponse> {
-    const response = await api.get<LeaderboardCacheResponse>('/leaderboard');
+  /** All countries in the dataset (for filter dropdown). */
+  async getCountries(): Promise<{ iso2: string; name: string }[]> {
+    const response = await api.get<{ iso2: string; name: string }[]>('/countries');
+    return response.data;
+  },
+
+  /** Cached leaderboard: global top-100 or country top-N. */
+  async getLeaderboardTop100(limit = 100, country?: string): Promise<LeaderboardCacheResponse> {
+    const params: { limit: number; country?: string } = { limit };
+    if (country && country !== 'ALL') params.country = country;
+    const response = await api.get<LeaderboardCacheResponse>('/leaderboard', { params });
     return response.data;
   },
 

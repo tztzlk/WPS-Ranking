@@ -96,19 +96,27 @@ export interface ApiResponse<T> {
 
 /** Cached Top-100 leaderboard from GET /api/leaderboard */
 export interface LeaderboardCacheItem {
-  rank: number;
+  rank?: number;
+  countryRank?: number;
   personId: string;
   name: string;
   countryId?: string;
   countryName?: string;
   countryIso2?: string;
   wps: number;
+  /** Global WPS rank (1-based). Shown as "#N of M" when scope is country. */
+  globalWpsRank?: number;
 }
 
 export interface LeaderboardCacheResponse {
-  source: string;
+  scope: 'global' | 'country';
   generatedAt: string;
   count: number;
+  /** Total ranked worldwide (for "N of M" display). */
+  totalRanked?: number;
+  countryIso2?: string;
+  countryName?: string;
+  source?: string;
   items: LeaderboardCacheItem[];
 }
 

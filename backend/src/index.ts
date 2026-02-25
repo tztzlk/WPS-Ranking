@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { leaderboardRoutes } from './routes/leaderboard';
+import { countriesRoutes } from './routes/countries';
 import { profileRoutes } from './routes/profile';
 import { searchRoutes } from './routes/search';
 import { aboutRoutes } from './routes/about';
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/countries', countriesRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/about', aboutRoutes);
