@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, User, MapPin, Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
-import { SearchResult, COUNTRY_FLAGS } from '../types';
+import { SearchResult } from '../types';
+import { CountryFlag } from '../components/CountryFlag';
 
 export function SearchPage() {
   const [query, setQuery] = useState('');
@@ -47,10 +48,6 @@ export function SearchPage() {
 
   const formatScore = (score: number) => {
     return score.toFixed(2);
-  };
-
-  const getCountryFlag = (country: string) => {
-    return COUNTRY_FLAGS[country] || '🏳️';
   };
 
   const isValidWCAId = (input: string) => {
@@ -146,9 +143,10 @@ export function SearchPage() {
                         <h3 className="text-lg font-semibold text-white">{cuber.name}</h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-400">
                           <span className="font-mono">{cuber.wcaId}</span>
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center gap-1">
                             <MapPin className="w-4 h-4" />
-                            <span>{getCountryFlag(cuber.country)} {cuber.country}</span>
+                            <CountryFlag iso2={cuber.countryIso2} name={cuber.countryName ?? cuber.country} />
+                            <span>{cuber.countryName ?? cuber.country ?? '—'}</span>
                           </div>
                         </div>
                       </div>
@@ -158,9 +156,11 @@ export function SearchPage() {
                         {formatScore(cuber.wpsScore)}
                       </div>
                       <div className="text-sm text-gray-400">WPS Score</div>
-                      {cuber.globalRank > 0 && (
+                      {(cuber.totalRanked ?? 0) > 0 && (
                         <div className="text-sm text-gray-300 mt-1">
-                          Rank #{cuber.globalRank}
+                          Global WPS Rank: {cuber.globalWpsRank != null && cuber.globalWpsRank > 0
+                            ? `#${cuber.globalWpsRank.toLocaleString()}`
+                            : '—'} of {(cuber.totalRanked ?? 0).toLocaleString()}
                         </div>
                       )}
                     </div>

@@ -5,6 +5,8 @@ export interface LeaderboardEntry {
   wcaId: string;
   name: string;
   country: string;
+  countryIso2?: string;
+  countryName?: string;
   wpsScore: number;
   totalEvents: number;
 }
@@ -26,8 +28,14 @@ export interface WPSProfile {
   wcaId: string;
   name: string;
   country: string;
+  countryIso2?: string;
+  countryName?: string;
   wpsScore: number;
+  /** World position by WPS (1-based). Same as globalRank when present. */
+  globalWpsRank?: number | null;
   globalRank: number;
+  /** Total number of people in the global WPS ranking (M). */
+  totalRanked?: number;
   eventScores: Record<string, number>;
   eventRanks: Record<string, number>;
   totalEvents: number;
@@ -42,8 +50,14 @@ export interface SearchResult {
   wcaId: string;
   name: string;
   country: string;
+  countryIso2?: string;
+  countryName?: string;
   wpsScore: number;
+  /** World position by WPS (1-based). */
+  globalWpsRank?: number | null;
   globalRank: number;
+  /** Total number of people in the global WPS ranking (M). */
+  totalRanked?: number;
 }
 
 export interface AboutData {
@@ -86,6 +100,8 @@ export interface LeaderboardCacheItem {
   personId: string;
   name: string;
   countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
   wps: number;
 }
 
@@ -117,26 +133,3 @@ export const EVENT_NAMES: Record<string, string> = {
   '333mbf': '3x3x3 Multi-Blind',
 };
 
-// Country flags mapping (simplified)
-export const COUNTRY_FLAGS: Record<string, string> = {
-  'USA': '🇺🇸',
-  'CHN': '🇨🇳',
-  'JPN': '🇯🇵',
-  'KOR': '🇰🇷',
-  'DEU': '🇩🇪',
-  'FRA': '🇫🇷',
-  'GBR': '🇬🇧',
-  'CAN': '🇨🇦',
-  'AUS': '🇦🇺',
-  'BRA': '🇧🇷',
-  'IND': '🇮🇳',
-  'RUS': '🇷🇺',
-  'POL': '🇵🇱',
-  'NLD': '🇳🇱',
-  'ITA': '🇮🇹',
-  'ESP': '🇪🇸',
-  'SWE': '🇸🇪',
-  'NOR': '🇳🇴',
-  'FIN': '🇫🇮',
-  'DNK': '🇩🇰',
-};

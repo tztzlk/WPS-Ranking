@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardCacheResponse, COUNTRY_FLAGS } from '../types';
+import { LeaderboardCacheResponse } from '../types';
+import { CountryFlag } from '../components/CountryFlag';
 
 function formatGeneratedAt(iso: string): string {
   try {
@@ -118,8 +119,8 @@ export function LeaderboardPage() {
                   <td className="py-3 px-4 font-medium text-white">{row.name}</td>
                   <td className="py-3 px-4">
                     <span className="flex items-center gap-2">
-                      <span>{COUNTRY_FLAGS[row.countryId ?? ''] ?? '🏳️'}</span>
-                      <span className="text-gray-300">{row.countryId ?? '—'}</span>
+                      <CountryFlag iso2={row.countryIso2} name={row.countryName ?? row.countryId} />
+                      <span className="text-gray-300">{row.countryName ?? row.countryId ?? '—'}</span>
                     </span>
                   </td>
                   <td className="py-3 px-4 font-mono text-green-400">

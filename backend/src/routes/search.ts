@@ -31,12 +31,17 @@ router.get('/', (req, res) => {
     return;
   }
   res.json({
+    totalRanked: profile.totalRanked,
     results: [{
       wcaId: profile.personId,
       name: profile.name,
-      country: profile.countryId ?? '',
+      country: profile.countryName ?? profile.countryId ?? '',
+      countryIso2: profile.countryIso2,
+      countryName: profile.countryName,
       wpsScore: profile.wps,
-      globalRank: 0,
+      globalWpsRank: profile.globalWpsRank,
+      globalRank: profile.globalWpsRank ?? 0,
+      totalRanked: profile.totalRanked,
     }],
   });
 });

@@ -7,17 +7,27 @@ import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
 const CACHE_DIR = path.resolve(__dirname, '../../cache');
 const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
 const PERSONS_PATH = path.join(WCA_EXPORT_DIR, 'Persons.tsv');
+const COUNTRIES_PATH = path.join(WCA_EXPORT_DIR, 'Countries.tsv');
 const RANKS_AVERAGE_PATH = path.join(WCA_EXPORT_DIR, 'RanksAvarage.tsv');
 const OUTPUT_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
+const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
 const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
+const COUNTRIES_INDEX_PATH = path.join(CACHE_DIR, 'countries.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
 const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 
 const TOP_N = 100;
 
+export interface CountryInfo {
+  name: string;
+  iso2: string;
+}
+
 export interface PersonInfo {
   name: string;
   countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
 }
 
 export interface LeaderboardItem {
@@ -25,6 +35,8 @@ export interface LeaderboardItem {
   personId: string;
   name: string;
   countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
   wps: number;
 }
 
@@ -47,7 +59,45 @@ function getHeaderIndices(headerRow: string[]): Record<string, number> {
   return indices;
 }
 
+/** Stream Countries.tsv and build countries.index.json: { "<wcaCountryId>": { name, iso2 } }. */
+async function buildCountriesIndex(): Promise<Record<string, CountryInfo>> {
+  const index: Record<string, CountryInfo> = {};
+  if (!fs.existsSync(COUNTRIES_PATH)) return index;
+  const stream = createReadStream(COUNTRIES_PATH, { encoding: 'utf8' });
+  const rl = createInterface({ input: stream, crlfDelay: Infinity });
+  let isHeader = true;
+  let headerIndices: Record<string, number> = {};
+
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    const cols = parseTSVLine(line);
+    if (isHeader) {
+      headerIndices = getHeaderIndices(cols);
+      isHeader = false;
+      continue;
+    }
+    const idIdx = headerIndices['id'] ?? 0;
+    const iso2Idx = headerIndices['iso2'] ?? 1;
+    const nameIdx = headerIndices['name'] ?? 2;
+    const wcaId = cols[idIdx]?.trim();
+    const iso2 = cols[iso2Idx]?.trim();
+    const name = cols[nameIdx]?.trim();
+    if (!wcaId) continue;
+    index[wcaId] = { name: name || wcaId, iso2: iso2 || '' };
+  }
+
+  const generatedAt = new Date().toISOString();
+  await fs.promises.mkdir(CACHE_DIR, { recursive: true });
+  await fs.promises.writeFile(
+    COUNTRIES_INDEX_PATH,
+    JSON.stringify({ generatedAt, countries: index }, null, 0),
+    'utf8'
+  );
+  return index;
+}
+
 async function buildPersonMap(
+  countriesIndex: Record<string, CountryInfo>,
   onProgress?: (lineCount: number) => void
 ): Promise<Map<string, PersonInfo>> {
   const personMap = new Map<string, PersonInfo>();
@@ -74,7 +124,13 @@ async function buildPersonMap(
     const name = cols[nameIdx]?.trim();
     if (!personId || !name) continue;
     const countryId = countryIdIdx !== undefined ? cols[countryIdIdx]?.trim() : undefined;
-    personMap.set(personId, { name, countryId: countryId || undefined });
+    const country = countryId ? countriesIndex[countryId] : undefined;
+    personMap.set(personId, {
+      name,
+      countryId: countryId || undefined,
+      countryName: country?.name,
+      countryIso2: country?.iso2 || undefined,
+    });
     lineCount++;
     if (onProgress && lineCount % 500000 === 0) onProgress(lineCount);
   }
@@ -147,7 +203,8 @@ export async function generateTop100Leaderboard(
 ): Promise<LeaderboardResult> {
   const onRanks = options?.onRanksLineProgress;
 
-  const personMap = await buildPersonMap();
+  const countriesIndex = await buildCountriesIndex();
+  const personMap = await buildPersonMap(countriesIndex);
 
   const scoreAndBreakdownByPerson = new Map<string, { sum: number; breakdown: BreakdownItem[] }>();
   await streamRanksAndAccumulate(scoreAndBreakdownByPerson, onRanks);
@@ -164,9 +221,14 @@ export async function generateTop100Leaderboard(
 
   await fs.promises.mkdir(CACHE_DIR, { recursive: true });
 
-  const personsIndex: Record<string, { name: string; countryId?: string }> = {};
+  const personsIndex: Record<string, { name: string; countryId?: string; countryName?: string; countryIso2?: string }> = {};
   for (const [id, info] of personMap) {
-    personsIndex[id] = { name: info.name, countryId: info.countryId };
+    personsIndex[id] = {
+      name: info.name,
+      countryId: info.countryId,
+      countryName: info.countryName,
+      countryIso2: info.countryIso2,
+    };
   }
   await fs.promises.writeFile(
     PERSONS_INDEX_PATH,
@@ -202,6 +264,18 @@ export async function generateTop100Leaderboard(
     return a.personId.localeCompare(b.personId);
   });
 
+  const generatedAt = new Date().toISOString();
+  const totalRanked = entries.length;
+  const ranks: Record<string, number> = {};
+  entries.forEach((e, i) => {
+    ranks[e.personId] = i + 1;
+  });
+  await fs.promises.writeFile(
+    WPS_RANK_INDEX_PATH,
+    JSON.stringify({ generatedAt, totalRanked, ranks }),
+    'utf8'
+  );
+
   const topEntries = entries.slice(0, TOP_N);
   const items: LeaderboardItem[] = topEntries.map((e, i) => {
     const person = personMap.get(e.personId);
@@ -210,13 +284,15 @@ export async function generateTop100Leaderboard(
       personId: e.personId,
       name: person?.name ?? e.personId,
       countryId: person?.countryId,
+      countryName: person?.countryName,
+      countryIso2: person?.countryIso2,
       wps: Math.round(e.wps * 100) / 100,
     };
   });
 
   const result: LeaderboardResult = {
     source: 'WCA Results Export',
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     count: items.length,
     items,
   };
