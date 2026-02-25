@@ -4,6 +4,7 @@ import path from 'path';
 const CACHE_DIR = path.resolve(__dirname, '../../cache');
 const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
+const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
 const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 const LEADERBOARD_CACHE_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
 
@@ -11,7 +12,11 @@ export interface ProfileCacheResult {
   personId: string;
   name: string;
   countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
   wps: number;
+  globalWpsRank: number | null;
+  totalRanked: number;
   generatedAt: string;
 }
 
@@ -55,7 +60,7 @@ export function getProfileByPersonId(personId: string): ProfileCacheResult | nul
   if (!normalizedId) return null;
 
   if (!fs.existsSync(PERSONS_INDEX_PATH)) return null;
-  const personsIndex: Record<string, { name: string; countryId?: string }> = JSON.parse(
+  const personsIndex: Record<string, { name: string; countryId?: string; countryName?: string; countryIso2?: string }> = JSON.parse(
     fs.readFileSync(PERSONS_INDEX_PATH, 'utf8')
   );
   const person = personsIndex[normalizedId];
@@ -70,11 +75,34 @@ export function getProfileByPersonId(personId: string): ProfileCacheResult | nul
     if (wpsEntry != null && typeof wpsEntry.wps === 'number') wps = wpsEntry.wps;
   }
 
+  let globalWpsRank: number | null = null;
+  let totalRanked = 0;
+  if (fs.existsSync(WPS_RANK_INDEX_PATH)) {
+    try {
+      const rankData: { ranks?: Record<string, number>; totalRanked?: number } = JSON.parse(
+        fs.readFileSync(WPS_RANK_INDEX_PATH, 'utf8')
+      );
+      const rank = rankData.ranks?.[normalizedId];
+      if (typeof rank === 'number' && rank >= 1) globalWpsRank = rank;
+      if (typeof rankData.totalRanked === 'number' && rankData.totalRanked >= 0) {
+        totalRanked = rankData.totalRanked;
+      } else if (rankData.ranks && typeof rankData.ranks === 'object') {
+        totalRanked = Object.keys(rankData.ranks).length;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return {
     personId: normalizedId,
     name: person.name,
     countryId: person.countryId,
+    countryName: person.countryName,
+    countryIso2: person.countryIso2,
     wps,
+    globalWpsRank,
+    totalRanked,
     generatedAt: getGeneratedAt(),
   };
 }

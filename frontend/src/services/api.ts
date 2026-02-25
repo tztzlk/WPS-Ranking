@@ -46,8 +46,8 @@ export const apiService = {
     return response.data;
   },
 
-  // Profile (includeBreakdown=1 for calculation + per-event breakdown)
-  async getProfile(wcaId: string, includeBreakdown = true): Promise<WPSProfile> {
+  // Profile (includeBreakdown=1 for calculation + per-event breakdown; default false to avoid loading breakdown until requested)
+  async getProfile(wcaId: string, includeBreakdown = false): Promise<WPSProfile> {
     const response = await api.get(`/profile/${wcaId}`, {
       params: includeBreakdown ? { includeBreakdown: 1 } : undefined,
     });

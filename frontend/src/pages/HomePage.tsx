@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import ReactCountryFlag from 'react-country-flag';
 import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardEntry, COUNTRY_FLAGS } from '../types';
+import { LeaderboardEntry } from '../types';
 
 export function HomePage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -21,7 +22,9 @@ export function HomePage() {
         rank: item.rank,
         wcaId: item.personId,
         name: item.name,
-        country: item.countryId ?? '',
+        country: item.countryName ?? item.countryId ?? '',
+        countryIso2: item.countryIso2,
+        countryName: item.countryName,
         wpsScore: item.wps,
         totalEvents: 0,
       })));
@@ -35,10 +38,6 @@ export function HomePage() {
 
   const formatScore = (score: number) => {
     return score.toFixed(2);
-  };
-
-  const getCountryFlag = (country: string) => {
-    return COUNTRY_FLAGS[country] || '🏳️';
   };
 
   return (
@@ -142,9 +141,13 @@ export function HomePage() {
                       <div className="text-sm text-gray-400">{cuber.wcaId}</div>
                     </td>
                     <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getCountryFlag(cuber.country)}</span>
-                        <span className="text-gray-300">{cuber.country}</span>
+                      <div className="flex items-center gap-2">
+                        {cuber.countryIso2 ? (
+                          <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
+                        ) : (
+                          <span className="text-gray-500">🏳️</span>
+                        )}
+                        <span className="text-gray-300">{cuber.countryName ?? cuber.country ?? '—'}</span>
                       </div>
                     </td>
                     <td className="py-4 px-4">
