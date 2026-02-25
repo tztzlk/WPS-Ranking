@@ -57,10 +57,11 @@ async function importTable(tsvFile: string, tableName: string) {
           break;
           
         case 'Continents':
-          await prisma.countries.createMany({
+          await prisma.continents.createMany({
             data: batch,
             skipDuplicates: true
           });
+          console.log(`  📋 Continents: attempted to insert ${batch.length} rows`);
           break;
           
         case 'Events':
@@ -68,30 +69,6 @@ async function importTable(tsvFile: string, tableName: string) {
             data: batch,
             skipDuplicates: true
           });
-          break;
-          
-        case 'RanksSingle':
-          // Check if persons exist first
-          const personIds = [...new Set(batch.map(b => b.personId))];
-          const existingPersons = await prisma.persons.findMany({
-            where: { id: { in: personIds } },
-            select: { id: true }
-          });
-          const existingPersonIds = new Set(existingPersons.map(p => p.id));
-          
-          const validBatch = batch.filter(b => existingPersonIds.has(b.personId));
-          
-          if (validBatch.length > 0) {
-            await prisma.ranksSingle.createMany({
-              data: validBatch,
-              skipDuplicates: true
-            });
-          }
-          
-          const skipped = batch.length - validBatch.length;
-          if (skipped > 0) {
-            console.log(`  ⚠ Skipped ${skipped} records (person not found)`);
-          }
           break;
           
         case 'RanksAverage':
@@ -109,6 +86,7 @@ async function importTable(tsvFile: string, tableName: string) {
               data: validAvgBatch,
               skipDuplicates: true
             });
+            console.log(`  📋 RanksAverage: attempted to insert ${validAvgBatch.length} rows`);
           }
           
           const avgSkipped = batch.length - validAvgBatch.length;

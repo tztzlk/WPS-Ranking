@@ -16,3 +16,6 @@ frontend/src/components/
 backend/src/components/
 backend/WCA_export303_20251030T000034Z.tsv/
 backend/.env
+backend/cache/
+backend/cache/leaderboard.top100.json
+backend/cache/wca_export/

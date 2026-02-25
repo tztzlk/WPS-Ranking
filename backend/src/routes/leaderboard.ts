@@ -1,48 +1,29 @@
 import { Router } from 'express';
-import { getDb } from '../db';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
+const LEADERBOARD_CACHE_PATH = path.resolve(__dirname, '../../cache/leaderboard.top100.json');
+
 /**
  * GET /api/leaderboard
- * Get top 100 competitors for a given event (default "333") from RanksAverage
+ * Returns the offline-computed Top-100 WPS leaderboard from cache.
+ * If cache is missing, returns 503 with instructions to run npm run leaderboard:update.
  */
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const { event = '333', limit = 100 } = req.query;
-    const prisma = await getDb();
-    const maxLimit = Math.min(parseInt(limit as string) || 100, 100); // Max 100 results
-
-    const rankings = await prisma.ranksAverage.findMany({
-      where: {
-        eventId: event as string
-      },
-      include: {
-        person: true
-      },
-      orderBy: {
-        worldRank: 'asc'
-      },
-      take: maxLimit
-    });
-
-    const leaderboard = rankings.map((rank: any, index: number) => ({
-      rank: index + 1,
-      name: rank.person.name,
-      wcaId: rank.person.id.toString(),
-      country: rank.person.countryId,
-      best: rank.best / 100, // Convert centiseconds to seconds
-      worldRank: rank.worldRank
-    }));
-
-    res.json({
-      data: leaderboard,
-      total: leaderboard.length,
-      event: event,
-      limit: maxLimit
-    });
+    if (!fs.existsSync(LEADERBOARD_CACHE_PATH)) {
+      res.status(503).json({
+        error: 'Leaderboard cache not generated. Run npm run leaderboard:update',
+      });
+      return;
+    }
+    const data = fs.readFileSync(LEADERBOARD_CACHE_PATH, 'utf8');
+    const json = JSON.parse(data);
+    res.json(json);
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    console.error('Error reading leaderboard cache:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });

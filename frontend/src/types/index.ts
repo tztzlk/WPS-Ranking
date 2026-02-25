@@ -58,6 +58,22 @@ export interface ApiResponse<T> {
   query?: string;
 }
 
+/** Cached Top-100 leaderboard from GET /api/leaderboard */
+export interface LeaderboardCacheItem {
+  rank: number;
+  personId: string;
+  name: string;
+  countryId?: string;
+  wps: number;
+}
+
+export interface LeaderboardCacheResponse {
+  source: string;
+  generatedAt: string;
+  count: number;
+  items: LeaderboardCacheItem[];
+}
+
 // Event names mapping
 export const EVENT_NAMES: Record<string, string> = {
   '333': '3x3x3 Cube',

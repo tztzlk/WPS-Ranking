@@ -7,20 +7,11 @@ import { profileRoutes } from './routes/profile';
 import { searchRoutes } from './routes/search';
 import { aboutRoutes } from './routes/about';
 import { errorHandler } from './middleware/errorHandler';
-import { getDb } from './db';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Test database connection on startup
-getDb().then(() => {
-  console.log('✅ Database connected successfully');
-}).catch((error) => {
-  console.error('❌ Database connection failed:', error);
-  process.exit(1);
-});
 
 // Middleware
 app.use(helmet());

@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "test": "jest",
     "import:wca": "tsx src/scripts/importWcaExport.ts",
+    "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push"

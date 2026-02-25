@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { LeaderboardEntry, WPSProfile, SearchResult, AboutData, ApiResponse } from '../types';
+import { LeaderboardEntry, WPSProfile, SearchResult, AboutData, ApiResponse, LeaderboardCacheResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '' : 'http://localhost:5000') + '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -32,11 +32,17 @@ api.interceptors.response.use(
 );
 
 export const apiService = {
-  // Leaderboard
+  // Leaderboard (paginated from DB - may not be implemented on backend)
   async getLeaderboard(limit: number = 1000, offset: number = 0): Promise<ApiResponse<LeaderboardEntry>> {
     const response = await api.get('/leaderboard', {
       params: { limit, offset }
     });
+    return response.data;
+  },
+
+  /** Cached Top-100 leaderboard JSON from backend/cache/leaderboard.top100.json */
+  async getLeaderboardTop100(): Promise<LeaderboardCacheResponse> {
+    const response = await api.get<LeaderboardCacheResponse>('/leaderboard');
     return response.data;
   },
 
@@ -46,10 +52,10 @@ export const apiService = {
     return response.data;
   },
 
-  // Search
+  // Search: GET /api/search?q=<query> (backend expects q or wcaId; returns { results: SearchResult[] })
   async searchCubers(query: string, limit: number = 20): Promise<ApiResponse<SearchResult>> {
-    const response = await api.get('/search', {
-      params: { q: query, limit }
+    const response = await api.get<ApiResponse<SearchResult>>('/search', {
+      params: { q: query.trim(), limit },
     });
     return response.data;
   },

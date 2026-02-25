@@ -15,17 +15,31 @@ export function SearchPage() {
     e.preventDefault();
     if (!query.trim()) return;
 
+    setLoading(true);
+    setError(null);
+    setHasSearched(true);
+
     try {
-      setLoading(true);
-      setError(null);
       const response = await apiService.searchCubers(query.trim());
-      if (response.results) {
-        setResults(response.results);
-        setHasSearched(true);
+      if (import.meta.env.DEV) {
+        console.log('[Search] response', response);
       }
-    } catch (err) {
-      setError('Failed to search cubers');
-      console.error('Error searching cubers:', err);
+      setResults(response.results ?? []);
+    } catch (err: unknown) {
+      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status: number; data?: { error?: string } } }) : null;
+      const status = ax?.response?.status;
+      const message = ax?.response?.data?.error;
+      if (status === 404) {
+        setError('Person not found');
+        setResults([]);
+      } else if (status === 400 && message) {
+        setError(message);
+        setResults([]);
+      } else {
+        setError('Failed to search cubers');
+        setResults([]);
+        console.error('Error searching cubers:', err);
+      }
     } finally {
       setLoading(false);
     }
