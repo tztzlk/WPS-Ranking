@@ -38,7 +38,6 @@ model Events {
   rank         Int
   format       String
   cellName     String?
-  ranksSingle  RanksSingle[]
   ranksAverage RanksAverage[]
 
   @@map("events")
@@ -52,7 +51,6 @@ model Persons {
   gender           String
   competitionCount Int            @default(0)
   country          Countries      @relation(fields: [countryId], references: [id])
-  ranksSingle      RanksSingle[]
   ranksAverage     RanksAverage[]
 
   @@map("persons")

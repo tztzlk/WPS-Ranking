@@ -83,8 +83,8 @@ export function HomePage() {
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Top 100 Global Rankings</h2>
-          <Link to="/search" className="text-green-400 hover:text-green-300 flex items-center space-x-1">
-            <span>View All</span>
+          <Link to="/leaderboard" className="text-green-400 hover:text-green-300 flex items-center space-x-1">
+            <span>View Full Leaderboard</span>
             <TrendingUp className="w-4 h-4" />
           </Link>
         </div>

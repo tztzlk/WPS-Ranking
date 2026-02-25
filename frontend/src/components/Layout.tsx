@@ -5,7 +5,8 @@ export function Layout() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Leaderboard', icon: Trophy },
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
     { path: '/search', label: 'Search', icon: Search },
     { path: '/about', label: 'About', icon: Info },
   ];
@@ -112,7 +113,8 @@ export function Layout() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
               <ul className="space-y-2">
-                <li><Link to="/" className="text-gray-400 hover:text-white">Leaderboard</Link></li>
+                <li><Link to="/" className="text-gray-400 hover:text-white">Home</Link></li>
+                <li><Link to="/leaderboard" className="text-gray-400 hover:text-white">Leaderboard</Link></li>
                 <li><Link to="/search" className="text-gray-400 hover:text-white">Search</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white">About WPS</Link></li>
               </ul>
