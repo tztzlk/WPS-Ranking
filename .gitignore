@@ -1,2 +1,16 @@
 backend/WCA_export303_20251030T000034Z.tsv/
 *.tsv
+node_modules/
+.env
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/dist/
+frontend/build/
+backend/build/
+frontend/public/
+backend/public/
+frontend/src/assets/
+backend/src/assets/
+frontend/src/components/
+backend/src/components/
