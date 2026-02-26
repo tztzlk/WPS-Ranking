@@ -36,6 +36,8 @@ export interface WPSProfile {
   globalRank: number;
   /** Total number of people in the global WPS ranking (M). */
   totalRanked?: number;
+  countryRank?: number | null;
+  countryTotal?: number | null;
   eventScores: Record<string, number>;
   eventRanks: Record<string, number>;
   totalEvents: number;

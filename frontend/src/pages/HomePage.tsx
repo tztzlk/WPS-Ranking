@@ -17,7 +17,7 @@ export function HomePage() {
   const loadLeaderboard = async () => {
     try {
       setLoading(true);
-      const result = await apiService.getLeaderboardTop100();
+      const result = await apiService.getLeaderboardTop100(5);
       setLeaderboard(result.items.map((item) => ({
         rank: item.rank,
         wcaId: item.personId,
@@ -83,15 +83,9 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Leaderboard */}
+      {/* Leaderboard — Top 5 only for fast load */}
       <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Top 100 Global Rankings</h2>
-          <Link to="/leaderboard" className="text-green-400 hover:text-green-300 flex items-center space-x-1">
-            <span>View Full Leaderboard</span>
-            <TrendingUp className="w-4 h-4" />
-          </Link>
-        </div>
+        <h2 className="text-2xl font-bold text-white mb-6">Top 5 Cubers Worldwide</h2>
 
         {loading ? (
           <div className="text-center py-12">
@@ -106,69 +100,67 @@ export function HomePage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS Score</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Events</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((cuber, index) => (
-                  <tr key={cuber.wcaId} className="border-b border-gray-700 hover:bg-gray-800/50">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        {index < 3 ? (
-                          <Trophy className={`w-5 h-5 ${
-                            index === 0 ? 'text-yellow-400' : 
-                            index === 1 ? 'text-gray-300' : 
-                            'text-amber-600'
-                          }`} />
-                        ) : (
-                          <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-gray-400">
-                            {cuber.rank}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-medium text-white">{cuber.name}</div>
-                      <div className="text-sm text-gray-400">{cuber.wcaId}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        {cuber.countryIso2 ? (
-                          <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
-                        ) : (
-                          <span className="text-gray-500">🏳️</span>
-                        )}
-                        <span className="text-gray-300">{cuber.countryName ?? cuber.country ?? '—'}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-bold text-green-400">{formatScore(cuber.wpsScore)}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-gray-300">{cuber.totalEvents}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Link
-                        to={`/profile/${cuber.wcaId}`}
-                        className="text-green-400 hover:text-green-300 text-sm font-medium"
-                      >
-                        View Profile
-                      </Link>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {leaderboard.map((cuber, index) => (
+                    <tr key={cuber.wcaId} className="border-b border-gray-700 hover:bg-gray-800/50">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          {index < 3 ? (
+                            <Trophy className={`w-5 h-5 ${
+                              index === 0 ? 'text-yellow-400' :
+                              index === 1 ? 'text-gray-300' :
+                              'text-amber-600'
+                            }`} />
+                          ) : (
+                            <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-gray-400">
+                              {cuber.rank}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <Link to={`/profile/${cuber.wcaId}`} className="font-medium text-white hover:text-green-400">
+                          {cuber.name}
+                        </Link>
+                        <div className="text-sm text-gray-400">{cuber.wcaId}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          {cuber.countryIso2 ? (
+                            <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
+                          ) : (
+                            <span className="text-gray-500">🏳️</span>
+                          )}
+                          <span className="text-gray-300">{cuber.countryName ?? cuber.country ?? '—'}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="font-bold text-green-400">{formatScore(cuber.wpsScore)}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <Link to="/leaderboard" className="btn-primary flex items-center justify-center space-x-2">
+                <TrendingUp className="w-5 h-5" />
+                <span>View Full Leaderboard</span>
+              </Link>
+              <p className="text-gray-500 text-sm">Showing top 5 of all ranked cubers</p>
+            </div>
+          </>
         )}
       </div>
 

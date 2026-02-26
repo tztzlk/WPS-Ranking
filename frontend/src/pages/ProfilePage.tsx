@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award, Calculator } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award, Calculator, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, EVENT_NAMES } from '../types';
 import { FormulaBox } from '../components/FormulaBox';
@@ -13,6 +13,7 @@ export function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showCalc, setShowCalc] = useState(false);
   const [loadingBreakdown, setLoadingBreakdown] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     if (wcaId) {
@@ -94,6 +95,18 @@ export function ProfilePage() {
     return 'text-red-400';
   };
 
+  const handleShareProfile = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // fallback: open share dialog or leave URL in location bar
+      setShareCopied(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -118,11 +131,21 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Back Button */}
-      <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
-        <ArrowLeft className="w-4 h-4" />
-        <span>Back to Leaderboard</span>
-      </Link>
+      {/* Back + Share */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Leaderboard</span>
+        </Link>
+        <button
+          type="button"
+          onClick={handleShareProfile}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition"
+        >
+          <Share2 className="w-4 h-4" />
+          {shareCopied ? 'Copied!' : 'Share profile'}
+        </button>
+      </div>
 
       {/* Profile Header */}
       <div className="card">

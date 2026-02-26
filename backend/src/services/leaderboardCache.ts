@@ -175,6 +175,35 @@ export function getGlobalLeaderboard(limit: number = 100): GlobalLeaderboardResp
 }
 
 /**
+ * Returns country rank and total for a person in their country (by WPS).
+ */
+export function getCountryRank(
+  personId: string,
+  countryIso2: string
+): { countryRank: number; countryTotal: number } | null {
+  ensureIndexesLoaded();
+  if (!personsIndex || !wpsRankIndex) return null;
+  const iso2Upper = countryIso2?.trim()?.toUpperCase();
+  if (!iso2Upper) return null;
+
+  const candidates: Array<{ personId: string; wps: number }> = [];
+  for (const [pid, person] of Object.entries(personsIndex)) {
+    if (person.countryIso2?.toUpperCase() !== iso2Upper) continue;
+    const wpsEntry = wpsIndex?.[pid];
+    if (wpsEntry == null || typeof wpsEntry.wps !== 'number') continue;
+    candidates.push({ personId: pid, wps: wpsEntry.wps });
+  }
+  candidates.sort((a, b) => {
+    const diff = b.wps - a.wps;
+    if (diff !== 0) return diff;
+    return a.personId.localeCompare(b.personId);
+  });
+  const index = candidates.findIndex((c) => c.personId === personId);
+  if (index < 0) return null;
+  return { countryRank: index + 1, countryTotal: candidates.length };
+}
+
+/**
  * Returns top N cubers for a country by WPS (from all ranked), with countryRank and globalWpsRank.
  */
 export function getCountryLeaderboard(
