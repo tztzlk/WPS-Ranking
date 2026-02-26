@@ -45,7 +45,115 @@ WPS Score = (sum of event scores / max possible score) × 100
 
 ## 🔧 Development
 
-See root `package.json`: `npm run dev` (backend + frontend), `npm run build` then `npm start` for production.
+- **Local:** From repo root: `npm run dev` (runs backend on port 5000 and frontend on port 3000).
+- **Frontend only (with proxy):** `cd frontend && npm run dev` — Vite proxies `/api` to `http://localhost:5000`.
+- **Frontend pointing at remote API:** `cd frontend && VITE_API_BASE_URL=https://your-backend.example.com/api npm run dev`.
+- **Backend only:** `cd backend && npm run dev` (TS watch); or `npm run build` then `npm start` (runs compiled `dist/index.js`).
+
+### Backend API routes (all under `/api/*`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check. Returns `{ ok: true, env: "production" \| "development" }`. |
+| GET | `/api/leaderboard` | Global or country leaderboard (query: `country`, `limit`). Served from cache. |
+| GET | `/api/countries` | List of countries (from cache). |
+| GET | `/api/profile/:wcaId` | Profile by WCA ID (query: `includeBreakdown=1` optional). |
+| GET | `/api/search` | Search cubers (query: `q`, `limit`). |
+| GET | `/api/compare` | Compare two cubers (query: `left`, `right` WCA IDs). |
+| GET | `/api/about` | About / formula data. |
+| GET | `/api/og/profile/:personId` | OG image for profile (PNG). |
+
+No database required; backend reads precomputed JSON from `backend/cache/`.
+
+---
+
+## 🚀 Deployment
+
+Production setup: **frontend on Vercel**, **backend as a standalone service** (e.g. Render, Fly, Railway). Frontend calls the backend via `VITE_API_BASE_URL` (no local proxy in production).
+
+### A) Deploy backend first
+
+Use a Node 20 runtime. These steps are written for **Render** but work on Fly, Railway, or a VPS.
+
+1. **Create a new Web Service** (Render: New → Web Service).
+2. **Connect** your repo.
+3. **Settings:**
+   - **Root directory:** `backend`
+   - **Build command:** `npm ci && npm run build`
+   - **Start command:** `npm start`
+   - **Environment:** Node 20 (or set in `engines` in `backend/package.json`).
+
+4. **Environment variables:**
+
+   | Variable | Value |
+   |----------|--------|
+   | `NODE_ENV` | `production` |
+   | `PORT` | `5000` (or leave unset if the platform provides `PORT`) |
+   | `CORS_ORIGINS` | `https://<your-vercel-frontend-domain>` (comma-separated if multiple, e.g. `https://wps.example.com,https://www.wps.example.com`) |
+
+5. **Cache data:** The backend serves from precomputed JSON in `backend/cache/`. You must either:
+   - Commit a pre-built `backend/cache/` (if not gitignored), or
+   - Run the update script after deploy (e.g. via a one-off job or cron):  
+     `cd backend && npm run update:data` (and optionally `npm run leaderboard:update`), then ensure the generated files are on the instance (persistent disk or re-run on each deploy).
+
+6. **Verify:**  
+   `curl https://<your-backend-domain>/api/health`  
+   Expected: `{"ok":true,"env":"production"}`.
+
+### B) Deploy frontend on Vercel
+
+1. **Import** the repo in Vercel (New Project).
+2. **Settings:**
+   - **Root directory:** `frontend`
+   - **Build command:** `npm run build`
+   - **Output directory:** `dist`
+   - **Node version:** 20 (if available in project settings).
+
+3. **Environment variable:**
+
+   | Variable | Value |
+   |----------|--------|
+   | `VITE_API_BASE_URL` | `https://<your-backend-domain>/api` |
+
+   Replace `<your-backend-domain>` with the URL of the backend you deployed in (A) (no trailing slash; the app appends paths like `/leaderboard` to this base).
+
+4. **Deploy.** After deploy, test:
+   - Home loads (top 5 leaderboard).
+   - Leaderboard loads.
+   - Profile loads (e.g. `/profile/2017AMAN04`).
+   - Compare loads.
+
+### Optional: Vercel config
+
+A `frontend/vercel.json` is included so that with **Root Directory** = `frontend` in the Vercel dashboard, build and output dir are set. You can override build/output in the dashboard instead if you prefer.
+
+### Go-live checklist
+
+- [ ] Backend deployed; `GET /api/health` returns `{ ok: true, env: "production" }`.
+- [ ] Backend has cache data (leaderboard/profile indexes); if not, run update scripts.
+- [ ] Frontend deployed with `VITE_API_BASE_URL` set to backend API base (e.g. `https://api.example.com/api`).
+- [ ] CORS: backend `CORS_ORIGINS` includes the frontend origin (e.g. `https://yourapp.vercel.app`).
+- [ ] Smoke test: Home, Leaderboard, Profile, Compare, Search, About all load and behave correctly.
+
+### Local verification commands
+
+Run these before deploying to confirm everything works:
+
+```bash
+# Backend: build and run (from repo root)
+cd backend && npm ci && npm run build && npm start
+# In another terminal: curl http://localhost:5000/api/health  → {"ok":true,"env":"development"}
+
+# Backend dev (TS watch)
+cd backend && npm run dev
+
+# Frontend dev (uses Vite proxy to backend at localhost:5000)
+cd frontend && npm run dev
+# Or point at a remote API: VITE_API_BASE_URL=http://localhost:5000/api npm run dev
+
+# Frontend build (must succeed for Vercel)
+cd frontend && npm run build
+```
 
 ## 📤 Open Graph & social sharing
 

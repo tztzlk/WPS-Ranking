@@ -101,8 +101,9 @@ export function ComparePage() {
       const result = await apiService.getCompare(l, r);
       setData(result);
     } catch (err: unknown) {
-      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status: number; data?: { error?: string } } }) : null;
-      const msg = ax?.response?.data?.error;
+      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
+      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { data?: { error?: string } } }) : null;
+      const msg = userMsg ?? ax?.response?.data?.error;
       setError(typeof msg === 'string' ? msg : 'Failed to load comparison');
       setData(null);
     } finally {

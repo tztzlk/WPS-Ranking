@@ -19,7 +19,7 @@ export function HomePage() {
       setLoading(true);
       const result = await apiService.getLeaderboardTop100(5);
       setLeaderboard(result.items.map((item) => ({
-        rank: item.rank,
+        rank: item.rank ?? 0,
         wcaId: item.personId,
         name: item.name,
         country: item.countryName ?? item.countryId ?? '',

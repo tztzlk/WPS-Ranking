@@ -28,8 +28,11 @@ export function ProfilePage() {
       setError(null);
       const data = await apiService.getProfile(id, false);
       setProfile(data);
-    } catch (err) {
-      setError('Failed to load profile');
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'userMessage' in err
+        ? (err as { userMessage?: string }).userMessage
+        : null;
+      setError(msg || 'Failed to load profile');
       console.error('Error loading profile:', err);
     } finally {
       setLoading(false);
