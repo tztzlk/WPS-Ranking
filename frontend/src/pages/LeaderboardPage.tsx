@@ -61,13 +61,15 @@ export function LeaderboardPage() {
       setData(result);
       if (country !== undefined) setSelectedCountry(country ?? ALL);
     } catch (err: unknown) {
+      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
       const message =
-        err && typeof err === 'object' && 'response' in err
+        userMsg ??
+        (err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
             ((err as { response?: { status?: number } }).response?.status === 503
               ? 'Leaderboard cache not generated. Run npm run leaderboard:update on the backend.'
               : 'Failed to load leaderboard')
-          : 'Failed to load leaderboard';
+          : 'Failed to load leaderboard');
       setError(message);
       setData(null);
     } finally {
@@ -117,7 +119,7 @@ export function LeaderboardPage() {
         <h1 className="text-3xl font-bold text-white">Top 100 WPS Leaderboard</h1>
         <div className="card text-center py-12">
           <p className="text-red-400">{error ?? 'Failed to load data'}</p>
-          <button type="button" onClick={loadLeaderboard} className="btn-primary mt-4">
+          <button type="button" onClick={() => loadLeaderboard(selectedCountry === ALL ? undefined : selectedCountry)} className="btn-primary mt-4">
             Try Again
           </button>
         </div>

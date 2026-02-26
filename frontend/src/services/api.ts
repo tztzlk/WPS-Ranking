@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { LeaderboardEntry, WPSProfile, SearchResult, AboutData, ApiResponse, LeaderboardCacheResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '' : 'http://localhost:5000') + '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE,
   timeout: 10000,
 });
 
@@ -26,6 +26,11 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (!error.response) {
+      (error as Error & { userMessage?: string }).userMessage = 'Unable to reach server. Please try again.';
+    } else if (error.response?.data?.error && typeof error.response.data.error === 'string') {
+      (error as Error & { userMessage?: string }).userMessage = error.response.data.error;
+    }
     console.error('API Response Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
@@ -85,8 +90,8 @@ export const apiService = {
   },
 
   // Health check
-  async getHealth(): Promise<{ status: string; timestamp: string }> {
-    const response = await api.get('/health');
+  async getHealth(): Promise<{ ok: boolean; env: string }> {
+    const response = await api.get<{ ok: boolean; env: string }>('/health');
     return response.data;
   }
 };
