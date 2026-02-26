@@ -21,9 +21,10 @@ const PORT = process.env.PORT || 5000;
 // CORS: comma-separated CORS_ORIGINS; in development allow localhost:3000
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-  : ['http://localhost:3000'];
+  : ['http://localhost:3000', 'https://wps-ranking.vercel.app',
+  'http://localhost:5173'];
 app.use(helmet());
-app.use(cors({
+app.use(cors({  
   origin: corsOrigins,
   credentials: true,
 }));
