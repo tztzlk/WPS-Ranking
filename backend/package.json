@@ -12,7 +12,8 @@
     "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "update:data": "tsx src/scripts/updateData.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
