@@ -4,7 +4,7 @@
   "description": "Backend API for WPS Ranking platform",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <21"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -13,7 +13,7 @@
     "test": "jest",
     "import:wca": "tsx src/scripts/importWcaExport.ts",
     "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
-     "update:data": "tsx src/scripts/updateData.ts"
+    "update:data": "tsx src/scripts/updateData.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
