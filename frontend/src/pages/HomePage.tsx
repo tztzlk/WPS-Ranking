@@ -18,8 +18,8 @@ export function HomePage() {
     try {
       setLoading(true);
       const result = await apiService.getLeaderboardTop100(5);
-      setLeaderboard(result.items.map((item) => ({
-        rank: item.rank ?? 0,
+      setLeaderboard(result.items.map((item, index) => ({
+        rank: item.rank ?? index + 1,
         wcaId: item.personId,
         name: item.name,
         country: item.countryName ?? item.countryId ?? '',
@@ -95,7 +95,7 @@ export function HomePage() {
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-red-400">{error}</p>
-            <button onClick={loadLeaderboard} className="btn-primary mt-4">
+            <button type="button" onClick={() => loadLeaderboard()} className="btn-primary mt-4">
               Try Again
             </button>
           </div>
