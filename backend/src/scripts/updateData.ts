@@ -15,7 +15,7 @@ const HASH_PATH = path.join(CACHE_DIR, "export.sha256");
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 
 // 1) скачать ZIP (замени на свой url/скрипт)
-execSync(`node src/scripts/downloadExport.js "${ZIP_PATH}"`, { stdio: "inherit" });
+execSync(`tsx src/scripts/downloadExport.ts "${ZIP_PATH}"`, { stdio: "inherit" });      
 
 // 2) сравнить hash
 const newHash = sha256File(ZIP_PATH);
@@ -29,9 +29,9 @@ if (newHash === oldHash) {
 fs.writeFileSync(HASH_PATH, newHash);
 
 // 3) распаковать нужные tsv (замени на свой unzip/скрипт)
-execSync(`node src/scripts/extractTsv.js "${ZIP_PATH}"`, { stdio: "inherit" });
+execSync(`tsx src/scripts/extractTsv.ts "${ZIP_PATH}"`, { stdio: "inherit" });
 
 // 4) пересчитать кэши
-execSync(`node src/scripts/buildCaches.js`, { stdio: "inherit" });
+execSync(`tsx src/scripts/buildCaches.ts`, { stdio: "inherit" });
 
 console.log("Updated export and recomputed caches.");
