@@ -3,8 +3,9 @@ import path from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
+import { getCacheDir } from '../utils/cachePath';
 
-const CACHE_DIR = path.resolve(__dirname, '../../cache');
+const CACHE_DIR = getCacheDir();
 const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
 const PERSONS_PATH = path.join(WCA_EXPORT_DIR, 'Persons.tsv');
 const COUNTRIES_PATH = path.join(WCA_EXPORT_DIR, 'Countries.tsv');

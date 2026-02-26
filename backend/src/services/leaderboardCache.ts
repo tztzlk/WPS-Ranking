@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { getCacheDir } from '../utils/cachePath';
 
-const CACHE_DIR = path.resolve(__dirname, '../../cache');
+const CACHE_DIR = getCacheDir();
 const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
 const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
@@ -58,11 +59,15 @@ export interface CountryItem {
 let countriesListCache: CountryItem[] | null = null;
 
 function loadJson<T>(filePath: string): T | null {
-  if (!fs.existsSync(filePath)) return null;
+  if (!fs.existsSync(filePath)) {
+    console.error(`[leaderboardCache] Missing cache file: ${filePath}`);
+    return null;
+  }
   try {
     const raw = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(raw) as T;
-  } catch {
+  } catch (err) {
+    console.error(`[leaderboardCache] Failed to read cache file: ${filePath}`, err);
     return null;
   }
 }
