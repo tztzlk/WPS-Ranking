@@ -18,11 +18,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// CORS: comma-separated CORS_ORIGINS; in development allow localhost:3000
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+  : ['http://localhost:3000'];
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
+  origin: corsOrigins,
+  credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,8 +40,9 @@ app.use('/api/compare', compareRoutes);
 app.use('/api/og', ogRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+app.get('/api/health', (_req, res) => {
+  const env = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+  res.status(200).json({ ok: true, env });
 });
 
 // Open Graph meta HTML for profile pages (crawlers only). Must be before static so /profile/:personId is hit.
