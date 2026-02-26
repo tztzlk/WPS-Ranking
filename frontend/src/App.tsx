@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ComparePage } from './pages/ComparePage';
 import { AboutPage } from './pages/AboutPage';
 import { SearchPage } from './pages/SearchPage';
 import { Layout } from './components/Layout';
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
       {
         path: 'profile/:wcaId',
         element: <ProfilePage />
+      },
+      {
+        path: 'compare',
+        element: <ComparePage />
       },
       {
         path: 'about',

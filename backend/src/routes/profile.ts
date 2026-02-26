@@ -4,6 +4,7 @@ import {
   getProfileBreakdownByPersonId,
   ProfileCacheResult,
 } from '../services/profileFromCache';
+import { getCountryRank } from '../services/leaderboardCache';
 
 const router = Router();
 
@@ -33,12 +34,12 @@ router.get('/', (req, res) => {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
-  const profile = getProfileByPersonId(personId);
-  if (!profile) {
+  const response = buildProfileResponse(personId, includeBreakdown(req));
+  if (!response) {
     res.status(404).json({ error: 'Person not found' });
     return;
   }
-  res.json(toProfileResponse(profile, includeBreakdown(req)));
+  res.json(response);
 });
 
 router.get('/:wcaId', (req, res) => {
@@ -47,15 +48,33 @@ router.get('/:wcaId', (req, res) => {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
-  const profile = getProfileByPersonId(wcaId);
-  if (!profile) {
+  const response = buildProfileResponse(wcaId, includeBreakdown(req));
+  if (!response) {
     res.status(404).json({ error: 'Person not found' });
     return;
   }
-  res.json(toProfileResponse(profile, includeBreakdown(req)));
+  res.json(response);
 });
 
+/**
+ * Build full profile response (with country rank). Used by profile and compare routes.
+ * Returns null if person not found.
+ */
+export function buildProfileResponse(
+  personId: string,
+  withBreakdown: boolean
+): ReturnType<typeof toProfileResponse> | null {
+  const profile = getProfileByPersonId(personId);
+  if (!profile) return null;
+  return toProfileResponse(profile, withBreakdown);
+}
+
 function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) {
+  const countryRankData =
+    profile.countryIso2 != null
+      ? getCountryRank(profile.personId, profile.countryIso2)
+      : null;
+
   const base = {
     personId: profile.personId,
     name: profile.name,
@@ -65,6 +84,8 @@ function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) 
     wps: profile.wps,
     globalWpsRank: profile.globalWpsRank,
     totalRanked: profile.totalRanked,
+    countryRank: countryRankData?.countryRank ?? null,
+    countryTotal: countryRankData?.countryTotal ?? null,
     generatedAt: profile.generatedAt,
     wcaId: profile.personId,
     country: profile.countryName ?? profile.countryId ?? '',

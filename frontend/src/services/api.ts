@@ -70,6 +70,14 @@ export const apiService = {
     return response.data;
   },
 
+  // Compare: GET /api/compare?left=WCA_ID&right=WCA_ID
+  async getCompare(left: string, right: string): Promise<{ left: WPSProfile; right: WPSProfile }> {
+    const response = await api.get<{ left: WPSProfile; right: WPSProfile }>('/compare', {
+      params: { left, right },
+    });
+    return response.data;
+  },
+
   // About
   async getAbout(): Promise<AboutData> {
     const response = await api.get('/about');
