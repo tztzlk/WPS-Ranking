@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getProfileByPersonId } from '../services/profileFromCache';
 import { searchPersons } from '../services/personLookup';
 import { getWpsIndex, getWpsRankIndex } from '../services/indexStore';
+import { LRUCache } from '../utils/lruCache';
 
 const router = Router();
 
@@ -11,12 +12,14 @@ function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
+const searchResultCache = new LRUCache<string, object>(500);
+
 /**
  * GET /api/search?q=<query>&limit=<n>
  * GET /api/search?wcaId=<WCA_ID>
  *
  * Exact WCA ID → profile lookup.
- * Otherwise → line-by-line TSV scan for name / partial-ID matches.
+ * Otherwise → line-by-line TSV scan for name / partial-ID / country matches.
  */
 router.get('/', async (req, res) => {
   const start = Date.now();
@@ -28,7 +31,14 @@ router.get('/', async (req, res) => {
     }
 
     const limitRaw = req.query.limit;
-    const limit = typeof limitRaw === 'string' ? Math.min(Math.max(1, parseInt(limitRaw, 10) || 20), 100) : 20;
+    const limit = typeof limitRaw === 'string' ? Math.min(Math.max(1, parseInt(limitRaw, 10) || 20), 50) : 20;
+
+    const cacheKey = `${q}:${limit}`;
+    const cached = searchResultCache.get(cacheKey);
+    if (cached !== undefined) {
+      res.json(cached);
+      return;
+    }
 
     if (isValidWCAId(q)) {
       const profile = await getProfileByPersonId(q);
@@ -36,7 +46,7 @@ router.get('/', async (req, res) => {
         res.status(404).json({ error: 'Person not found' });
         return;
       }
-      res.json({
+      const response = {
         totalRanked: profile.totalRanked,
         results: [{
           wcaId: profile.personId,
@@ -49,7 +59,9 @@ router.get('/', async (req, res) => {
           globalRank: profile.globalWpsRank ?? 0,
           totalRanked: profile.totalRanked,
         }],
-      });
+      };
+      searchResultCache.set(cacheKey, response);
+      res.json(response);
       return;
     }
 
@@ -74,7 +86,9 @@ router.get('/', async (req, res) => {
       };
     });
 
-    res.json({ totalRanked, results });
+    const response = { totalRanked, results };
+    searchResultCache.set(cacheKey, response);
+    res.json(response);
   } catch (err) {
     console.error('[search] error:', err);
     res.status(500).json({ error: 'Search failed' });

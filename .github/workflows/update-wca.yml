@@ -2,7 +2,7 @@ name: Update WCA export and recompute caches
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # каждый день в 03:00 UTC
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
 jobs:
@@ -21,9 +21,12 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
       - name: Install backend deps
         working-directory: backend
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Update data and recompute caches
         working-directory: backend

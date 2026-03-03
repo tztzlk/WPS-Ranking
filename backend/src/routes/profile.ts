@@ -5,6 +5,7 @@ import {
   ProfileCacheResult,
 } from '../services/profileFromCache';
 import { getCountryRank } from '../services/leaderboardCache';
+import { LRUCache } from '../utils/lruCache';
 
 const router = Router();
 
@@ -18,6 +19,9 @@ function includeBreakdown(req: { query: Record<string, unknown> }): boolean {
   const v = req.query.includeBreakdown;
   return v === '1' || v === 'true';
 }
+
+// Caches the full enriched response (person + WPS + country rank + optional breakdown).
+const profileResponseCache = new LRUCache<string, object | null>(500);
 
 router.get('/', async (req, res) => {
   const personId = (req.query.personId as string)?.trim();
@@ -56,11 +60,21 @@ router.get('/:wcaId', async (req, res) => {
  */
 export async function buildProfileResponse(
   personId: string,
-  withBreakdown: boolean
-): Promise<ReturnType<typeof toProfileResponse> extends Promise<infer R> ? R : never> {
+  withBreakdown: boolean,
+) {
+  const cacheKey = `${personId}:${withBreakdown ? '1' : '0'}`;
+  const cached = profileResponseCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   const profile = await getProfileByPersonId(personId);
-  if (!profile) return null;
-  return toProfileResponse(profile, withBreakdown);
+  if (!profile) {
+    profileResponseCache.set(cacheKey, null);
+    return null;
+  }
+
+  const result = await toProfileResponse(profile, withBreakdown);
+  profileResponseCache.set(cacheKey, result);
+  return result;
 }
 
 async function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) {
