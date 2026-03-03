@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { HomePage } from './pages/HomePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -45,6 +46,7 @@ function App() {
   return (
     <ErrorBoundary>
       <RouterProvider router={router} />
+      <SpeedInsights />
     </ErrorBoundary>
   );
 }
