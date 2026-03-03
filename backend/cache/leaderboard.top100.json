@@ -1,0 +1,907 @@
+{
+  "source": "WCA Results Export",
+  "generatedAt": "2026-03-03T10:57:25.179Z",
+  "count": 100,
+  "items": [
+    {
+      "rank": 1,
+      "personId": "2012PARK03",
+      "name": "Max Park",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 30.72
+    },
+    {
+      "rank": 2,
+      "personId": "2016KOLA02",
+      "name": "Tymon Kolasiński",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 30.56
+    },
+    {
+      "rank": 3,
+      "personId": "2019TARA09",
+      "name": "Timofei Tarasenko",
+      "countryId": "Russia",
+      "countryName": "Russia",
+      "countryIso2": "RU",
+      "wps": 23.93
+    },
+    {
+      "rank": 4,
+      "personId": "2017GARR05",
+      "name": "Luke Garrett",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 23.63
+    },
+    {
+      "rank": 5,
+      "personId": "2016CHAP04",
+      "name": "Stanley Chapel",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 20.72
+    },
+    {
+      "rank": 6,
+      "personId": "2013NAHM01",
+      "name": "Seung Hyuk Nahm (남승혁)",
+      "countryId": "Korea",
+      "countryName": "Republic of Korea",
+      "countryIso2": "KR",
+      "wps": 20.4
+    },
+    {
+      "rank": 7,
+      "personId": "2021DUNA01",
+      "name": "Brendyn Dunagan",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 20.38
+    },
+    {
+      "rank": 8,
+      "personId": "2019HUNG16",
+      "name": "Đỗ Quang Hưng",
+      "countryId": "Vietnam",
+      "countryName": "Vietnam",
+      "countryIso2": "VN",
+      "wps": 19.16
+    },
+    {
+      "rank": 9,
+      "personId": "2015CHER07",
+      "name": "Tommy Cherry",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 18.34
+    },
+    {
+      "rank": 10,
+      "personId": "2015KUCA01",
+      "name": "Carter Kucala",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 17.48
+    },
+    {
+      "rank": 11,
+      "personId": "2015FUSH01",
+      "name": "Firstian Fushada (符逢城)",
+      "countryId": "Indonesia",
+      "countryName": "Indonesia",
+      "countryIso2": "ID",
+      "wps": 17.17
+    },
+    {
+      "rank": 12,
+      "personId": "2016WUZI04",
+      "name": "Ziyu Wu (吴子钰)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 17.12
+    },
+    {
+      "rank": 13,
+      "personId": "2017AGGA01",
+      "name": "Sameer Aggarwal",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 16.97
+    },
+    {
+      "rank": 14,
+      "personId": "2016PILA03",
+      "name": "Ryan Pilat",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 15.99
+    },
+    {
+      "rank": 15,
+      "personId": "2013EGDA02",
+      "name": "Martin Vædele Egdal",
+      "countryId": "Denmark",
+      "countryName": "Denmark",
+      "countryIso2": "DK",
+      "wps": 15.77
+    },
+    {
+      "rank": 16,
+      "personId": "2017SIAU02",
+      "name": "Max Siauw",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 15.76
+    },
+    {
+      "rank": 17,
+      "personId": "2019EGGI02",
+      "name": "Charlie Eggins",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 15.69
+    },
+    {
+      "rank": 18,
+      "personId": "2009ZEMD01",
+      "name": "Feliks Zemdegs",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 15.68
+    },
+    {
+      "rank": 19,
+      "personId": "2015WANG09",
+      "name": "Kai-Wen Wang (王楷文)",
+      "countryId": "Taiwan",
+      "countryName": "Chinese Taipei",
+      "countryIso2": "TW",
+      "wps": 15.49
+    },
+    {
+      "rank": 20,
+      "personId": "2017PARK05",
+      "name": "DongSoo Park (박동수)",
+      "countryId": "Korea",
+      "countryName": "Republic of Korea",
+      "countryIso2": "KR",
+      "wps": 15.21
+    },
+    {
+      "rank": 21,
+      "personId": "2022SAMS03",
+      "name": "Ignacy Samselski",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 15.02
+    },
+    {
+      "rank": 22,
+      "personId": "2016HUNG08",
+      "name": "Lim Hung (林弘)",
+      "countryId": "Malaysia",
+      "countryName": "Malaysia",
+      "countryIso2": "MY",
+      "wps": 14.96
+    },
+    {
+      "rank": 23,
+      "personId": "2012BEAH01",
+      "name": "Ciarán Beahan",
+      "countryId": "Ireland",
+      "countryName": "Ireland",
+      "countryIso2": "IE",
+      "wps": 14.7
+    },
+    {
+      "rank": 24,
+      "personId": "2013JOHN10",
+      "name": "Brian Johnson",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 14.46
+    },
+    {
+      "rank": 25,
+      "personId": "2012PONC02",
+      "name": "Patrick Ponce",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 14.4
+    },
+    {
+      "rank": 26,
+      "personId": "2019WANY36",
+      "name": "Yiheng Wang (王艺衡)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 14.37
+    },
+    {
+      "rank": 27,
+      "personId": "2017CHOI07",
+      "name": "Kyeongmin Choi (최경민)",
+      "countryId": "Korea",
+      "countryName": "Republic of Korea",
+      "countryIso2": "KR",
+      "wps": 14.34
+    },
+    {
+      "rank": 28,
+      "personId": "2016PFEI01",
+      "name": "Jack Pfeifer",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 14.33
+    },
+    {
+      "rank": 29,
+      "personId": "2022PART02",
+      "name": "Daniel Partridge",
+      "countryId": "United Kingdom",
+      "countryName": "United Kingdom",
+      "countryIso2": "GB",
+      "wps": 14.29
+    },
+    {
+      "rank": 30,
+      "personId": "2016BARO04",
+      "name": "Ben Baron",
+      "countryId": "Israel",
+      "countryName": "Israel",
+      "countryIso2": "IL",
+      "wps": 14.21
+    },
+    {
+      "rank": 31,
+      "personId": "2022STOJ03",
+      "name": "Antoni Stojek",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 14.16
+    },
+    {
+      "rank": 32,
+      "personId": "2017SWOR01",
+      "name": "Noah Swor",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 14.14
+    },
+    {
+      "rank": 33,
+      "personId": "2021PIET01",
+      "name": "Tomasz Pietruszka",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 14.11
+    },
+    {
+      "rank": 34,
+      "personId": "2021CHEL01",
+      "name": "Ianis Costin Chele",
+      "countryId": "Romania",
+      "countryName": "Romania",
+      "countryIso2": "RO",
+      "wps": 13.79
+    },
+    {
+      "rank": 35,
+      "personId": "2015MACK06",
+      "name": "Zeke Mackay",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.74
+    },
+    {
+      "rank": 36,
+      "personId": "2021ZAJD03",
+      "name": "Teodor Zajder",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 13.73
+    },
+    {
+      "rank": 37,
+      "personId": "2018LICH05",
+      "name": "Henry Lichner",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.67
+    },
+    {
+      "rank": 38,
+      "personId": "2015LEON02",
+      "name": "Ivan Li Ka Leong (李嘉亮)",
+      "countryId": "Hong Kong",
+      "countryName": "Hong Kong, China",
+      "countryIso2": "HK",
+      "wps": 13.64
+    },
+    {
+      "rank": 39,
+      "personId": "2017XURU04",
+      "name": "Ruihang Xu (许瑞航)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 13.54
+    },
+    {
+      "rank": 40,
+      "personId": "2018KHAN28",
+      "name": "Zayn Khanani",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.52
+    },
+    {
+      "rank": 41,
+      "personId": "2017GUTM01",
+      "name": "Manuel Gutman",
+      "countryId": "Argentina",
+      "countryName": "Argentina",
+      "countryIso2": "AR",
+      "wps": 13.49
+    },
+    {
+      "rank": 42,
+      "personId": "2014CHIC01",
+      "name": "Christopher Chi",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.47
+    },
+    {
+      "rank": 43,
+      "personId": "2013GERH01",
+      "name": "Kevin Gerhardt",
+      "countryId": "Germany",
+      "countryName": "Germany",
+      "countryIso2": "DE",
+      "wps": 13.41
+    },
+    {
+      "rank": 44,
+      "personId": "2015CHEA01",
+      "name": "Andrey Che",
+      "countryId": "Russia",
+      "countryName": "Russia",
+      "countryIso2": "RU",
+      "wps": 13.36
+    },
+    {
+      "rank": 45,
+      "personId": "2018KHAN26",
+      "name": "Hassan Khanani",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.33
+    },
+    {
+      "rank": 46,
+      "personId": "2022KAOE01",
+      "name": "Emmanuel Kao",
+      "countryId": "Singapore",
+      "countryName": "Singapore",
+      "countryIso2": "SG",
+      "wps": 13.26
+    },
+    {
+      "rank": 47,
+      "personId": "2019REDI02",
+      "name": "Dominic Redisi",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 13.25
+    },
+    {
+      "rank": 48,
+      "personId": "2017GOLU01",
+      "name": "Theo Goluboff",
+      "countryId": "Argentina",
+      "countryName": "Argentina",
+      "countryIso2": "AR",
+      "wps": 13.23
+    },
+    {
+      "rank": 49,
+      "personId": "2018MURR03",
+      "name": "Jasper Murray",
+      "countryId": "New Zealand",
+      "countryName": "New Zealand",
+      "countryIso2": "NZ",
+      "wps": 13.22
+    },
+    {
+      "rank": 50,
+      "personId": "2015LARS04",
+      "name": "Kim Roger Haraldsen",
+      "countryId": "Norway",
+      "countryName": "Norway",
+      "countryIso2": "NO",
+      "wps": 13.21
+    },
+    {
+      "rank": 51,
+      "personId": "2019RAMO05",
+      "name": "Dwyane Ramos",
+      "countryId": "New Zealand",
+      "countryName": "New Zealand",
+      "countryIso2": "NZ",
+      "wps": 13.19
+    },
+    {
+      "rank": 52,
+      "personId": "2016EPST02",
+      "name": "David Epstein",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 13.14
+    },
+    {
+      "rank": 53,
+      "personId": "2015QUAN03",
+      "name": "Ng Jia Quan (黄佳铨)",
+      "countryId": "Malaysia",
+      "countryName": "Malaysia",
+      "countryIso2": "MY",
+      "wps": 13.1
+    },
+    {
+      "rank": 54,
+      "personId": "2013WALL03",
+      "name": "Daniel Wallin",
+      "countryId": "Sweden",
+      "countryName": "Sweden",
+      "countryIso2": "SE",
+      "wps": 13.02
+    },
+    {
+      "rank": 55,
+      "personId": "2016INAB01",
+      "name": "Matty Hiroto Inaba",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.99
+    },
+    {
+      "rank": 56,
+      "personId": "2019YANG94",
+      "name": "Cian-Jyun Yang (楊謙君)",
+      "countryId": "Taiwan",
+      "countryName": "Chinese Taipei",
+      "countryIso2": "TW",
+      "wps": 12.99
+    },
+    {
+      "rank": 57,
+      "personId": "2022DINC01",
+      "name": "Ayden Dincher",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.95
+    },
+    {
+      "rank": 58,
+      "personId": "2016LIJI05",
+      "name": "Jiazhou Li (李佳洲)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 12.92
+    },
+    {
+      "rank": 59,
+      "personId": "2018WROT01",
+      "name": "Brayden Wroten",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.87
+    },
+    {
+      "rank": 60,
+      "personId": "2010WEYE02",
+      "name": "Sebastian Weyer",
+      "countryId": "Germany",
+      "countryName": "Germany",
+      "countryIso2": "DE",
+      "wps": 12.86
+    },
+    {
+      "rank": 61,
+      "personId": "2012PATE01",
+      "name": "Antonie Paterakis",
+      "countryId": "Greece",
+      "countryName": "Greece",
+      "countryIso2": "GR",
+      "wps": 12.85
+    },
+    {
+      "rank": 62,
+      "personId": "2017MAND13",
+      "name": "Francisco Moraes Mandalozzo",
+      "countryId": "Brazil",
+      "countryName": "Brazil",
+      "countryIso2": "BR",
+      "wps": 12.85
+    },
+    {
+      "rank": 63,
+      "personId": "2021ELIA01",
+      "name": "Niklas Aasen Eliasson",
+      "countryId": "Norway",
+      "countryName": "Norway",
+      "countryIso2": "NO",
+      "wps": 12.84
+    },
+    {
+      "rank": 64,
+      "personId": "2019MORG10",
+      "name": "Danny Morgan",
+      "countryId": "United Kingdom",
+      "countryName": "United Kingdom",
+      "countryIso2": "GB",
+      "wps": 12.77
+    },
+    {
+      "rank": 65,
+      "personId": "2016PARK10",
+      "name": "Yeon Kyun Park (박연균)",
+      "countryId": "Korea",
+      "countryName": "Republic of Korea",
+      "countryIso2": "KR",
+      "wps": 12.74
+    },
+    {
+      "rank": 66,
+      "personId": "2017SUNC02",
+      "name": "Christopher Sun",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.67
+    },
+    {
+      "rank": 67,
+      "personId": "2016ROLZ01",
+      "name": "Alwin Rölz",
+      "countryId": "Switzerland",
+      "countryName": "Switzerland",
+      "countryIso2": "CH",
+      "wps": 12.67
+    },
+    {
+      "rank": 68,
+      "personId": "2016TRAG01",
+      "name": "Parker Trager",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.66
+    },
+    {
+      "rank": 69,
+      "personId": "2014WENW01",
+      "name": "Wong Chong Wen (黄崇文)",
+      "countryId": "Singapore",
+      "countryName": "Singapore",
+      "countryIso2": "SG",
+      "wps": 12.62
+    },
+    {
+      "rank": 70,
+      "personId": "2011MAHT02",
+      "name": "Natthaphat Mahtani (ณัฐภัทร จี มาทานี)",
+      "countryId": "Thailand",
+      "countryName": "Thailand",
+      "countryIso2": "TH",
+      "wps": 12.51
+    },
+    {
+      "rank": 71,
+      "personId": "2016JENS09",
+      "name": "William Jensen",
+      "countryId": "Sweden",
+      "countryName": "Sweden",
+      "countryIso2": "SE",
+      "wps": 12.5
+    },
+    {
+      "rank": 72,
+      "personId": "2017PABI01",
+      "name": "Magdalena Pabisz",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 12.49
+    },
+    {
+      "rank": 73,
+      "personId": "2017KWAN05",
+      "name": "Burno Li Chak Kwan (李澤堃)",
+      "countryId": "Hong Kong",
+      "countryName": "Hong Kong, China",
+      "countryIso2": "HK",
+      "wps": 12.48
+    },
+    {
+      "rank": 74,
+      "personId": "2014FRIT02",
+      "name": "Oliver Fritz",
+      "countryId": "Germany",
+      "countryName": "Germany",
+      "countryIso2": "DE",
+      "wps": 12.41
+    },
+    {
+      "rank": 75,
+      "personId": "2018GRAH05",
+      "name": "Kate Grahame",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.38
+    },
+    {
+      "rank": 76,
+      "personId": "2016KELL12",
+      "name": "Simon Kellum",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.22
+    },
+    {
+      "rank": 77,
+      "personId": "2016YONG02",
+      "name": "Tristan Chua Yong",
+      "countryId": "Singapore",
+      "countryName": "Singapore",
+      "countryIso2": "SG",
+      "wps": 12.16
+    },
+    {
+      "rank": 78,
+      "personId": "2014BAIR01",
+      "name": "Ray Bai",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 12.09
+    },
+    {
+      "rank": 79,
+      "personId": "2019VUJC01",
+      "name": "Alexander Vujcich",
+      "countryId": "New Zealand",
+      "countryName": "New Zealand",
+      "countryIso2": "NZ",
+      "wps": 12.09
+    },
+    {
+      "rank": 80,
+      "personId": "2017CHAM09",
+      "name": "Cham J. Chambers",
+      "countryId": "United Kingdom",
+      "countryName": "United Kingdom",
+      "countryIso2": "GB",
+      "wps": 12.05
+    },
+    {
+      "rank": 81,
+      "personId": "2016JONE04",
+      "name": "Jode Brewster",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 12.02
+    },
+    {
+      "rank": 82,
+      "personId": "2018RUSH01",
+      "name": "Daniel Rush",
+      "countryId": "South Africa",
+      "countryName": "South Africa",
+      "countryIso2": "ZA",
+      "wps": 12.01
+    },
+    {
+      "rank": 83,
+      "personId": "2018ALAM08",
+      "name": "Leon Marcell Alamanda",
+      "countryId": "Indonesia",
+      "countryName": "Indonesia",
+      "countryIso2": "ID",
+      "wps": 11.97
+    },
+    {
+      "rank": 84,
+      "personId": "2017FENG10",
+      "name": "Hill Pong Yong Feng",
+      "countryId": "Malaysia",
+      "countryName": "Malaysia",
+      "countryIso2": "MY",
+      "wps": 11.96
+    },
+    {
+      "rank": 85,
+      "personId": "2022CHAI02",
+      "name": "Curtis Chai",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 11.94
+    },
+    {
+      "rank": 86,
+      "personId": "2015CECC01",
+      "name": "Vicenzo Guerino Cecchini",
+      "countryId": "Brazil",
+      "countryName": "Brazil",
+      "countryIso2": "BR",
+      "wps": 11.91
+    },
+    {
+      "rank": 87,
+      "personId": "2017CAIZ03",
+      "name": "Zijian Cai (蔡子健)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 11.88
+    },
+    {
+      "rank": 88,
+      "personId": "2023MALO01",
+      "name": "Quinn Maloney",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 11.86
+    },
+    {
+      "rank": 89,
+      "personId": "2022VISH01",
+      "name": "Yoav Vishne",
+      "countryId": "Israel",
+      "countryName": "Israel",
+      "countryIso2": "IL",
+      "wps": 11.86
+    },
+    {
+      "rank": 90,
+      "personId": "2022RUDA02",
+      "name": "Roman Rudakov",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 11.85
+    },
+    {
+      "rank": 91,
+      "personId": "2016DEXT01",
+      "name": "Riley Dexter",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 11.85
+    },
+    {
+      "rank": 92,
+      "personId": "2018KUZM02",
+      "name": "Olaf Kuźmiński",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 11.83
+    },
+    {
+      "rank": 93,
+      "personId": "2017SANK04",
+      "name": "Vishwa Sankar",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 11.8
+    },
+    {
+      "rank": 94,
+      "personId": "2017MAZH04",
+      "name": "Zhiyuan Ma (马之元)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 11.8
+    },
+    {
+      "rank": 95,
+      "personId": "2018SATO01",
+      "name": "Sora Sato",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 11.8
+    },
+    {
+      "rank": 96,
+      "personId": "2016CHAN09",
+      "name": "Jaemin Chang (장재민)",
+      "countryId": "Korea",
+      "countryName": "Republic of Korea",
+      "countryIso2": "KR",
+      "wps": 11.72
+    },
+    {
+      "rank": 97,
+      "personId": "2014GERB01",
+      "name": "Henri Gerber",
+      "countryId": "Germany",
+      "countryName": "Germany",
+      "countryIso2": "DE",
+      "wps": 11.71
+    },
+    {
+      "rank": 98,
+      "personId": "2018OPAC01",
+      "name": "Kajetan Opach",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 11.7
+    },
+    {
+      "rank": 99,
+      "personId": "2018HANU02",
+      "name": "Oskar Hanuszkiewicz",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
+      "wps": 11.67
+    },
+    {
+      "rank": 100,
+      "personId": "2018CREE01",
+      "name": "Kerry Creech",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 11.65
+    }
+  ]
+}
