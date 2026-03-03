@@ -14,10 +14,19 @@ import { ogMetaRoutes } from './routes/ogMeta';
 import { errorHandler } from './middleware/errorHandler';
 import { initAllCaches } from './services/indexStore';
 
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled rejection:', reason);
+  process.exit(1);
+});
+
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // CORS: comma-separated CORS_ORIGINS; in development allow localhost:3000
 const corsOrigins = process.env.CORS_ORIGINS
@@ -69,9 +78,13 @@ if (publicPath) {
 // Error handling
 app.use(errorHandler);
 
-initAllCaches();
+try {
+  initAllCaches();
+} catch (err) {
+  console.error('[startup] initAllCaches failed, continuing without cache:', err);
+}
 
-app.listen(PORT, () => {
-  console.log(`🚀 WPS Ranking API running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`WPS Ranking API running on 0.0.0.0:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
