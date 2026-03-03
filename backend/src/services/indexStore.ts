@@ -84,25 +84,28 @@ export function initAllCaches(): void {
     breakdown: path.join(cacheDir, 'wps.breakdown.json'),
   };
 
+  const warn = (name: string, e: unknown) =>
+    console.warn(`[indexStore] WARN: ${name} unavailable — ${e instanceof Error ? e.message : String(e)}`);
+
   try { personsIndex = loadJsonCache<Record<string, PersonEntry>>(files.persons); }
-  catch (e) { console.error(String(e)); personsIndex = {}; }
+  catch (e) { warn('persons', e); personsIndex = {}; }
 
   try { wpsIndex = loadJsonCache<Record<string, WpsEntry>>(files.wps); }
-  catch (e) { console.error(String(e)); wpsIndex = {}; }
+  catch (e) { warn('wps', e); wpsIndex = {}; }
 
   try { wpsRankIndex = loadJsonCache<WpsRankIndex>(files.wpsRank); }
-  catch (e) { console.error(String(e)); wpsRankIndex = null; }
+  catch (e) { warn('wpsRank', e); wpsRankIndex = null; }
 
   try { countriesIndex = loadJsonCache<CountriesIndex>(files.countries); }
-  catch (e) { console.error(String(e)); countriesIndex = null; }
+  catch (e) { warn('countries', e); countriesIndex = null; }
 
   try { globalLeaderboard = loadJsonCache<GlobalLeaderboard>(files.leaderboard); }
-  catch (e) { console.error(String(e)); globalLeaderboard = null; }
+  catch (e) { warn('leaderboard', e); globalLeaderboard = null; }
 
   try { breakdownIndex = loadJsonCache<Record<string, ProfileBreakdownEntry>>(files.breakdown); }
-  catch (e) { console.error(String(e)); breakdownIndex = {}; }
+  catch (e) { warn('breakdown', e); breakdownIndex = {}; }
 
-  console.log(`[indexStore] All caches loaded in ${Date.now() - t0}ms`);
+  console.log(`[indexStore] Cache init done in ${Date.now() - t0}ms (cacheDir: ${cacheDir})`);
 }
 
 // --------------- getters ---------------
