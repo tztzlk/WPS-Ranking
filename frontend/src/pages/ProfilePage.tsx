@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award, Calculator, Share2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, Calendar, MapPin, Award, Calculator, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, EVENT_NAMES } from '../types';
 import { FormulaBox } from '../components/FormulaBox';
@@ -68,10 +68,7 @@ export function ProfilePage() {
     }
   };
 
-  const formatScore = (score: number) => {
-    return score.toFixed(2);
-  };
-
+  const formatScore = (score: number) => score.toFixed(2);
 
   const hasBreakdown = Boolean(profile?.breakdown && profile.breakdown.length > 0);
   const calculation = profile?.calculation;
@@ -103,39 +100,37 @@ export function ProfilePage() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    if (score >= 40) return 'text-orange-400';
-    return 'text-red-400';
+    if (score >= 80) return 'text-[var(--color-brand)]';
+    if (score >= 60) return 'text-[var(--color-accent-gold)]';
+    if (score >= 40) return 'text-[var(--color-accent-bronze)]';
+    return 'text-[var(--color-error)]';
   };
 
   const handleShareProfile = async () => {
-    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(window.location.href);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      // fallback: open share dialog or leave URL in location bar
       setShareCopied(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto"></div>
-        <p className="text-gray-400 mt-4">Loading profile...</p>
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="w-8 h-8 border-2 border-[var(--color-brand)] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-[var(--color-text-muted)]">Loading profile...</p>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400 mb-4">{error || 'Profile not found'}</p>
-        <Link to="/" className="btn-primary">
-          Back to Leaderboard
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <p className="text-sm text-[var(--color-error)]">{error || 'Profile not found'}</p>
+        <Link to="/" className="btn-primary text-sm">
+          Back to Home
         </Link>
       </div>
     );
@@ -144,52 +139,52 @@ export function ProfilePage() {
   const eventScores = getEventScores();
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Back + Share */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
+    <div className="max-w-6xl mx-auto flex flex-col gap-6 animate-fade-in">
+      {/* Top bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Leaderboard</span>
+          Back
         </Link>
         <button
           type="button"
           onClick={handleShareProfile}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition"
+          className="btn-secondary text-xs"
         >
-          <Share2 className="w-4 h-4" />
+          <Share2 className="w-3.5 h-3.5" />
           {shareCopied ? 'Copied!' : 'Share profile'}
         </button>
       </div>
 
       {/* Profile Header */}
       <div className="card">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center">
-              <Trophy className="w-10 h-10 text-gray-300" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-[var(--color-surface-overlay)] rounded-full flex items-center justify-center ring-2 ring-[var(--color-border)]">
+              <Trophy className="w-8 h-8 text-[var(--color-text-muted)]" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
-              <div className="flex items-center space-x-4 text-gray-400 mt-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">{profile.name}</h1>
+              <div className="flex items-center gap-3 text-sm text-[var(--color-text-muted)] mt-1">
                 <span className="font-mono">{profile.wcaId}</span>
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" />
                   <CountryFlag iso2={profile.countryIso2} name={profile.countryName ?? profile.country} />
-                  <span>{profile.countryName ?? profile.country ?? '—'}</span>
+                  <span>{profile.countryName ?? profile.country ?? '--'}</span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="mt-6 md:mt-0 text-center md:text-right">
-            <div className="text-4xl font-bold text-green-400">
+          <div className="flex flex-col items-start md:items-end gap-1">
+            <div className="text-4xl font-bold font-mono text-[var(--color-brand)]">
               {formatScore(profile.wpsScore)}
             </div>
-            <div className="text-gray-400">WPS Score</div>
+            <div className="text-xs text-[var(--color-text-muted)]">WPS Score</div>
             {(profile.totalRanked ?? 0) > 0 && (
-              <div className="text-lg text-gray-300 mt-2">
-                Global WPS Rank: {profile.globalWpsRank != null && profile.globalWpsRank > 0
+              <div className="text-sm text-[var(--color-text-secondary)] mt-1">
+                Global Rank: {profile.globalWpsRank != null && profile.globalWpsRank > 0
                   ? `#${profile.globalWpsRank.toLocaleString()}`
-                  : '—'} of {(profile.totalRanked ?? 0).toLocaleString()}
+                  : '--'} of {(profile.totalRanked ?? 0).toLocaleString()}
               </div>
             )}
           </div>
@@ -197,70 +192,74 @@ export function ProfilePage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card text-center">
-          <Target className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">{profile.totalEvents}</h3>
-          <p className="text-gray-400">Events Participated</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="stat-card relative z-10">
+          <Target className="w-5 h-5 text-[var(--color-brand)] mx-auto mb-2" />
+          <div className="text-2xl font-bold text-[var(--color-text-primary)]">{profile.totalEvents}</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">Events Participated</div>
         </div>
-        <div className="card text-center">
-          <Award className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">{eventScores.length}</h3>
-          <p className="text-gray-400">Events Ranked</p>
+        <div className="stat-card relative z-10">
+          <Award className="w-5 h-5 text-[var(--color-brand)] mx-auto mb-2" />
+          <div className="text-2xl font-bold text-[var(--color-text-primary)]">{eventScores.length}</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">Events Ranked</div>
         </div>
-        <div className="card text-center">
-          <Calendar className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-sm font-bold text-white">
+        <div className="stat-card relative z-10">
+          <Calendar className="w-5 h-5 text-[var(--color-brand)] mx-auto mb-2" />
+          <div className="text-sm font-bold text-[var(--color-text-primary)]">
             {new Date(profile.lastUpdated).toLocaleDateString()}
-          </h3>
-          <p className="text-gray-400">Last Updated</p>
+          </div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">Last Updated</div>
         </div>
       </div>
 
-      {/* Show / Hide calculation toggle */}
-      <div className="card">
-        <button
-          type="button"
-          onClick={() => (showCalc ? setShowCalc(false) : loadBreakdownAndShow())}
-          disabled={loadingBreakdown}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition disabled:opacity-50"
-        >
-          <Calculator className="w-5 h-5 text-green-400" />
-          {showCalc ? 'Hide calculation' : 'Show calculation'}
-          {loadingBreakdown && (
-            <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400" />
-          )}
-        </button>
-      </div>
+      {/* Calculation Toggle */}
+      <button
+        type="button"
+        onClick={() => (showCalc ? setShowCalc(false) : loadBreakdownAndShow())}
+        disabled={loadingBreakdown}
+        className="btn-secondary self-start disabled:opacity-50"
+      >
+        <Calculator className="w-4 h-4 text-[var(--color-brand)]" />
+        {showCalc ? 'Hide calculation' : 'Show calculation'}
+        {loadingBreakdown ? (
+          <span className="w-4 h-4 border-2 border-[var(--color-text-primary)] border-t-transparent rounded-full animate-spin" />
+        ) : showCalc ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+      </button>
 
-      {/* WPS Calculation — formula + breakdown (only when showCalc) */}
+      {/* WPS Calculation */}
       {showCalc && (
-        <div className="card">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <Calculator className="w-7 h-7 text-green-400" />
+        <div className="card animate-slide-up">
+          <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-5 flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-[var(--color-brand)]" />
             WPS Calculation
           </h2>
           <FormulaBox />
           {calculation && (
-            <div className="mt-6 p-4 bg-gray-800/70 rounded-lg border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-2">Totals</h3>
-              <ul className="space-y-1 text-gray-300 font-mono text-sm">
-                <li>Σ EventScore = {calculation.sumEventScores.toFixed(4)}</li>
+            <div className="mt-5 p-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)]">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">Totals</h3>
+              <ul className="flex flex-col gap-1 text-xs font-mono text-[var(--color-text-secondary)]">
+                <li>Sum EventScore = {calculation.sumEventScores.toFixed(4)}</li>
                 <li>MAX = {calculation.maxPossible.toFixed(4)}</li>
-                <li>Final WPS = ({calculation.sumEventScores.toFixed(4)} / {calculation.maxPossible.toFixed(4)}) × 100 = {formatScore(profile.wpsScore)}</li>
+                <li>
+                  Final WPS = ({calculation.sumEventScores.toFixed(4)} / {calculation.maxPossible.toFixed(4)}) x 100 = {formatScore(profile.wpsScore)}
+                </li>
               </ul>
             </div>
           )}
           {hasBreakdown && profile.breakdown && profile.breakdown.length > 0 && (
-            <div className="mt-6 overflow-x-auto">
-              <h3 className="text-lg font-semibold text-white mb-3">Per-event breakdown</h3>
-              <table className="w-full text-left border-collapse">
+            <div className="mt-5 overflow-x-auto">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Per-event breakdown</h3>
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-gray-600">
-                    <th className="py-2 px-3 text-gray-300 font-semibold">Event</th>
-                    <th className="py-2 px-3 text-gray-300 font-semibold">World Rank</th>
-                    <th className="py-2 px-3 text-gray-300 font-semibold">Weight</th>
-                    <th className="py-2 px-3 text-gray-300 font-semibold">Event Score</th>
+                  <tr>
+                    <th>Event</th>
+                    <th>World Rank</th>
+                    <th>Weight</th>
+                    <th>Event Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,11 +267,11 @@ export function ProfilePage() {
                     .slice()
                     .sort((a, b) => (EVENT_NAMES[a.eventId] || a.eventId).localeCompare(EVENT_NAMES[b.eventId] || b.eventId))
                     .map((row) => (
-                      <tr key={row.eventId} className="border-b border-gray-700">
-                        <td className="py-2 px-3 text-white">{EVENT_NAMES[row.eventId] || row.eventId}</td>
-                        <td className="py-2 px-3 text-gray-300">{row.worldRank.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-gray-300">{row.weight}</td>
-                        <td className="py-2 px-3 text-green-400 font-mono">{row.eventScore.toFixed(4)}</td>
+                      <tr key={row.eventId}>
+                        <td className="text-[var(--color-text-primary)]">{EVENT_NAMES[row.eventId] || row.eventId}</td>
+                        <td className="text-[var(--color-text-secondary)]">{row.worldRank.toLocaleString()}</td>
+                        <td className="text-[var(--color-text-secondary)]">{row.weight}</td>
+                        <td className="font-mono text-[var(--color-brand)]">{row.eventScore.toFixed(4)}</td>
                       </tr>
                     ))}
                 </tbody>
@@ -284,50 +283,44 @@ export function ProfilePage() {
 
       {/* Event Performance */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-white mb-6">Event Performance</h2>
-        
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-5">Event Performance</h2>
+
         {eventScores.length === 0 ? (
-          <div className="text-center py-12">
-            <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Target className="w-12 h-12 text-[var(--color-text-muted)]" />
             {profile.breakdown == null && profile.calculation == null ? (
               <>
-                <h3 className="text-lg font-medium text-white mb-2">Per-event details</h3>
-                <p className="text-gray-400">
+                <h3 className="font-medium text-[var(--color-text-primary)]">Per-event details</h3>
+                <p className="text-sm text-[var(--color-text-muted)]">
                   Click &quot;Show calculation&quot; above to see per-event breakdown and event performance.
                 </p>
               </>
             ) : (
               <>
-                <h3 className="text-lg font-medium text-white mb-2">No Event Data</h3>
-                <p className="text-gray-400">
+                <h3 className="font-medium text-[var(--color-text-primary)]">No Event Data</h3>
+                <p className="text-sm text-[var(--color-text-muted)]">
                   This cuber doesn&apos;t have any official WCA results yet.
                 </p>
               </>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {eventScores.map((event) => (
               <div
                 key={event.eventId}
-                className="bg-gray-800 border border-gray-700 rounded-lg p-4"
+                className="flex items-center justify-between p-4 rounded-[var(--radius-sm)] bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border)] transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{event.eventName}</h3>
-                    <p className="text-sm text-gray-400">Event ID: {event.eventId}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-xl font-bold ${getScoreColor(event.score)}`}>
-                      {formatScore(event.score)}
-                    </div>
-                    <div className="text-sm text-gray-400">Event Score</div>
-                    {event.rank > 0 && (
-                      <div className="text-sm text-gray-300 mt-1">
-                        World Rank #{event.rank.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
+                <div>
+                  <h3 className="font-medium text-[var(--color-text-primary)]">{event.eventName}</h3>
+                  {event.rank > 0 && (
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      World Rank #{event.rank.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div className={`text-lg font-bold font-mono ${getScoreColor(event.score)}`}>
+                  {formatScore(event.score)}
                 </div>
               </div>
             ))}
@@ -335,16 +328,16 @@ export function ProfilePage() {
         )}
       </div>
 
-      {/* WPS Explanation */}
-      <div className="card bg-gray-800/50">
-        <h3 className="text-lg font-semibold text-white mb-4">About WPS Score</h3>
-        <p className="text-gray-300 mb-4">
-          The Weighted Performance Scale (WPS) calculates a fair score based on performance 
-          across all WCA events. Each event is weighted according to its popularity and difficulty, 
+      {/* About WPS */}
+      <div className="card bg-[var(--color-surface-raised)]">
+        <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">About WPS Score</h3>
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-3">
+          The Weighted Performance Scale (WPS) calculates a fair score based on performance
+          across all WCA events. Each event is weighted according to its popularity and difficulty,
           ensuring balanced recognition for versatile cubers.
         </p>
-        <Link to="/about" className="text-green-400 hover:text-green-300">
-          Learn more about the WPS formula →
+        <Link to="/about" className="text-sm font-medium text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">
+          Learn more about the WPS formula &rarr;
         </Link>
       </div>
     </div>

@@ -26,26 +26,26 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
           <div className="max-w-md mx-auto text-center p-8">
-            <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-white mb-4">
+            <AlertTriangle className="w-12 h-12 text-[var(--color-error)] mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-[var(--color-text-primary)] mb-3">
               Something went wrong
             </h1>
-            <p className="text-gray-400 mb-6">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+              We{"'"}re sorry, but something unexpected happened. Please try refreshing the page.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="btn-primary flex items-center space-x-2 mx-auto"
+              className="btn-primary"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Refresh Page</span>
             </button>
             {import.meta.env.DEV && this.state.error && (
               <details className="mt-6 text-left">
-                <summary className="text-gray-400 cursor-pointer">Error Details</summary>
-                <pre className="mt-2 text-xs text-red-400 bg-gray-800 p-4 rounded overflow-auto">
+                <summary className="text-[var(--color-text-muted)] cursor-pointer text-sm">Error Details</summary>
+                <pre className="mt-2 text-xs text-[var(--color-error)] bg-[var(--color-surface)] p-4 rounded-[var(--radius-sm)] overflow-auto border border-[var(--color-border)]">
                   {this.state.error.stack}
                 </pre>
               </details>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+import { Trophy, Filter } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
@@ -86,18 +86,22 @@ export function LeaderboardPage() {
   const isFiltered = selectedCountry !== ALL;
   const selectedCountryName =
     countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
-  const pageTitle = isFiltered ? `WPS Leaderboard — ${selectedCountryName}` : 'Global WPS Leaderboard';
-  const subtitle = isFiltered
-    ? `${filteredItems.length} cubers from ${selectedCountryName} in global top 100 · Updated: ${formatGeneratedAt(generatedAt)}`
-    : `Updated: ${formatGeneratedAt(generatedAt)} · ${filteredItems.length} cubers`;
+  const pageTitle = isFiltered ? `WPS Leaderboard -- ${selectedCountryName}` : 'Global WPS Leaderboard';
+
+  const getRankClass = (rank: number) => {
+    if (rank === 1) return 'rank-gold';
+    if (rank === 2) return 'rank-silver';
+    if (rank === 3) return 'rank-bronze';
+    return 'text-[var(--color-text-secondary)]';
+  };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-white">Top 100 WPS Leaderboard</h1>
-        <div className="card text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto" />
-          <p className="text-gray-400 mt-4">Loading leaderboard...</p>
+      <div className="flex flex-col gap-6 animate-fade-in">
+        <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Top 100 WPS Leaderboard</h1>
+        <div className="card flex flex-col items-center justify-center py-16 gap-4">
+          <div className="w-8 h-8 border-2 border-[var(--color-brand)] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[var(--color-text-muted)]">Loading leaderboard...</p>
         </div>
       </div>
     );
@@ -105,11 +109,11 @@ export function LeaderboardPage() {
 
   if (error || !data) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-white">Top 100 WPS Leaderboard</h1>
-        <div className="card text-center py-12">
-          <p className="text-red-400">{error ?? 'Failed to load data'}</p>
-          <button type="button" onClick={loadData} className="btn-primary mt-4">
+      <div className="flex flex-col gap-6 animate-fade-in">
+        <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Top 100 WPS Leaderboard</h1>
+        <div className="card flex flex-col items-center justify-center py-16 gap-4">
+          <p className="text-sm text-[var(--color-error)]">{error ?? 'Failed to load data'}</p>
+          <button type="button" onClick={loadData} className="btn-primary text-sm">
             Try Again
           </button>
         </div>
@@ -118,24 +122,30 @@ export function LeaderboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Trophy className="w-8 h-8 text-green-400" />
-          {pageTitle}
-        </h1>
-        <p className="text-gray-400 text-sm">{subtitle}</p>
+        <div className="flex items-center gap-3">
+          <Trophy className="w-7 h-7 text-[var(--color-brand)]" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)]">{pageTitle}</h1>
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          {isFiltered
+            ? `${filteredItems.length} cubers from ${selectedCountryName} in global top 100`
+            : `${filteredItems.length} cubers`}
+          {generatedAt ? ` -- Updated: ${formatGeneratedAt(generatedAt)}` : ''}
+        </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <label htmlFor="country-filter" className="text-gray-400 text-sm font-medium shrink-0">
-          Filter by country
-        </label>
+      {/* Filter */}
+      <div className="flex items-center gap-3">
+        <Filter className="w-4 h-4 text-[var(--color-text-muted)]" />
         <select
           id="country-filter"
           value={selectedCountry}
           onChange={(e) => handleCountryChange(e.target.value)}
-          className="bg-gray-800 border border-gray-600 text-white rounded px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="input-field min-w-[200px] text-sm"
+          aria-label="Filter by country"
         >
           {countryOptions.map((opt) => (
             <option key={opt.countryIso2} value={opt.countryIso2}>
@@ -145,60 +155,57 @@ export function LeaderboardPage() {
         </select>
       </div>
 
-      <div className="card overflow-hidden p-0">
+      {/* Table */}
+      <div className="card p-0 overflow-hidden">
         {filteredItems.length === 0 ? (
-          <div className="py-12 text-center text-gray-400">
+          <div className="py-16 text-center text-[var(--color-text-muted)] text-sm">
             No ranked cubers from this country in the global top 100
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-gray-700 bg-gray-800/50">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">WCA ID</th>
+                <tr>
+                  <th className="w-20">Rank</th>
+                  <th>Name</th>
+                  <th>Country</th>
+                  <th>WPS</th>
+                  <th>WCA ID</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.map((row) => {
                   const displayRank = row.rank ?? 0;
                   return (
-                    <tr
-                      key={row.personId}
-                      className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
-                    >
-                      <td className="py-3 px-4">
-                        {displayRank <= 3 ? (
-                          <span className="flex items-center gap-1">
-                            <Trophy
-                              className={`w-5 h-5 ${
-                                displayRank === 1 ? 'text-yellow-400' :
-                                displayRank === 2 ? 'text-gray-300' : 'text-amber-600'
-                              }`}
-                            />
+                    <tr key={row.personId}>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          {displayRank <= 3 && (
+                            <Trophy className={`w-4 h-4 ${getRankClass(displayRank)}`} />
+                          )}
+                          <span className={`text-sm font-semibold ${getRankClass(displayRank)}`}>
                             {displayRank}
                           </span>
-                        ) : (
-                          <span className="text-gray-300">{displayRank}</span>
-                        )}
+                        </div>
                       </td>
-                      <td className="py-3 px-4 font-medium text-white">{row.name}</td>
-                      <td className="py-3 px-4">
-                        <span className="flex items-center gap-2">
+                      <td className="font-medium text-[var(--color-text-primary)]">{row.name}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
                           <CountryFlag iso2={row.countryIso2} name={row.countryName ?? row.countryId} />
-                          <span className="text-gray-300">{row.countryName ?? row.countryId ?? '—'}</span>
+                          <span className="text-sm text-[var(--color-text-secondary)]">
+                            {row.countryName ?? row.countryId ?? '--'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="font-mono font-semibold text-[var(--color-brand)]">
+                          {row.wps.toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-green-400">
-                        {row.wps.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4">
+                      <td>
                         <Link
                           to={`/profile/${row.personId}`}
-                          className="text-green-400 hover:text-green-300 text-sm font-medium"
+                          className="text-sm font-medium text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors"
                         >
                           {row.personId}
                         </Link>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
-import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
+import { Trophy, Search, TrendingUp, Users, Award, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardEntry } from '../types';
 
@@ -36,146 +36,174 @@ export function HomePage() {
     }
   };
 
-  const formatScore = (score: number) => {
-    return score.toFixed(2);
+  const formatScore = (score: number) => score.toFixed(2);
+
+  const getRankClass = (index: number) => {
+    if (index === 0) return 'rank-gold';
+    if (index === 1) return 'rank-silver';
+    if (index === 2) return 'rank-bronze';
+    return 'text-[var(--color-text-muted)]';
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-16 animate-fade-in">
       {/* Hero Section */}
-      <div className="text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-          Global Rankings for{' '}
-          <span className="text-green-400">Speedcubers</span>
-        </h1>
-        <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-          Track your performance across all WCA events with the Weighted Performance Scale. 
-          See who's the most complete cuber in the world.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/search" className="btn-primary flex items-center justify-center space-x-2">
-            <Search className="w-5 h-5" />
-            <span>Search Your Rank</span>
-          </Link>
-          <Link to="/about" className="btn-secondary flex items-center justify-center space-x-2">
-            <Award className="w-5 h-5" />
-            <span>Learn About WPS</span>
-          </Link>
-        </div>
-      </div>
+      <section className="relative text-center py-16 md:py-24">
+        {/* Subtle radial glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,185,129,0.08), transparent)',
+          }}
+        />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card text-center">
-          <Trophy className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">1000+</h3>
-          <p className="text-gray-400">Ranked Cubers</p>
-        </div>
-        <div className="card text-center">
-          <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">17</h3>
-          <p className="text-gray-400">WCA Events</p>
-        </div>
-        <div className="card text-center">
-          <Users className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">100+</h3>
-          <p className="text-gray-400">Countries</p>
-        </div>
-      </div>
+        <div className="relative flex flex-col items-center gap-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-brand-muted)] border border-[var(--color-brand)]/20 text-xs font-medium text-[var(--color-brand)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand)] animate-pulse" />
+            Live rankings from WCA data
+          </div>
 
-      {/* Leaderboard — Top 5 only for fast load */}
-      <div className="card">
-        <h2 className="text-2xl font-bold text-white mb-6">Top 5 Cubers Worldwide</h2>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-[var(--color-text-primary)] tracking-tight text-balance leading-[1.1]">
+            Global Rankings for{' '}
+            <span className="text-[var(--color-brand)]">Speedcubers</span>
+          </h1>
+
+          <p className="text-lg md:text-xl text-[var(--color-text-secondary)] max-w-2xl leading-relaxed text-pretty">
+            Track your performance across all WCA events with the Weighted Performance Scale.
+            See who{"'"}s the most complete cuber in the world.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            <Link to="/search" className="btn-primary">
+              <Search className="w-4 h-4" />
+              <span>Search Your Rank</span>
+            </Link>
+            <Link to="/about" className="btn-secondary">
+              <Award className="w-4 h-4" />
+              <span>Learn About WPS</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Row */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { icon: Trophy, value: '1000+', label: 'Ranked Cubers' },
+          { icon: TrendingUp, value: '17', label: 'WCA Events' },
+          { icon: Users, value: '100+', label: 'Countries' },
+        ].map((stat) => (
+          <div key={stat.label} className="stat-card relative z-10">
+            <stat.icon className="w-6 h-6 text-[var(--color-brand)] mx-auto mb-3" />
+            <div className="text-3xl font-bold text-[var(--color-text-primary)]">{stat.value}</div>
+            <div className="text-sm text-[var(--color-text-muted)] mt-1">{stat.label}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* Top 5 Leaderboard */}
+      <section className="card p-0 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--color-border)]">
+          <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Top 5 Cubers Worldwide</h2>
+          <Link
+            to="/leaderboard"
+            className="text-sm font-medium text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] flex items-center gap-1 transition-colors"
+          >
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto"></div>
-            <p className="text-gray-400 mt-4">Loading leaderboard...</p>
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="w-8 h-8 border-2 border-[var(--color-brand)] border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-[var(--color-text-muted)]">Loading leaderboard...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-400">{error}</p>
-            <button type="button" onClick={() => loadLeaderboard()} className="btn-primary mt-4">
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <p className="text-sm text-[var(--color-error)]">{error}</p>
+            <button type="button" onClick={() => loadLeaderboard()} className="btn-primary text-sm">
               Try Again
             </button>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="w-20">Rank</th>
+                  <th>Name</th>
+                  <th>Country</th>
+                  <th className="text-right">WPS Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((cuber, index) => (
+                  <tr key={cuber.wcaId}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        {index < 3 ? (
+                          <Trophy className={`w-4 h-4 ${getRankClass(index)}`} />
+                        ) : null}
+                        <span className={`text-sm font-semibold ${getRankClass(index)}`}>
+                          {cuber.rank}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <Link
+                        to={`/profile/${cuber.wcaId}`}
+                        className="font-medium text-[var(--color-text-primary)] hover:text-[var(--color-brand)] transition-colors"
+                      >
+                        {cuber.name}
+                      </Link>
+                      <div className="text-xs font-mono text-[var(--color-text-muted)] mt-0.5">{cuber.wcaId}</div>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        {cuber.countryIso2 ? (
+                          <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
+                        ) : (
+                          <span className="text-[var(--color-text-muted)]">--</span>
+                        )}
+                        <span className="text-sm text-[var(--color-text-secondary)]">
+                          {cuber.countryName ?? cuber.country ?? '--'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-right">
+                      <span className="font-mono font-semibold text-[var(--color-brand)]">
+                        {formatScore(cuber.wpsScore)}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((cuber, index) => (
-                    <tr key={cuber.wcaId} className="border-b border-gray-700 hover:bg-gray-800/50">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center space-x-2">
-                          {index < 3 ? (
-                            <Trophy className={`w-5 h-5 ${
-                              index === 0 ? 'text-yellow-400' :
-                              index === 1 ? 'text-gray-300' :
-                              'text-amber-600'
-                            }`} />
-                          ) : (
-                            <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-gray-400">
-                              {cuber.rank}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <Link to={`/profile/${cuber.wcaId}`} className="font-medium text-white hover:text-green-400">
-                          {cuber.name}
-                        </Link>
-                        <div className="text-sm text-gray-400">{cuber.wcaId}</div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          {cuber.countryIso2 ? (
-                            <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
-                          ) : (
-                            <span className="text-gray-500">🏳️</span>
-                          )}
-                          <span className="text-gray-300">{cuber.countryName ?? cuber.country ?? '—'}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="font-bold text-green-400">{formatScore(cuber.wpsScore)}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-6 flex flex-col items-center gap-2">
-              <Link to="/leaderboard" className="btn-primary flex items-center justify-center space-x-2">
-                <TrendingUp className="w-5 h-5" />
-                <span>View Full Leaderboard</span>
-              </Link>
-              <p className="text-gray-500 text-sm">Showing top 5 of all ranked cubers</p>
-            </div>
-          </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* Call to Action */}
-      <div className="text-center bg-gray-800 rounded-lg p-8">
-        <h3 className="text-2xl font-bold text-white mb-4">
-          Ready to Find Your Rank?
-        </h3>
-        <p className="text-gray-300 mb-6">
-          Search for your WCA ID or name to see your WPS score and global ranking.
-        </p>
-        <Link to="/search" className="btn-primary">
-          Search Now
-        </Link>
-      </div>
+      {/* CTA Section */}
+      <section className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-8 md:p-12 text-center">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(16,185,129,0.06), transparent)',
+          }}
+        />
+        <div className="relative flex flex-col items-center gap-4">
+          <h3 className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] text-balance">
+            Ready to Find Your Rank?
+          </h3>
+          <p className="text-[var(--color-text-secondary)] max-w-lg">
+            Search for your WCA ID or name to see your WPS score and global ranking.
+          </p>
+          <Link to="/search" className="btn-primary mt-2">
+            <Search className="w-4 h-4" />
+            <span>Search Now</span>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

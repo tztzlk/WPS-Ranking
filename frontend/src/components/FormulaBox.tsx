@@ -6,7 +6,7 @@ import { BlockMath } from 'react-katex';
  */
 export function FormulaBox() {
   return (
-    <div className="border border-gray-600 rounded-lg p-6 bg-gray-800/80 text-center overflow-x-auto">
+    <div className="border border-[var(--color-border)] rounded-[var(--radius)] p-6 bg-[var(--color-surface-raised)] text-center overflow-x-auto">
       <div className="flex flex-col items-center gap-4">
         <BlockMath math="\text{EventScore}(e) = w_e \cdot \frac{1}{\ln(R_e + 1)} \cdot 10" />
         <BlockMath math="\text{WPS} = \frac{\sum \text{EventScore}(e)}{\text{MAX}} \cdot 100" />
