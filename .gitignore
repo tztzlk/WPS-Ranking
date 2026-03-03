@@ -1,27 +1,20 @@
-# Dependencies
+backend/WCA_export303_20251030T000034Z.tsv/
+*.tsv
 node_modules/
-backend/node_modules/
-frontend/node_modules/
-
-# Env
 .env
-backend/.env
-frontend/.env
-
-# Builds
+frontend/node_modules/
+backend/node_modules/
 frontend/dist/
 backend/dist/
 frontend/build/
 backend/build/
+frontend/public/
+backend/public/
+frontend/src/assets/
+backend/src/assets/
 
-# WCA export raw files (never commit)
-*.tsv
-backend/cache/wca_export/**
-backend/WCA_export*.zip
-backend/WCA_export*.tsv
-backend/WCA_export*/
-
-# Cache: ignore everything EXCEPT computed JSON caches we need for deploy
-backend/cache/**
-!backend/cache/*.json
-!backend/cache/.gitkeep
+backend/WCA_export303_20251030T000034Z.tsv/
+backend/.env
+backend/cache/
+backend/cache/leaderboard.top100.json
+backend/cache/wca_export/
