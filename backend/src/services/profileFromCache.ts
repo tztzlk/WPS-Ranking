@@ -48,7 +48,7 @@ function getGeneratedAt(): string {
  * Look up profile by WCA ID. Streams from Persons.tsv + in-memory WPS/rank.
  */
 export async function getProfileByPersonId(personId: string): Promise<ProfileCacheResult | null> {
-  const normalizedId = personId?.trim();
+  const normalizedId = personId?.trim().toUpperCase();
   if (!normalizedId) return null;
 
   const person = await lookupPerson(normalizedId);
