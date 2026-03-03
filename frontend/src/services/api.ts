@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { LeaderboardEntry, WPSProfile, SearchResult, AboutData, ApiResponse, LeaderboardCacheResponse } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1500;
@@ -83,9 +83,12 @@ export const apiService = {
   },
 
   async searchCubers(query: string, limit: number = 20): Promise<ApiResponse<SearchResult>> {
-    const response = await api.get<ApiResponse<SearchResult>>('/search', {
-      params: { q: query.trim(), limit },
-    });
+    const trimmed = query.trim();
+    const isWcaId = /^\d{4}[A-Z]{4}\d{2}$/.test(trimmed);
+    const params: Record<string, string | number> = isWcaId
+      ? { wcaId: trimmed, limit }
+      : { q: trimmed, limit };
+    const response = await api.get<ApiResponse<SearchResult>>('/search', { params });
     return response.data;
   },
 

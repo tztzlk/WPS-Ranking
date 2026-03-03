@@ -30,20 +30,23 @@ export function SearchPage() {
       }
       setResults(response.results ?? []);
     } catch (err: unknown) {
-      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status: number; data?: { error?: string } } }) : null;
+      const ax = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status: number; data?: { error?: string } } })
+        : null;
       const status = ax?.response?.status;
       const message = ax?.response?.data?.error;
-      if (status === 404) {
+
+      if (status === 404 && message === 'Person not found') {
         setError('Person not found');
-        setResults([]);
       } else if (status === 400 && message) {
         setError(message);
-        setResults([]);
+      } else if (!ax?.response) {
+        setError('Server unavailable. Check VITE_API_BASE_URL and CORS settings.');
       } else {
-        setError('Failed to search cubers');
-        setResults([]);
-        console.error('Error searching cubers:', err);
+        setError(`Server error (${status}). Check VITE_API_BASE_URL and CORS settings.`);
+        console.error('Search error:', err);
       }
+      setResults([]);
     } finally {
       setLoading(false);
     }
