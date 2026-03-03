@@ -19,12 +19,7 @@ function includeBreakdown(req: { query: Record<string, unknown> }): boolean {
   return v === '1' || v === 'true';
 }
 
-/**
- * GET /api/profile?personId=<WCA_ID>&includeBreakdown=1
- * GET /api/profile/:wcaId?includeBreakdown=1
- * Returns profile from cache. When includeBreakdown=1, adds calculation and breakdown.
- */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const personId = (req.query.personId as string)?.trim();
   if (!personId) {
     res.status(400).json({ error: 'personId query parameter is required' });
@@ -34,7 +29,7 @@ router.get('/', (req, res) => {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
-  const response = buildProfileResponse(personId, includeBreakdown(req));
+  const response = await buildProfileResponse(personId, includeBreakdown(req));
   if (!response) {
     res.status(404).json({ error: 'Person not found' });
     return;
@@ -42,13 +37,13 @@ router.get('/', (req, res) => {
   res.json(response);
 });
 
-router.get('/:wcaId', (req, res) => {
+router.get('/:wcaId', async (req, res) => {
   const wcaId = req.params.wcaId?.trim();
   if (!wcaId || !isValidWCAId(wcaId)) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
-  const response = buildProfileResponse(wcaId, includeBreakdown(req));
+  const response = await buildProfileResponse(wcaId, includeBreakdown(req));
   if (!response) {
     res.status(404).json({ error: 'Person not found' });
     return;
@@ -58,21 +53,20 @@ router.get('/:wcaId', (req, res) => {
 
 /**
  * Build full profile response (with country rank). Used by profile and compare routes.
- * Returns null if person not found.
  */
-export function buildProfileResponse(
+export async function buildProfileResponse(
   personId: string,
   withBreakdown: boolean
-): ReturnType<typeof toProfileResponse> | null {
-  const profile = getProfileByPersonId(personId);
+): Promise<ReturnType<typeof toProfileResponse> extends Promise<infer R> ? R : never> {
+  const profile = await getProfileByPersonId(personId);
   if (!profile) return null;
   return toProfileResponse(profile, withBreakdown);
 }
 
-function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) {
+async function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) {
   const countryRankData =
     profile.countryIso2 != null
-      ? getCountryRank(profile.personId, profile.countryIso2)
+      ? await getCountryRank(profile.personId, profile.countryIso2)
       : null;
 
   const base = {
@@ -99,7 +93,7 @@ function toProfileResponse(profile: ProfileCacheResult, withBreakdown: boolean) 
 
   if (!withBreakdown) return base;
 
-  const breakdownData = getProfileBreakdownByPersonId(profile.personId);
+  const breakdownData = await getProfileBreakdownByPersonId(profile.personId);
   if (!breakdownData) {
     return {
       ...base,

@@ -11,9 +11,9 @@ function isValidWCAId(id: string): boolean {
 
 /**
  * GET /api/compare?left=<WCA_ID1>&right=<WCA_ID2>
- * Returns side-by-side profile data (same shape as /api/profile) for both cubers.
+ * Returns side-by-side profile data for both cubers.
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const left = (req.query.left as string)?.trim();
   const right = (req.query.right as string)?.trim();
 
@@ -30,8 +30,10 @@ router.get('/', (req: Request, res: Response) => {
     return;
   }
 
-  const leftProfile = buildProfileResponse(left, false);
-  const rightProfile = buildProfileResponse(right, false);
+  const [leftProfile, rightProfile] = await Promise.all([
+    buildProfileResponse(left, false),
+    buildProfileResponse(right, false),
+  ]);
 
   if (!leftProfile) {
     res.status(404).json({ error: `Person not found: ${left}` });

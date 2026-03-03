@@ -12,11 +12,9 @@ const MAX_LIMIT = 500;
 
 /**
  * GET /api/leaderboard
- * Query: country (optional, ISO2 e.g. KZ), limit (default 100).
- * - No country: returns global cached top-100 (from leaderboard.top100.json).
- * - With country: returns top N for that country from all ranked (persons + wps + wpsRank indexes).
+ * Query: country (optional, ISO2), limit (default 100).
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const start = Date.now();
   try {
     const country = typeof req.query.country === 'string' ? req.query.country.trim() : undefined;
@@ -38,7 +36,7 @@ router.get('/', (req: Request, res: Response) => {
         return;
       }
     } else {
-      data = getCountryLeaderboard(country, validLimit);
+      data = await getCountryLeaderboard(country, validLimit);
       if (!data) {
         res.status(503).json({
           error: 'Leaderboard indexes not available. Run npm run leaderboard:update',

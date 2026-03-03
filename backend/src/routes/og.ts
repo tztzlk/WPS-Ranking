@@ -9,7 +9,6 @@ function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
-/** In-memory cache: personId -> PNG buffer. Max 500 entries, 1h TTL. */
 const ogImageCache = new Map<string, { buffer: Buffer; at: number }>();
 const CACHE_MAX = 500;
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -34,7 +33,7 @@ function setCached(personId: string, buffer: Buffer): void {
 
 /**
  * GET /api/og/profile/:personId
- * Returns 1200x630 PNG for Open Graph preview (Telegram, Discord, etc.).
+ * Returns 1200x630 PNG for Open Graph preview.
  */
 router.get('/profile/:personId', async (req: Request, res: Response) => {
   const personId = (req.params.personId ?? '').trim();
@@ -51,7 +50,7 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
     return;
   }
 
-  const profile = getProfileByPersonId(personId);
+  const profile = await getProfileByPersonId(personId);
   if (!profile) {
     res.status(404).json({ error: 'Person not found' });
     return;

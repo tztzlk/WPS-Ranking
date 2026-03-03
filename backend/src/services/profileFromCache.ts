@@ -1,10 +1,10 @@
 import {
-  getPersonsIndex,
   getWpsIndex,
   getWpsRankIndex,
   getGlobalLeaderboardCache,
-  getBreakdownIndex,
 } from './indexStore';
+import { lookupPerson } from './personLookup';
+import { lookupBreakdown } from './breakdownLookup';
 
 export interface ProfileCacheResult {
   personId: string;
@@ -45,14 +45,13 @@ function getGeneratedAt(): string {
 }
 
 /**
- * Look up profile by WCA ID from in-memory cache. Returns null if person not found.
+ * Look up profile by WCA ID. Streams from Persons.tsv + in-memory WPS/rank.
  */
-export function getProfileByPersonId(personId: string): ProfileCacheResult | null {
+export async function getProfileByPersonId(personId: string): Promise<ProfileCacheResult | null> {
   const normalizedId = personId?.trim();
   if (!normalizedId) return null;
 
-  const personsIndex = getPersonsIndex();
-  const person = personsIndex[normalizedId];
+  const person = await lookupPerson(normalizedId);
   if (!person) return null;
 
   let wps = 0;
@@ -86,10 +85,9 @@ export function getProfileByPersonId(personId: string): ProfileCacheResult | nul
   };
 }
 
-/** Load WPS breakdown for a person from in-memory cache. Returns null if not found. */
-export function getProfileBreakdownByPersonId(personId: string): ProfileBreakdown | null {
+/** Load WPS breakdown for a person. Streams from wps.breakdown.json. */
+export async function getProfileBreakdownByPersonId(personId: string): Promise<ProfileBreakdown | null> {
   const normalizedId = personId?.trim();
   if (!normalizedId) return null;
-  const data = getBreakdownIndex();
-  return (data[normalizedId] as ProfileBreakdown) ?? null;
+  return lookupBreakdown(normalizedId) as Promise<ProfileBreakdown | null>;
 }
