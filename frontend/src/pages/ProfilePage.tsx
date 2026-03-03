@@ -29,11 +29,22 @@ export function ProfilePage() {
       const data = await apiService.getProfile(id, false);
       setProfile(data);
     } catch (err: unknown) {
-      const msg = err && typeof err === 'object' && 'userMessage' in err
-        ? (err as { userMessage?: string }).userMessage
+      const ax = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status: number; data?: { error?: string } } })
         : null;
-      setError(msg || 'Failed to load profile');
-      console.error('Error loading profile:', err);
+      const status = ax?.response?.status;
+      const message = ax?.response?.data?.error;
+
+      if (status === 404 && message === 'Person not found') {
+        setError('Person not found');
+      } else if (status === 400 && message) {
+        setError(message);
+      } else if (!ax?.response) {
+        setError('Server unavailable. Check VITE_API_BASE_URL and CORS settings.');
+      } else {
+        setError(`Server error (${status}). Check VITE_API_BASE_URL and CORS settings.`);
+        console.error('Profile error:', err);
+      }
     } finally {
       setLoading(false);
     }
