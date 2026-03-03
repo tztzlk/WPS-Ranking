@@ -1,55 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import { getCacheDir } from '../utils/cachePath';
-
-const CACHE_DIR = getCacheDir();
-const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
-const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
-const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
-const COUNTRIES_INDEX_PATH = path.join(CACHE_DIR, 'countries.index.json');
-const LEADERBOARD_TOP100_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
-
-interface PersonEntry {
-  name: string;
-  countryId?: string;
-  countryName?: string;
-  countryIso2?: string;
-}
-
-interface WpsEntry {
-  wps: number;
-}
-
-interface WpsRankIndex {
-  generatedAt: string;
-  totalRanked: number;
-  ranks: Record<string, number>;
-}
-
-interface CountriesIndex {
-  countries: Record<string, { name: string; iso2: string }>;
-}
-
-interface GlobalLeaderboard {
-  source: string;
-  generatedAt: string;
-  count: number;
-  items: Array<{
-    rank: number;
-    personId: string;
-    name: string;
-    countryId?: string;
-    countryName?: string;
-    countryIso2?: string;
-    wps: number;
-  }>;
-}
-
-let personsIndex: Record<string, PersonEntry> | null = null;
-let wpsIndex: Record<string, WpsEntry> | null = null;
-let wpsRankIndex: WpsRankIndex | null = null;
-let countriesIndex: CountriesIndex | null = null;
-let globalLeaderboard: GlobalLeaderboard | null = null;
+import {
+  getPersonsIndex,
+  getWpsIndex,
+  getWpsRankIndex,
+  getCountriesIndex,
+  getGlobalLeaderboardCache,
+  type PersonEntry,
+} from './indexStore';
 
 export interface CountryItem {
   iso2: string;
@@ -58,37 +14,10 @@ export interface CountryItem {
 
 let countriesListCache: CountryItem[] | null = null;
 
-function loadJson<T>(filePath: string): T | null {
-  if (!fs.existsSync(filePath)) {
-    console.error(`[leaderboardCache] Missing cache file: ${filePath}`);
-    return null;
-  }
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(raw) as T;
-  } catch (err) {
-    console.error(`[leaderboardCache] Failed to read cache file: ${filePath}`, err);
-    return null;
-  }
-}
-
-/** Load all index files into memory. Reused across requests. */
-function ensureIndexesLoaded(): void {
-  if (personsIndex !== null && wpsIndex !== null && wpsRankIndex !== null) return;
-  personsIndex = loadJson<Record<string, PersonEntry>>(PERSONS_INDEX_PATH) ?? {};
-  wpsIndex = loadJson<Record<string, WpsEntry>>(WPS_INDEX_PATH) ?? {};
-  wpsRankIndex = loadJson<WpsRankIndex>(WPS_RANK_INDEX_PATH);
-  countriesIndex = loadJson<CountriesIndex>(COUNTRIES_INDEX_PATH);
-}
-
-function ensureGlobalLoaded(): void {
-  if (globalLeaderboard !== null) return;
-  globalLeaderboard = loadJson<GlobalLeaderboard>(LEADERBOARD_TOP100_PATH);
-}
-
 function getCountryNameByIso2(iso2: string): string | undefined {
-  if (!countriesIndex?.countries) return undefined;
-  const entry = Object.values(countriesIndex.countries).find(
+  const ci = getCountriesIndex();
+  if (!ci?.countries) return undefined;
+  const entry = Object.values(ci.countries).find(
     (c) => c.iso2?.toUpperCase() === iso2.toUpperCase()
   );
   return entry?.name;
@@ -99,8 +28,8 @@ function getCountryNameByIso2(iso2: string): string | undefined {
  * In-memory cached after first call.
  */
 export function getCountriesList(): CountryItem[] | null {
-  ensureIndexesLoaded();
-  if (!personsIndex) return null;
+  const personsIndex = getPersonsIndex();
+  if (!personsIndex || Object.keys(personsIndex).length === 0) return null;
   if (countriesListCache !== null) return countriesListCache;
 
   const byIso2 = new Map<string, string>();
@@ -164,18 +93,18 @@ export interface GlobalLeaderboardResponse {
 export type LeaderboardResponse = CountryLeaderboardResponse | GlobalLeaderboardResponse;
 
 /**
- * Returns global top-100 from cached leaderboard.top100.json.
+ * Returns global top-100 from in-memory leaderboard cache.
  */
 export function getGlobalLeaderboard(limit: number = 100): GlobalLeaderboardResponse | null {
-  ensureGlobalLoaded();
-  if (!globalLeaderboard) return null;
-  const items = globalLeaderboard.items.slice(0, limit);
+  const gl = getGlobalLeaderboardCache();
+  if (!gl) return null;
+  const items = gl.items.slice(0, limit);
   return {
     scope: 'global',
-    generatedAt: globalLeaderboard.generatedAt,
+    generatedAt: gl.generatedAt,
     count: items.length,
     items,
-    source: globalLeaderboard.source,
+    source: gl.source,
   };
 }
 
@@ -186,7 +115,9 @@ export function getCountryRank(
   personId: string,
   countryIso2: string
 ): { countryRank: number; countryTotal: number } | null {
-  ensureIndexesLoaded();
+  const personsIndex = getPersonsIndex();
+  const wpsIndex = getWpsIndex();
+  const wpsRankIndex = getWpsRankIndex();
   if (!personsIndex || !wpsRankIndex) return null;
   const iso2Upper = countryIso2?.trim()?.toUpperCase();
   if (!iso2Upper) return null;
@@ -215,7 +146,9 @@ export function getCountryLeaderboard(
   countryIso2: string,
   limit: number = 100
 ): CountryLeaderboardResponse | null {
-  ensureIndexesLoaded();
+  const personsIndex = getPersonsIndex();
+  const wpsIndex = getWpsIndex();
+  const wpsRankIndex = getWpsRankIndex();
   if (!personsIndex || !wpsRankIndex) return null;
 
   const iso2Upper = countryIso2.trim().toUpperCase();

@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, User, MapPin, Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+
+const DEBOUNCE_MS = 300;
+const MIN_QUERY_LENGTH = 2;
 
 export function SearchPage() {
   const [query, setQuery] = useState('');
@@ -11,17 +14,17 @@ export function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const executeSearch = useCallback(async (q: string) => {
+    if (q.trim().length < MIN_QUERY_LENGTH) return;
 
     setLoading(true);
     setError(null);
     setHasSearched(true);
 
     try {
-      const response = await apiService.searchCubers(query.trim());
+      const response = await apiService.searchCubers(q.trim());
       if (import.meta.env.DEV) {
         console.log('[Search] response', response);
       }
@@ -44,6 +47,19 @@ export function SearchPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < MIN_QUERY_LENGTH) return;
+    debounceRef.current = setTimeout(() => executeSearch(query), DEBOUNCE_MS);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, executeSearch]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    executeSearch(query);
   };
 
   const formatScore = (score: number) => {
