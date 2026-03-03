@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardCacheResponse } from '../types';
+import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 
 const ALL = 'ALL';
@@ -21,45 +21,17 @@ export function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedCountry, setSelectedCountry] = useState<string>(ALL);
-  const [countryOptions, setCountryOptions] = useState<{ countryIso2: string; countryName: string }[]>(() => [
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => searchParams.get('country') ?? ALL);
+  const [countryOptions, setCountryOptions] = useState<{ countryIso2: string; countryName: string }[]>([
     { countryIso2: ALL, countryName: 'All countries' },
   ]);
 
-  const items = data?.items ?? [];
-  const scope = data?.scope ?? 'global';
-  const isCountryScope = scope === 'country';
-  const totalRanked = data?.totalRanked;
-
-  useEffect(() => {
-    apiService.getCountries().then(
-      (list) =>
-        setCountryOptions([
-          { countryIso2: ALL, countryName: 'All countries' },
-          ...list.map((c) => ({ countryIso2: c.iso2, countryName: c.name })),
-        ]),
-      () => {}
-    );
-  }, []);
-
-  useEffect(() => {
-    const urlCountry = searchParams.get('country');
-    if (urlCountry && urlCountry !== ALL) {
-      setSelectedCountry(urlCountry);
-      loadLeaderboard(urlCountry);
-    } else {
-      setSelectedCountry(ALL);
-      loadLeaderboard(undefined);
-    }
-  }, []);
-
-  const loadLeaderboard = async (country: string | undefined) => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await apiService.getLeaderboardTop100(100, country === ALL ? undefined : country);
+      const result = await apiService.getLeaderboardTop100(100);
       setData(result);
-      if (country !== undefined) setSelectedCountry(country ?? ALL);
     } catch (err: unknown) {
       const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
       const message =
@@ -75,7 +47,27 @@ export function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    apiService.getCountries().then(
+      (list) =>
+        setCountryOptions([
+          { countryIso2: ALL, countryName: 'All countries' },
+          ...list.map((c) => ({ countryIso2: c.iso2, countryName: c.name })),
+        ]),
+      () => {}
+    );
+  }, [loadData]);
+
+  const filteredItems = useMemo<LeaderboardCacheItem[]>(() => {
+    if (!data?.items) return [];
+    if (selectedCountry === ALL) return data.items;
+    return data.items.filter(
+      (item) => item.countryIso2?.toUpperCase() === selectedCountry.toUpperCase()
+    );
+  }, [data, selectedCountry]);
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
@@ -85,21 +77,19 @@ export function LeaderboardPage() {
         next.delete('country');
         return next;
       });
-      loadLeaderboard(undefined);
     } else {
       setSearchParams({ country: value });
-      loadLeaderboard(value);
     }
   };
 
   const generatedAt = data?.generatedAt ?? '';
-  const count = data?.count ?? 0;
+  const isFiltered = selectedCountry !== ALL;
   const selectedCountryName =
-    countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? data?.countryName ?? selectedCountry;
-  const pageTitle = isCountryScope ? `WPS Leaderboard — ${selectedCountryName}` : 'Global WPS Leaderboard';
-  const subtitle = isCountryScope
-    ? `Top ${count} in ${selectedCountryName} · Updated: ${formatGeneratedAt(generatedAt)}`
-    : `Updated: ${formatGeneratedAt(generatedAt)} · ${count} cubers`;
+    countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
+  const pageTitle = isFiltered ? `WPS Leaderboard — ${selectedCountryName}` : 'Global WPS Leaderboard';
+  const subtitle = isFiltered
+    ? `${filteredItems.length} cubers from ${selectedCountryName} in global top 100 · Updated: ${formatGeneratedAt(generatedAt)}`
+    : `Updated: ${formatGeneratedAt(generatedAt)} · ${filteredItems.length} cubers`;
 
   if (loading) {
     return (
@@ -119,7 +109,7 @@ export function LeaderboardPage() {
         <h1 className="text-3xl font-bold text-white">Top 100 WPS Leaderboard</h1>
         <div className="card text-center py-12">
           <p className="text-red-400">{error ?? 'Failed to load data'}</p>
-          <button type="button" onClick={() => loadLeaderboard(selectedCountry === ALL ? undefined : selectedCountry)} className="btn-primary mt-4">
+          <button type="button" onClick={loadData} className="btn-primary mt-4">
             Try Again
           </button>
         </div>
@@ -156,9 +146,9 @@ export function LeaderboardPage() {
       </div>
 
       <div className="card overflow-hidden p-0">
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
-            No ranked cubers from this country
+            No ranked cubers from this country in the global top 100
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -166,9 +156,6 @@ export function LeaderboardPage() {
               <thead>
                 <tr className="border-b border-gray-700 bg-gray-800/50">
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                  {isCountryScope && (
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Global</th>
-                  )}
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
@@ -176,12 +163,8 @@ export function LeaderboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row) => {
-                  const displayRank = isCountryScope ? (row.countryRank ?? 0) : (row.rank ?? 0);
-                  const globalRank = row.globalWpsRank ?? row.rank;
-                  const globalLabel = typeof totalRanked === 'number' && totalRanked > 0 && typeof globalRank === 'number'
-                    ? `#${globalRank} of ${totalRanked}`
-                    : globalRank;
+                {filteredItems.map((row) => {
+                  const displayRank = row.rank ?? 0;
                   return (
                     <tr
                       key={row.personId}
@@ -202,9 +185,6 @@ export function LeaderboardPage() {
                           <span className="text-gray-300">{displayRank}</span>
                         )}
                       </td>
-                      {isCountryScope && (
-                        <td className="py-3 px-4 text-gray-400">{globalLabel}</td>
-                      )}
                       <td className="py-3 px-4 font-medium text-white">{row.name}</td>
                       <td className="py-3 px-4">
                         <span className="flex items-center gap-2">

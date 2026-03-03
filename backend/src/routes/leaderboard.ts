@@ -17,6 +17,7 @@ const MAX_LIMIT = 500;
  * - With country: returns top N for that country from all ranked (persons + wps + wpsRank indexes).
  */
 router.get('/', (req: Request, res: Response) => {
+  const start = Date.now();
   try {
     const country = typeof req.query.country === 'string' ? req.query.country.trim() : undefined;
     const limitRaw = req.query.limit;
@@ -50,6 +51,8 @@ router.get('/', (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error serving leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  } finally {
+    console.log(`[leaderboard] ${Date.now() - start}ms`);
   }
 });
 

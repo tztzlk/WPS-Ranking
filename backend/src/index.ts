@@ -12,6 +12,7 @@ import { compareRoutes } from './routes/compare';
 import { ogRoutes } from './routes/og';
 import { ogMetaRoutes } from './routes/ogMeta';
 import { errorHandler } from './middleware/errorHandler';
+import { initAllCaches } from './services/indexStore';
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ const corsOrigins = process.env.CORS_ORIGINS
 app.use(helmet());
 app.use(cors({  
   origin: corsOrigins,
-  credentials: true,
+  credentials: false,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -48,6 +49,7 @@ app.get('/api/health', (_req, res) => {
 
 // Open Graph meta HTML for profile pages (crawlers only). Must be before static so /profile/:personId is hit.
 app.use(ogMetaRoutes);
+app.options('*', cors());
 
 // Optional: serve frontend build for production (set PUBLIC_PATH to frontend dist)
 const publicPath = process.env.PUBLIC_PATH;
@@ -66,6 +68,8 @@ if (publicPath) {
 
 // Error handling
 app.use(errorHandler);
+
+initAllCaches();
 
 app.listen(PORT, () => {
   console.log(`🚀 WPS Ranking API running on port ${PORT}`);

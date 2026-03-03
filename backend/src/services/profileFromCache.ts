@@ -1,13 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import { getCacheDir } from '../utils/cachePath';
-
-const CACHE_DIR = getCacheDir();
-const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
-const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
-const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
-const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
-const LEADERBOARD_CACHE_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
+import {
+  getPersonsIndex,
+  getWpsIndex,
+  getWpsRankIndex,
+  getGlobalLeaderboardCache,
+  getBreakdownIndex,
+} from './indexStore';
 
 export interface ProfileCacheResult {
   personId: string;
@@ -42,59 +39,37 @@ export interface ProfileBreakdown {
 }
 
 function getGeneratedAt(): string {
-  try {
-    if (fs.existsSync(LEADERBOARD_CACHE_PATH)) {
-      const data = JSON.parse(fs.readFileSync(LEADERBOARD_CACHE_PATH, 'utf8'));
-      if (data.generatedAt) return data.generatedAt;
-    }
-  } catch {
-    // ignore
-  }
+  const lb = getGlobalLeaderboardCache();
+  if (lb?.generatedAt) return lb.generatedAt;
   return new Date().toISOString();
 }
 
 /**
- * Look up profile by WCA ID from cache files. Returns null if person not found.
+ * Look up profile by WCA ID from in-memory cache. Returns null if person not found.
  */
 export function getProfileByPersonId(personId: string): ProfileCacheResult | null {
   const normalizedId = personId?.trim();
   if (!normalizedId) return null;
 
-  if (!fs.existsSync(PERSONS_INDEX_PATH)) {
-    console.error(`[profileFromCache] Missing cache file: ${PERSONS_INDEX_PATH}`);
-    return null;
-  }
-  const personsIndex: Record<string, { name: string; countryId?: string; countryName?: string; countryIso2?: string }> = JSON.parse(
-    fs.readFileSync(PERSONS_INDEX_PATH, 'utf8')
-  );
+  const personsIndex = getPersonsIndex();
   const person = personsIndex[normalizedId];
   if (!person) return null;
 
   let wps = 0;
-  if (fs.existsSync(WPS_INDEX_PATH)) {
-    const wpsIndex: Record<string, { wps: number }> = JSON.parse(
-      fs.readFileSync(WPS_INDEX_PATH, 'utf8')
-    );
-    const wpsEntry = wpsIndex[normalizedId];
-    if (wpsEntry != null && typeof wpsEntry.wps === 'number') wps = wpsEntry.wps;
-  }
+  const wpsIndex = getWpsIndex();
+  const wpsEntry = wpsIndex[normalizedId];
+  if (wpsEntry != null && typeof wpsEntry.wps === 'number') wps = wpsEntry.wps;
 
   let globalWpsRank: number | null = null;
   let totalRanked = 0;
-  if (fs.existsSync(WPS_RANK_INDEX_PATH)) {
-    try {
-      const rankData: { ranks?: Record<string, number>; totalRanked?: number } = JSON.parse(
-        fs.readFileSync(WPS_RANK_INDEX_PATH, 'utf8')
-      );
-      const rank = rankData.ranks?.[normalizedId];
-      if (typeof rank === 'number' && rank >= 1) globalWpsRank = rank;
-      if (typeof rankData.totalRanked === 'number' && rankData.totalRanked >= 0) {
-        totalRanked = rankData.totalRanked;
-      } else if (rankData.ranks && typeof rankData.ranks === 'object') {
-        totalRanked = Object.keys(rankData.ranks).length;
-      }
-    } catch {
-      // ignore
+  const rankData = getWpsRankIndex();
+  if (rankData) {
+    const rank = rankData.ranks?.[normalizedId];
+    if (typeof rank === 'number' && rank >= 1) globalWpsRank = rank;
+    if (typeof rankData.totalRanked === 'number' && rankData.totalRanked >= 0) {
+      totalRanked = rankData.totalRanked;
+    } else if (rankData.ranks && typeof rankData.ranks === 'object') {
+      totalRanked = Object.keys(rankData.ranks).length;
     }
   }
 
@@ -111,20 +86,10 @@ export function getProfileByPersonId(personId: string): ProfileCacheResult | nul
   };
 }
 
-/** Load WPS breakdown for a person from cache. Returns null if not found or file missing. */
+/** Load WPS breakdown for a person from in-memory cache. Returns null if not found. */
 export function getProfileBreakdownByPersonId(personId: string): ProfileBreakdown | null {
   const normalizedId = personId?.trim();
   if (!normalizedId) return null;
-  if (!fs.existsSync(WPS_BREAKDOWN_PATH)) {
-    console.error(`[profileFromCache] Missing cache file: ${WPS_BREAKDOWN_PATH}`);
-    return null;
-  }
-  try {
-    const data: Record<string, ProfileBreakdown> = JSON.parse(
-      fs.readFileSync(WPS_BREAKDOWN_PATH, 'utf8')
-    );
-    return data[normalizedId] ?? null;
-  } catch {
-    return null;
-  }
+  const data = getBreakdownIndex();
+  return (data[normalizedId] as ProfileBreakdown) ?? null;
 }

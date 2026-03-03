@@ -16,6 +16,7 @@ function isValidWCAId(id: string): boolean {
  * 404 if person not found.
  */
 router.get('/', (req, res) => {
+  const start = Date.now();
   const wcaId = ((req.query.wcaId as string) ?? (req.query.q as string))?.trim();
   if (!wcaId) {
     res.status(400).json({ error: 'wcaId or q query parameter is required' });
@@ -44,6 +45,7 @@ router.get('/', (req, res) => {
       totalRanked: profile.totalRanked,
     }],
   });
+  console.log(`[search] ${Date.now() - start}ms`);
 });
 
 export { router as searchRoutes };
