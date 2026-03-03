@@ -1,62 +1,3 @@
-// WPS Scoring System Types and Interfaces
-
-export interface WCAEvent {
-  id: string;
-  name: string;
-  rank: number;
-  format: string;
-  cellName: string;
-}
-
-export interface WCAPerson {
-  id: string;
-  subid: number;
-  name: string;
-  countryId: string;
-  gender: string;
-  competitionCount: number;
-  personalRecords: Record<string, WCARecord>;
-}
-
-export interface WCARecord {
-  single: number | null;
-  average: number | null;
-  best: number | null;
-  worldRank: number | null;
-  continentRank: number | null;
-  countryRank: number | null;
-  type: string;
-}
-
-export interface WPSProfile {
-  wcaId: string;
-  name: string;
-  country: string;
-  wpsScore: number;
-  globalRank: number;
-  eventScores: Record<string, number>;
-  eventRanks: Record<string, number>;
-  totalEvents: number;
-  lastUpdated: string;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  wcaId: string;
-  name: string;
-  country: string;
-  wpsScore: number;
-  totalEvents: number;
-}
-
-export interface SearchResult {
-  wcaId: string;
-  name: string;
-  country: string;
-  wpsScore: number;
-  globalRank: number;
-}
-
 // WPS Event Weights (based on popularity and difficulty)
 export const EVENT_WEIGHTS: Record<string, number> = {
   '333': 1.0,      // 3x3x3 Cube - baseline
@@ -81,5 +22,5 @@ export const EVENT_WEIGHTS: Record<string, number> = {
 /** MAX = Σ (w_e × (1/ln(2)) × 10). Matches EventScore when R_e = 1 for all events. */
 export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
   (sum, w) => sum + w * (1 / Math.log(2)) * 10,
-  0
+  0,
 );

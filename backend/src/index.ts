@@ -1,4 +1,5 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
@@ -27,19 +28,30 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
+const REQUEST_TIMEOUT_MS = 25_000;
 
-// CORS: comma-separated CORS_ORIGINS; in development allow localhost:3000
 const corsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-  : ['http://localhost:3000', 'https://wps-ranking.vercel.app',
-  'http://localhost:5173'];
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean)
+  : ['http://localhost:3000', 'https://wps-ranking.vercel.app', 'http://localhost:5173'];
+
 app.use(helmet());
-app.use(cors({  
-  origin: corsOrigins,
-  credentials: false,
-}));
+app.use(compression());
+app.use(cors({ origin: corsOrigins, credentials: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api', (_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(504).json({ error: 'Request timed out' });
+    }
+  }, REQUEST_TIMEOUT_MS);
+  res.on('finish', () => clearTimeout(timer));
+
+  next();
+});
 
 // API Routes
 app.use('/api/leaderboard', leaderboardRoutes);
@@ -50,17 +62,15 @@ app.use('/api/about', aboutRoutes);
 app.use('/api/compare', compareRoutes);
 app.use('/api/og', ogRoutes);
 
-// Health check
 app.get('/api/health', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
   const env = process.env.NODE_ENV === 'production' ? 'production' : 'development';
   res.status(200).json({ ok: true, env });
 });
 
-// Open Graph meta HTML for profile pages (crawlers only). Must be before static so /profile/:personId is hit.
 app.use(ogMetaRoutes);
 app.options('*', cors());
 
-// Optional: serve frontend build for production (set PUBLIC_PATH to frontend dist)
 const publicPath = process.env.PUBLIC_PATH;
 if (publicPath) {
   const absolutePath = path.isAbsolute(publicPath) ? publicPath : path.resolve(process.cwd(), publicPath);
@@ -69,13 +79,11 @@ if (publicPath) {
     res.sendFile(path.join(absolutePath, 'index.html'));
   });
 } else {
-  // 404 for non-API when not serving frontend
-  app.use('*', (req, res) => {
+  app.use('*', (_req, res) => {
     res.status(404).json({ error: 'Route not found' });
   });
 }
 
-// Error handling
 app.use(errorHandler);
 
 try {

@@ -1,30 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { getCacheDir } from '../utils/cachePath';
+import { LRUCache } from '../utils/lruCache';
 import type { ProfileBreakdownEntry } from './indexStore';
-
-class LRUCache<K, V> {
-  private map = new Map<K, V>();
-  constructor(private maxSize: number) {}
-
-  get(key: K): V | undefined {
-    const value = this.map.get(key);
-    if (value !== undefined) {
-      this.map.delete(key);
-      this.map.set(key, value);
-    }
-    return value;
-  }
-
-  set(key: K, value: V): void {
-    this.map.delete(key);
-    if (this.map.size >= this.maxSize) {
-      const first = this.map.keys().next().value;
-      if (first !== undefined) this.map.delete(first);
-    }
-    this.map.set(key, value);
-  }
-}
 
 const cache = new LRUCache<string, ProfileBreakdownEntry | null>(500);
 
@@ -35,7 +13,7 @@ function getBreakdownPath(): string {
 /**
  * Stream-scan wps.breakdown.json for a single personId's breakdown entry.
  * Reads 64 KB chunks, searches for `"personId":`, extracts the JSON value
- * by brace-matching, then stops. Never loads the full 97 MB into memory.
+ * by brace-matching, then stops. Never loads the full file into memory.
  */
 export async function lookupBreakdown(personId: string): Promise<ProfileBreakdownEntry | null> {
   const cached = cache.get(personId);
