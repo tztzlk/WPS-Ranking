@@ -8,7 +8,6 @@ function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
-/** User-Agent substrings for link-preview crawlers (Telegram, Discord, etc.) */
 const CRAWLER_AGENTS = [
   'TelegramBot',
   'Discordbot',
@@ -30,10 +29,9 @@ function isCrawler(userAgent: string): boolean {
 
 /**
  * GET /profile/:personId
- * For crawler User-Agents only: returns minimal HTML with OpenGraph meta tags
- * so Telegram/Discord show a rich preview. Otherwise calls next().
+ * For crawler User-Agents only: returns minimal HTML with OpenGraph meta tags.
  */
-router.get('/profile/:personId', (req: Request, res: Response, next: NextFunction) => {
+router.get('/profile/:personId', async (req: Request, res: Response, next: NextFunction) => {
   if (!isCrawler(req.get('User-Agent') || '')) {
     next();
     return;
@@ -45,7 +43,7 @@ router.get('/profile/:personId', (req: Request, res: Response, next: NextFunctio
     return;
   }
 
-  const profile = getProfileByPersonId(personId);
+  const profile = await getProfileByPersonId(personId);
   if (!profile) {
     next();
     return;

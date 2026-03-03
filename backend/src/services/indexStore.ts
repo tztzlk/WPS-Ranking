@@ -2,13 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { getCacheDir } from '../utils/cachePath';
 
-export interface PersonEntry {
-  name: string;
-  countryId?: string;
-  countryName?: string;
-  countryIso2?: string;
-}
-
 export interface WpsEntry {
   wps: number;
 }
@@ -50,18 +43,25 @@ export interface ProfileBreakdownEntry {
   }>;
 }
 
-// --------------- module-level caches ---------------
+// --------------- module-level caches (small files only) ---------------
 
-let personsIndex: Record<string, PersonEntry> = {};
 let wpsIndex: Record<string, WpsEntry> = {};
 let wpsRankIndex: WpsRankIndex | null = null;
 let countriesIndex: CountriesIndex | null = null;
 let globalLeaderboard: GlobalLeaderboard | null = null;
-let breakdownIndex: Record<string, ProfileBreakdownEntry> = {};
 
-// --------------- helper ---------------
+// --------------- helpers ---------------
 
-export function loadJsonCache<T>(filePath: string): T {
+function fileSizeMB(filePath: string): string {
+  try {
+    const { size } = fs.statSync(filePath);
+    return `${(size / 1024 / 1024).toFixed(2)} MB`;
+  } catch {
+    return 'missing';
+  }
+}
+
+function loadJsonCache<T>(filePath: string): T {
   if (!fs.existsSync(filePath)) {
     throw new Error(`[indexStore] Missing cache file: ${filePath}`);
   }
@@ -69,26 +69,32 @@ export function loadJsonCache<T>(filePath: string): T {
   return JSON.parse(raw) as T;
 }
 
-// --------------- eager loader ---------------
+// --------------- eager loader (small files only) ---------------
 
 export function initAllCaches(): void {
   const cacheDir = getCacheDir();
   const t0 = Date.now();
 
   const files: Record<string, string> = {
-    persons: path.join(cacheDir, 'persons.index.json'),
     wps: path.join(cacheDir, 'wps.index.json'),
     wpsRank: path.join(cacheDir, 'wpsRank.index.json'),
     countries: path.join(cacheDir, 'countries.index.json'),
     leaderboard: path.join(cacheDir, 'leaderboard.top100.json'),
+  };
+
+  const skipped: Record<string, string> = {
+    persons: path.join(cacheDir, 'persons.index.json'),
     breakdown: path.join(cacheDir, 'wps.breakdown.json'),
   };
 
+  console.log('[indexStore] File sizes:');
+  for (const [name, fp] of Object.entries({ ...files, ...skipped })) {
+    console.log(`  ${name}: ${fileSizeMB(fp)}`);
+  }
+  console.log('[indexStore] Skipping persons + breakdown (streamed on demand)');
+
   const warn = (name: string, e: unknown) =>
     console.warn(`[indexStore] WARN: ${name} unavailable — ${e instanceof Error ? e.message : String(e)}`);
-
-  try { personsIndex = loadJsonCache<Record<string, PersonEntry>>(files.persons); }
-  catch (e) { warn('persons', e); personsIndex = {}; }
 
   try { wpsIndex = loadJsonCache<Record<string, WpsEntry>>(files.wps); }
   catch (e) { warn('wps', e); wpsIndex = {}; }
@@ -102,17 +108,13 @@ export function initAllCaches(): void {
   try { globalLeaderboard = loadJsonCache<GlobalLeaderboard>(files.leaderboard); }
   catch (e) { warn('leaderboard', e); globalLeaderboard = null; }
 
-  try { breakdownIndex = loadJsonCache<Record<string, ProfileBreakdownEntry>>(files.breakdown); }
-  catch (e) { warn('breakdown', e); breakdownIndex = {}; }
-
-  console.log(`[indexStore] Cache init done in ${Date.now() - t0}ms (cacheDir: ${cacheDir})`);
+  const rss = (process.memoryUsage().rss / 1024 / 1024).toFixed(1);
+  console.log(`[indexStore] Cache init done in ${Date.now() - t0}ms | RSS ${rss} MB`);
 }
 
 // --------------- getters ---------------
 
-export function getPersonsIndex(): Record<string, PersonEntry> { return personsIndex; }
 export function getWpsIndex(): Record<string, WpsEntry> { return wpsIndex; }
 export function getWpsRankIndex(): WpsRankIndex | null { return wpsRankIndex; }
 export function getCountriesIndex(): CountriesIndex | null { return countriesIndex; }
 export function getGlobalLeaderboardCache(): GlobalLeaderboard | null { return globalLeaderboard; }
-export function getBreakdownIndex(): Record<string, ProfileBreakdownEntry> { return breakdownIndex; }
