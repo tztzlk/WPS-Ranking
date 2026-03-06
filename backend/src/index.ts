@@ -13,7 +13,6 @@ import { compareRoutes } from './routes/compare';
 import { ogRoutes } from './routes/og';
 import { ogMetaRoutes } from './routes/ogMeta';
 import { errorHandler } from './middleware/errorHandler';
-import { initAllCaches } from './services/indexStore';
 
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught exception:', err);
@@ -85,12 +84,6 @@ if (publicPath) {
 }
 
 app.use(errorHandler);
-
-try {
-  initAllCaches();
-} catch (err) {
-  console.error('[startup] initAllCaches failed, continuing without cache:', err);
-}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`WPS Ranking API running on 0.0.0.0:${PORT}`);

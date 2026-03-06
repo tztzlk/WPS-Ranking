@@ -1,93 +1,38 @@
-import {
-  getWpsIndex,
-  getWpsRankIndex,
-  getGlobalLeaderboardCache,
-} from './indexStore';
-import { lookupPerson } from './personLookup';
-import { lookupBreakdown } from './breakdownLookup';
+import { findPersonById, toProfileResponse, getMetaValue } from './personDb';
 
-export interface ProfileCacheResult {
-  personId: string;
+/** Profile result for OG/ogMeta (includes totalRanked for rank text). */
+export interface ProfileForOg {
+  id: string;
   name: string;
-  countryId?: string;
-  countryName?: string;
-  countryIso2?: string;
-  wps: number;
-  globalWpsRank: number | null;
+  countryName: string | null;
+  countryIso2: string | null;
+  wpsScore: number;
+  wpsRank: number | null;
   totalRanked: number;
-  generatedAt: string;
+  /** Alias for OG compatibility */
+  wps: number;
+  /** Alias for OG compatibility */
+  globalWpsRank: number | null;
 }
 
-export interface ProfileBreakdownItem {
-  eventId: string;
-  worldRank: number;
-  weight: number;
-  eventScore: number;
-}
-
-export interface ProfileCalculation {
-  sumEventScores: number;
-  maxPossible: number;
-  eventsParticipated: number;
-}
-
-export interface ProfileBreakdown {
-  sumEventScores: number;
-  maxPossible: number;
-  eventsParticipated: number;
-  breakdown: ProfileBreakdownItem[];
-}
-
-function getGeneratedAt(): string {
-  const lb = getGlobalLeaderboardCache();
-  if (lb?.generatedAt) return lb.generatedAt;
-  return new Date().toISOString();
-}
-
-/**
- * Look up profile by WCA ID. Streams from Persons.tsv + in-memory WPS/rank.
- */
-export async function getProfileByPersonId(personId: string): Promise<ProfileCacheResult | null> {
+export async function getProfileByPersonId(personId: string): Promise<ProfileForOg | null> {
   const normalizedId = personId?.trim().toUpperCase();
   if (!normalizedId) return null;
 
-  const person = await lookupPerson(normalizedId);
+  const person = await findPersonById(normalizedId);
   if (!person) return null;
 
-  let wps = 0;
-  const wpsIndex = getWpsIndex();
-  const wpsEntry = wpsIndex[normalizedId];
-  if (wpsEntry != null && typeof wpsEntry.wps === 'number') wps = wpsEntry.wps;
-
-  let globalWpsRank: number | null = null;
-  let totalRanked = 0;
-  const rankData = getWpsRankIndex();
-  if (rankData) {
-    const rank = rankData.ranks?.[normalizedId];
-    if (typeof rank === 'number' && rank >= 1) globalWpsRank = rank;
-    if (typeof rankData.totalRanked === 'number' && rankData.totalRanked >= 0) {
-      totalRanked = rankData.totalRanked;
-    } else if (rankData.ranks && typeof rankData.ranks === 'object') {
-      totalRanked = Object.keys(rankData.ranks).length;
-    }
-  }
+  const totalRankedRaw = await getMetaValue('totalRanked');
+  const totalRanked =
+    totalRankedRaw != null && totalRankedRaw !== ''
+      ? Math.max(0, Number.parseInt(String(totalRankedRaw), 10)) || 0
+      : 0;
+  const profile = toProfileResponse(person);
 
   return {
-    personId: normalizedId,
-    name: person.name,
-    countryId: person.countryId,
-    countryName: person.countryName,
-    countryIso2: person.countryIso2,
-    wps,
-    globalWpsRank,
+    ...profile,
     totalRanked,
-    generatedAt: getGeneratedAt(),
+    wps: person.score,
+    globalWpsRank: person.rank,
   };
-}
-
-/** Load WPS breakdown for a person. Streams from wps.breakdown.json. */
-export async function getProfileBreakdownByPersonId(personId: string): Promise<ProfileBreakdown | null> {
-  const normalizedId = personId?.trim();
-  if (!normalizedId) return null;
-  return lookupBreakdown(normalizedId) as Promise<ProfileBreakdown | null>;
 }
