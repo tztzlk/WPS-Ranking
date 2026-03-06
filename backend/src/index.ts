@@ -86,6 +86,5 @@ if (publicPath) {
 app.use(errorHandler);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`WPS Ranking API running on 0.0.0.0:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`WPS Ranking API running on port ${PORT}`);
 });
