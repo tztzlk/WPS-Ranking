@@ -5,14 +5,14 @@ const router = Router();
 
 /**
  * GET /api/countries
- * Returns all countries present in the dataset (from persons index), sorted by name.
+ * Returns all countries present in the dataset (from persons table), sorted by name.
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    const list = getCountriesList();
-    if (!list) {
+    const list = await getCountriesList();
+    if (!list.length) {
       res.status(503).json({
-        error: 'Persons index not available. Run npm run leaderboard:update',
+        error: 'Countries data not available',
       });
       return;
     }

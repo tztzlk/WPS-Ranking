@@ -1,21 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { buildProfileResponse } from './profile';
+import { getProfileByWcaId } from './profile';
+import { isValidWCAId } from '../services/personDb';
 
 const router = Router();
 
-const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
-
-function isValidWCAId(id: string): boolean {
-  return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
-}
-
-/**
- * GET /api/compare?left=<WCA_ID1>&right=<WCA_ID2>
- * Returns side-by-side profile data for both cubers.
- */
 router.get('/', async (req: Request, res: Response) => {
-  const left = (req.query.left as string)?.trim();
-  const right = (req.query.right as string)?.trim();
+  const left = ((req.query.left ?? req.query.id1) as string)?.trim();
+  const right = ((req.query.right ?? req.query.id2) as string)?.trim();
 
   if (!left || !right) {
     res.status(400).json({ error: 'Query parameters "left" and "right" (WCA IDs) are required' });
@@ -31,8 +22,8 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   const [leftProfile, rightProfile] = await Promise.all([
-    buildProfileResponse(left, false),
-    buildProfileResponse(right, false),
+    getProfileByWcaId(left),
+    getProfileByWcaId(right),
   ]);
 
   if (!leftProfile) {

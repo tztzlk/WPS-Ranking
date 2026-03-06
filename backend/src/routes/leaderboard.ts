@@ -28,10 +28,10 @@ router.get('/', async (req: Request, res: Response) => {
     let data: LeaderboardResponse | null;
 
     if (!country) {
-      data = getGlobalLeaderboard(validLimit);
+      data = await getGlobalLeaderboard(validLimit);
       if (!data) {
         res.status(503).json({
-          error: 'Leaderboard cache not generated. Run npm run leaderboard:update',
+          error: 'Leaderboard data unavailable',
         });
         return;
       }
@@ -39,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
       data = await getCountryLeaderboard(country, validLimit);
       if (!data) {
         res.status(503).json({
-          error: 'Leaderboard indexes not available. Run npm run leaderboard:update',
+          error: 'Country leaderboard unavailable',
         });
         return;
       }

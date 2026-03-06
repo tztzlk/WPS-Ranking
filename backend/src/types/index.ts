@@ -1,3 +1,22 @@
+/** Search API: one item in the results array */
+export interface SearchResultItem {
+  id: string;
+  name: string;
+  countryIso2: string | null;
+  wpsScore: number;
+  wpsRank: number | null;
+}
+
+/** Profile API response */
+export interface ProfileResponse {
+  id: string;
+  name: string;
+  countryName: string | null;
+  countryIso2: string | null;
+  wpsScore: number;
+  wpsRank: number | null;
+}
+
 // WPS Event Weights (based on popularity and difficulty)
 export const EVENT_WEIGHTS: Record<string, number> = {
   '333': 1.0,      // 3x3x3 Cube - baseline
