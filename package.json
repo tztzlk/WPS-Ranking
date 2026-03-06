@@ -22,6 +22,7 @@
   "author": "WPS Ranking Team",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^25.3.5",
     "concurrently": "^8.2.2"
   }
 }
