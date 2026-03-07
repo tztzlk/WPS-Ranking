@@ -6,7 +6,9 @@ export interface CountryItem {
   name: string;
 }
 
+const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
 let countriesListCache: CountryItem[] | null = null;
+let countriesCacheAt = 0;
 
 function parseTotalRanked(value: string | null): number {
   if (value == null || value === '') return 0;
@@ -18,7 +20,9 @@ function parseTotalRanked(value: string | null): number {
  * Returns all distinct countries from persons table, sorted by name.
  */
 export async function getCountriesList(): Promise<CountryItem[]> {
-  if (countriesListCache) return countriesListCache;
+  if (countriesListCache && Date.now() - countriesCacheAt < COUNTRIES_CACHE_TTL_MS) {
+    return countriesListCache;
+  }
 
   const rows = await prisma.person.findMany({
     where: { countryIso2: { not: null }, countryName: { not: null } },
@@ -31,6 +35,7 @@ export async function getCountriesList(): Promise<CountryItem[]> {
     .map((r) => ({ iso2: r.countryIso2, name: r.countryName }));
   list.sort((a, b) => a.name.localeCompare(b.name));
   countriesListCache = list;
+  countriesCacheAt = Date.now();
   return countriesListCache;
 }
 

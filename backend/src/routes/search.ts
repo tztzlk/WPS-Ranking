@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { searchPersons } from '../services/personDb';
-import type { SearchResultItem } from '../types';
 
 const router = Router();
 
@@ -13,8 +12,8 @@ router.get('/', async (req, res) => {
       return;
     }
 
-    const results: SearchResultItem[] = await searchPersons(q, 20);
-    res.json(results);
+    const results = await searchPersons(q, 20);
+    res.json({ results });
   } catch (err) {
     console.error('[search] error:', err);
     res.status(500).json({ error: 'Search failed' });

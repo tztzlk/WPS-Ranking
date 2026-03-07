@@ -58,14 +58,6 @@ export async function findPersonById(personId: string): Promise<PersonWithScoreR
 
 const SEARCH_LIMIT = 20;
 
-/**
- * Search persons by:
- * - name (nameLower contains query, case-insensitive)
- * - exact WCA ID (if query is a valid WCA ID)
- * - partial WCA ID (id contains query, uppercase)
- * - country name (countryName contains query, case-insensitive)
- * Returns at most 20 results, sorted by wpsScore desc, wpsRank asc (nulls last), id asc.
- */
 export async function searchPersons(
   query: string,
   limit: number = SEARCH_LIMIT,
@@ -104,7 +96,7 @@ export async function searchPersons(
   });
 
   return persons.map((p) => ({
-    id: p.id,
+    wcaId: p.id,
     name: p.name,
     countryIso2: p.countryIso2,
     wpsScore: p.wpsScore?.score ?? 0,
@@ -112,50 +104,30 @@ export async function searchPersons(
   }));
 }
 
-export async function getPersonsByCountry(
-  countryIso2: string,
-): Promise<PersonWithScoreRank[]> {
-  const iso2 = countryIso2.trim().toUpperCase();
-  const persons = await prisma.person.findMany({
-    where: {
-      countryIso2: iso2,
-      wpsScore: { isNot: null },
-    },
-    orderBy: { wpsScore: { score: 'desc' } },
-    include: {
-      wpsScore: true,
-      wpsRank: true,
-    },
-  });
-  return persons.map((p) =>
-    toPersonWithScoreRank({
-      id: p.id,
-      name: p.name,
-      countryId: p.countryId,
-      countryName: p.countryName,
-      countryIso2: p.countryIso2,
-      wpsScore: p.wpsScore ? { score: p.wpsScore.score } : null,
-      wpsRank: p.wpsRank ? { rank: p.wpsRank.rank } : null,
-    }),
-  );
-}
-
-export async function getTotalRanked(): Promise<number> {
-  return prisma.wpsRank.count();
-}
-
 export async function getMetaValue(key: string): Promise<string | null> {
   const row = await prisma.meta.findUnique({ where: { key } });
   return row?.value ?? null;
 }
 
-export function toProfileResponse(person: PersonWithScoreRank): ProfileResponse {
+export function toProfileResponse(
+  person: PersonWithScoreRank,
+  extra: {
+    totalRanked: number;
+    countryRank: number | null;
+    countryTotal: number | null;
+    lastUpdated: string;
+  },
+): ProfileResponse {
   return {
-    id: person.id,
+    wcaId: person.id,
     name: person.name,
     countryName: person.countryName,
     countryIso2: person.countryIso2,
     wpsScore: person.score,
-    wpsRank: person.rank,
+    globalWpsRank: person.rank,
+    totalRanked: extra.totalRanked,
+    countryRank: extra.countryRank,
+    countryTotal: extra.countryTotal,
+    lastUpdated: extra.lastUpdated,
   };
 }

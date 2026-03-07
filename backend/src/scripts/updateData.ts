@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { execSync } from 'child_process';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { generateTop100Leaderboard } from '../services/leaderboardTop100';
+import { generateTop100Leaderboard } from './leaderboardTop100';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 

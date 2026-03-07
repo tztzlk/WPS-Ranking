@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import ReactCountryFlag from 'react-country-flag';
 import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardEntry } from '../types';
+import { LeaderboardCacheItem } from '../types';
 
 export function HomePage() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardCacheItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,27 +18,17 @@ export function HomePage() {
     try {
       setLoading(true);
       const result = await apiService.getLeaderboardTop100(5);
-      setLeaderboard(result.items.map((item, index) => ({
-        rank: item.rank ?? index + 1,
-        wcaId: item.personId,
-        name: item.name,
-        country: item.countryName ?? item.countryId ?? '',
-        countryIso2: item.countryIso2,
-        countryName: item.countryName,
-        wpsScore: item.wps,
-        totalEvents: 0,
-      })));
-    } catch (err) {
-      setError('Failed to load leaderboard');
-      console.error('Error loading leaderboard:', err);
+      setLeaderboard(result.items);
+    } catch (err: unknown) {
+      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
+      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { data?: { error?: string } } }) : null;
+      setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load leaderboard');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatScore = (score: number) => {
-    return score.toFixed(2);
-  };
+  const formatScore = (score: number) => score.toFixed(2);
 
   return (
     <div className="space-y-8">
@@ -83,7 +73,7 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Leaderboard — Top 5 only for fast load */}
+      {/* Leaderboard — Top 5 */}
       <div className="card">
         <h2 className="text-2xl font-bold text-white mb-6">Top 5 Cubers Worldwide</h2>
 
@@ -113,7 +103,7 @@ export function HomePage() {
                 </thead>
                 <tbody>
                   {leaderboard.map((cuber, index) => (
-                    <tr key={cuber.wcaId} className="border-b border-gray-700 hover:bg-gray-800/50">
+                    <tr key={cuber.personId} className="border-b border-gray-700 hover:bg-gray-800/50">
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-2">
                           {index < 3 ? (
@@ -124,29 +114,29 @@ export function HomePage() {
                             }`} />
                           ) : (
                             <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-gray-400">
-                              {cuber.rank}
+                              {cuber.rank ?? index + 1}
                             </span>
                           )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <Link to={`/profile/${cuber.wcaId}`} className="font-medium text-white hover:text-green-400">
+                        <Link to={`/profile/${cuber.personId}`} className="font-medium text-white hover:text-green-400">
                           {cuber.name}
                         </Link>
-                        <div className="text-sm text-gray-400">{cuber.wcaId}</div>
+                        <div className="text-sm text-gray-400">{cuber.personId}</div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           {cuber.countryIso2 ? (
                             <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
                           ) : (
-                            <span className="text-gray-500">🏳️</span>
+                            <span className="text-gray-500">--</span>
                           )}
-                          <span className="text-gray-300">{cuber.countryName ?? cuber.country ?? '—'}</span>
+                          <span className="text-gray-300">{cuber.countryName ?? cuber.countryId ?? '--'}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="font-bold text-green-400">{formatScore(cuber.wpsScore)}</div>
+                        <div className="font-bold text-green-400">{formatScore(cuber.wps)}</div>
                       </td>
                     </tr>
                   ))}

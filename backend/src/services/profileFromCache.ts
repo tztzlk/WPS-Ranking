@@ -1,4 +1,4 @@
-import { findPersonById, toProfileResponse, getMetaValue } from './personDb';
+import { findPersonById, getMetaValue } from './personDb';
 
 /** Profile result for OG/ogMeta (includes totalRanked for rank text). */
 export interface ProfileForOg {
@@ -9,9 +9,7 @@ export interface ProfileForOg {
   wpsScore: number;
   wpsRank: number | null;
   totalRanked: number;
-  /** Alias for OG compatibility */
   wps: number;
-  /** Alias for OG compatibility */
   globalWpsRank: number | null;
 }
 
@@ -27,10 +25,14 @@ export async function getProfileByPersonId(personId: string): Promise<ProfileFor
     totalRankedRaw != null && totalRankedRaw !== ''
       ? Math.max(0, Number.parseInt(String(totalRankedRaw), 10)) || 0
       : 0;
-  const profile = toProfileResponse(person);
 
   return {
-    ...profile,
+    id: person.id,
+    name: person.name,
+    countryName: person.countryName,
+    countryIso2: person.countryIso2,
+    wpsScore: person.score,
+    wpsRank: person.rank,
     totalRanked,
     wps: person.score,
     globalWpsRank: person.rank,

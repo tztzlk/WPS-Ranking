@@ -15,37 +15,29 @@ export function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const executeSearch = useCallback(async (q: string) => {
     if (q.trim().length < MIN_QUERY_LENGTH) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setLoading(true);
     setError(null);
     setHasSearched(true);
 
     try {
-      const response = await apiService.searchCubers(q.trim());
-      if (import.meta.env.DEV) {
-        console.log('[Search] response', response);
-      }
-      setResults(response.results ?? []);
+      const data = await apiService.searchCubers(q.trim(), 20, controller.signal);
+      setResults(data);
     } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
       const ax = err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { status: number; data?: { error?: string } } })
+        ? (err as { response?: { data?: { error?: string } } })
         : null;
-      const status = ax?.response?.status;
-      const message = ax?.response?.data?.error;
-
-      if (status === 404 && message === 'Person not found') {
-        setError('Person not found');
-      } else if (status === 400 && message) {
-        setError(message);
-      } else if (!ax?.response) {
-        setError('Server unavailable. Check VITE_API_BASE_URL and CORS settings.');
-      } else {
-        setError(`Server error (${status}). Check VITE_API_BASE_URL and CORS settings.`);
-        console.error('Search error:', err);
-      }
+      setError(userMsg ?? ax?.response?.data?.error ?? 'Search failed');
       setResults([]);
     } finally {
       setLoading(false);
@@ -59,24 +51,22 @@ export function SearchPage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, executeSearch]);
 
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (debounceRef.current) clearTimeout(debounceRef.current);
     executeSearch(query);
   };
 
-  const formatScore = (score: number) => {
-    return score.toFixed(2);
-  };
+  const formatScore = (score: number) => score.toFixed(2);
 
-  const isValidWCAId = (input: string) => {
-    const wcaIdRegex = /^\d{4}[A-Z]{4}\d{2}$/;
-    return wcaIdRegex.test(input);
-  };
+  const isValidWCAId = (input: string) => /^\d{4}[A-Z]{4}\d{2}$/.test(input);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
           Search <span className="text-green-400">Cubers</span>
@@ -86,7 +76,6 @@ export function SearchPage() {
         </p>
       </div>
 
-      {/* Search Form */}
       <div className="card">
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="flex space-x-4">
@@ -119,7 +108,6 @@ export function SearchPage() {
         </form>
       </div>
 
-      {/* Search Results */}
       {hasSearched && (
         <div className="card">
           <h2 className="text-xl font-bold text-white mb-4">
@@ -162,11 +150,12 @@ export function SearchPage() {
                         <h3 className="text-lg font-semibold text-white">{cuber.name}</h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-400">
                           <span className="font-mono">{cuber.wcaId}</span>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            <CountryFlag iso2={cuber.countryIso2} name={cuber.countryName ?? cuber.country} />
-                            <span>{cuber.countryName ?? cuber.country ?? '—'}</span>
-                          </div>
+                          {cuber.countryIso2 && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              <CountryFlag iso2={cuber.countryIso2} />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -175,13 +164,6 @@ export function SearchPage() {
                         {formatScore(cuber.wpsScore)}
                       </div>
                       <div className="text-sm text-gray-400">WPS Score</div>
-                      {(cuber.totalRanked ?? 0) > 0 && (
-                        <div className="text-sm text-gray-300 mt-1">
-                          Global WPS Rank: {cuber.globalWpsRank != null && cuber.globalWpsRank > 0
-                            ? `#${cuber.globalWpsRank.toLocaleString()}`
-                            : '—'} of {(cuber.totalRanked ?? 0).toLocaleString()}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="mt-4 flex justify-end">
@@ -199,7 +181,6 @@ export function SearchPage() {
         </div>
       )}
 
-      {/* Search Tips */}
       <div className="card">
         <h3 className="text-lg font-semibold text-white mb-4">Search Tips</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
