@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import dotenv from 'dotenv';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
