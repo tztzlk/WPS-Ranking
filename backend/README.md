@@ -21,30 +21,46 @@ npm install
 ### 2. Set up environment variables
 
 ```bash
-cp env.example .env
+cp .env.example .env
+# Then edit .env with your credentials
 ```
 
-Required variables in `.env`:
+#### Required at runtime
 
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string (pooled, port 6543 for Supabase) with `?pgbouncer=true` |
-| `DIRECT_DATABASE_URL` | Direct PostgreSQL connection (port 5432) used for migrations |
 | `PORT` | Server port (default: 5000) |
 | `NODE_ENV` | `development` or `production` |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
 
-### 3. Run database migration
+#### Required at build / CLI time
+
+| Variable | Description |
+|---|---|
+| `DIRECT_DATABASE_URL` | Direct PostgreSQL connection (port 5432, `?sslmode=require`). Used by `prisma generate`, `prisma migrate`, `prisma db push`, and `import:data`. |
+| `DATABASE_URL` | Also required at build time because `postinstall` runs `prisma generate` via `prisma.config.ts`. |
+
+> **Note:** Both `DATABASE_URL` and `DIRECT_DATABASE_URL` must be available when `npm install` / `npm ci` runs, because `postinstall` executes `prisma generate` which loads `prisma.config.ts` and validates both variables. If deploying on a platform where secrets are only available at runtime, either set them as build-time env vars or remove the `postinstall` script and run `prisma generate` separately.
+
+#### Optional
+
+| Variable | Description |
+|---|---|
+| `PUBLIC_PATH` | Path to frontend build for same-origin serving |
+| `SITE_URL` | Public base URL for OG meta tags (fallback: `http://localhost:PORT`) |
+| `CACHE_DIR` | Override cache directory for pipeline scripts (default: `./cache`) |
+| `WCA_EXPORT_URL` | Override WCA export download URL |
+
+### 3. Apply database schema
+
+This project uses `prisma db push` (schemaless migrations). No migrations directory is needed.
 
 ```bash
-npx prisma migrate dev --name init_prisma
+npx prisma db push
 ```
 
-For production:
-
-```bash
-npx prisma migrate deploy
-```
+This synchronizes the Prisma schema with the database without creating migration files.
 
 ### 4. Import data into PostgreSQL
 
@@ -80,7 +96,7 @@ The API will be available at `http://localhost:5000`.
 ### Profiles
 - `GET /api/profile/:wcaId` - Get cuber profile by WCA ID
 - `GET /api/profile?personId=ID` - Get profile by query param
-- Query parameters: `includeBreakdown=1` for event breakdown
+- Returns: WCA ID, name, country, WPS score, global rank, country rank, last updated
 
 ### Compare
 - `GET /api/compare?left=ID1&right=ID2` - Compare two cubers
@@ -102,11 +118,13 @@ The API will be available at `http://localhost:5000`.
 | `npm run dev` | Start dev server with hot reload |
 | `npm run build` | Compile TypeScript |
 | `npm start` | Run compiled JS |
-| `npm run prisma:generate` | Regenerate Prisma client |
-| `npm run prisma:migrate` | Run migrations (dev) |
-| `npm run prisma:deploy` | Run migrations (production) |
-| `npm run import:data` | Import TSV/JSON data into PostgreSQL |
-| `npm run update:data` | Download and process WCA export |
+| `npm run db:push` | Apply Prisma schema to database (primary schema sync method) |
+| `npm run db:generate` | Regenerate Prisma client |
+| `npm run db:validate` | Validate Prisma schema |
+| `npm run update:data` | Download and process WCA export into JSON indexes |
+| `npm run import:data` | Import JSON indexes + Persons.tsv into PostgreSQL |
+| `npm run leaderboard:update` | Regenerate leaderboard JSON from existing TSVs |
+| `npm run debug:person` | Look up a person by WCA ID (debug script) |
 
 ## Tech Stack
 

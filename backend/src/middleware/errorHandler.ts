@@ -27,10 +27,3 @@ export const errorHandler = (
     timestamp: new Date().toISOString()
   });
 };
-
-export const createError = (message: string, statusCode: number = 500): ApiError => {
-  const error: ApiError = new Error(message);
-  error.statusCode = statusCode;
-  error.isOperational = true;
-  return error;
-};

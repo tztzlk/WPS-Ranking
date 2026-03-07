@@ -38,7 +38,7 @@ echo "✅ All dependencies installed successfully!"
 # Create environment file for backend
 if [ ! -f "backend/.env" ]; then
     echo "📝 Creating backend environment file..."
-    cp backend/env.example backend/.env
+    cp backend/.env.example backend/.env
     echo "⚠️  Please edit backend/.env with your configuration"
 fi
 

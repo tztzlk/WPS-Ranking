@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { findPersonById, toProfileResponse, isValidWCAId } from '../services/personDb';
+import { findPersonById, toProfileResponse, isValidWCAId, getMetaValue } from '../services/personDb';
+import { getCountryRank } from '../services/leaderboardCache';
 import type { ProfileResponse } from '../types';
 
 const router = Router();
@@ -39,7 +40,23 @@ router.get('/:wcaId', async (req, res) => {
 export async function getProfileByWcaId(wcaId: string): Promise<ProfileResponse | null> {
   const person = await findPersonById(wcaId);
   if (!person) return null;
-  return toProfileResponse(person);
+
+  const [totalRankedRaw, generatedAt, countryRankData] = await Promise.all([
+    getMetaValue('totalRanked'),
+    getMetaValue('generatedAt'),
+    person.countryIso2
+      ? getCountryRank(person.id, person.countryIso2)
+      : Promise.resolve(null),
+  ]);
+
+  const totalRanked = totalRankedRaw != null ? Math.max(0, Math.floor(Number(totalRankedRaw)) || 0) : 0;
+
+  return toProfileResponse(person, {
+    totalRanked,
+    countryRank: countryRankData?.countryRank ?? null,
+    countryTotal: countryRankData?.countryTotal ?? null,
+    lastUpdated: generatedAt ?? new Date().toISOString(),
+  });
 }
 
 export { router as profileRoutes };

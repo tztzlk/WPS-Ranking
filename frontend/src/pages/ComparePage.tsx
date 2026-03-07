@@ -19,7 +19,7 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
       : '—';
   const countryRankText =
     profile.countryRank != null && profile.countryTotal != null
-      ? `#${profile.countryRank.toLocaleString()} in ${profile.countryName ?? profile.country ?? 'country'}`
+      ? `#${profile.countryRank.toLocaleString()} in ${profile.countryName ?? 'country'}`
       : '—';
 
   return (
@@ -32,10 +32,10 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
         <div className="min-w-0">
           <h2 className="text-xl font-bold text-white truncate">{profile.name}</h2>
           <div className="flex items-center gap-2 text-gray-400 mt-0.5">
-            <CountryFlag iso2={profile.countryIso2} name={profile.countryName ?? profile.country} />
+            <CountryFlag iso2={profile.countryIso2} name={profile.countryName} />
             <span className="font-mono text-sm">{profile.wcaId}</span>
-            {(profile.countryName ?? profile.country) && (
-              <span className="text-gray-400 truncate">({profile.countryName ?? profile.country})</span>
+            {profile.countryName && (
+              <span className="text-gray-400 truncate">({profile.countryName})</span>
             )}
           </div>
         </div>

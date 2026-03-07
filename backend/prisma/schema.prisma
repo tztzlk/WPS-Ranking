@@ -29,6 +29,7 @@ model WpsScore {
 
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
+  @@index([score(sort: Desc)], map: "idx_wps_score_desc")
   @@map("wps_scores")
 }
 
@@ -38,6 +39,7 @@ model WpsRank {
 
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
+  @@index([rank], map: "idx_wps_rank_asc")
   @@map("wps_ranks")
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
@@ -26,11 +26,11 @@ export function LeaderboardPage() {
     { countryIso2: ALL, countryName: 'All countries' },
   ]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (country: string) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await apiService.getLeaderboardTop100(100);
+      const result = await apiService.getLeaderboardTop100(100, country === ALL ? undefined : country);
       setData(result);
     } catch (err: unknown) {
       const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
@@ -39,7 +39,7 @@ export function LeaderboardPage() {
         (err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
             ((err as { response?: { status?: number } }).response?.status === 503
-              ? 'Leaderboard cache not generated. Run npm run leaderboard:update on the backend.'
+              ? 'Leaderboard data unavailable. Run the data pipeline on the backend.'
               : 'Failed to load leaderboard')
           : 'Failed to load leaderboard');
       setError(message);
@@ -50,7 +50,7 @@ export function LeaderboardPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    loadData(selectedCountry);
     apiService.getCountries().then(
       (list) =>
         setCountryOptions([
@@ -59,15 +59,7 @@ export function LeaderboardPage() {
         ]),
       () => {}
     );
-  }, [loadData]);
-
-  const filteredItems = useMemo<LeaderboardCacheItem[]>(() => {
-    if (!data?.items) return [];
-    if (selectedCountry === ALL) return data.items;
-    return data.items.filter(
-      (item) => item.countryIso2?.toUpperCase() === selectedCountry.toUpperCase()
-    );
-  }, [data, selectedCountry]);
+  }, [loadData, selectedCountry]);
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
@@ -82,14 +74,15 @@ export function LeaderboardPage() {
     }
   };
 
+  const items: LeaderboardCacheItem[] = data?.items ?? [];
   const generatedAt = data?.generatedAt ?? '';
   const isFiltered = selectedCountry !== ALL;
   const selectedCountryName =
     countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
   const pageTitle = isFiltered ? `WPS Leaderboard — ${selectedCountryName}` : 'Global WPS Leaderboard';
-  const subtitle = isFiltered
-    ? `${filteredItems.length} cubers from ${selectedCountryName} in global top 100 · Updated: ${formatGeneratedAt(generatedAt)}`
-    : `Updated: ${formatGeneratedAt(generatedAt)} · ${filteredItems.length} cubers`;
+  const subtitle = generatedAt
+    ? `Updated: ${formatGeneratedAt(generatedAt)} · ${items.length} cubers`
+    : `${items.length} cubers`;
 
   if (loading) {
     return (
@@ -109,7 +102,7 @@ export function LeaderboardPage() {
         <h1 className="text-3xl font-bold text-white">Top 100 WPS Leaderboard</h1>
         <div className="card text-center py-12">
           <p className="text-red-400">{error ?? 'Failed to load data'}</p>
-          <button type="button" onClick={loadData} className="btn-primary mt-4">
+          <button type="button" onClick={() => loadData(selectedCountry)} className="btn-primary mt-4">
             Try Again
           </button>
         </div>
@@ -146,9 +139,9 @@ export function LeaderboardPage() {
       </div>
 
       <div className="card overflow-hidden p-0">
-        {filteredItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
-            No ranked cubers from this country in the global top 100
+            No ranked cubers found{isFiltered ? ` from ${selectedCountryName}` : ''}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -163,8 +156,8 @@ export function LeaderboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((row) => {
-                  const displayRank = row.rank ?? 0;
+                {items.map((row, index) => {
+                  const displayRank = row.rank ?? row.countryRank ?? index + 1;
                   return (
                     <tr
                       key={row.personId}

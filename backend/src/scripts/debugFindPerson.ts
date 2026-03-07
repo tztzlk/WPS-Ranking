@@ -1,4 +1,8 @@
+import path from 'path';
+import dotenv from 'dotenv';
 import { findPersonById } from '../services/personDb';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 async function main() {
   const targetId =

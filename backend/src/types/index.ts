@@ -1,6 +1,6 @@
 /** Search API: one item in the results array */
 export interface SearchResultItem {
-  id: string;
+  wcaId: string;
   name: string;
   countryIso2: string | null;
   wpsScore: number;
@@ -9,36 +9,39 @@ export interface SearchResultItem {
 
 /** Profile API response */
 export interface ProfileResponse {
-  id: string;
+  wcaId: string;
   name: string;
   countryName: string | null;
   countryIso2: string | null;
   wpsScore: number;
-  wpsRank: number | null;
+  globalWpsRank: number | null;
+  totalRanked: number;
+  countryRank: number | null;
+  countryTotal: number | null;
+  lastUpdated: string;
 }
 
-// WPS Event Weights (based on popularity and difficulty)
 export const EVENT_WEIGHTS: Record<string, number> = {
-  '333': 1.0,      // 3x3x3 Cube - baseline
-  '222': 0.8,      // 2x2x2 Cube
-  '444': 0.9,      // 4x4x4 Cube
-  '555': 0.9,      // 5x5x5 Cube
-  '666': 0.7,      // 6x6x6 Cube
-  '777': 0.7,      // 7x7x7 Cube
-  '333bf': 0.6,    // 3x3x3 Blindfolded
-  '333fm': 0.5,    // 3x3x3 Fewest Moves
-  '333oh': 0.8,    // 3x3x3 One-Handed
-  'clock': 0.6,    // Clock
-  'minx': 0.7,     // Megaminx
-  'pyram': 0.7,    // Pyraminx
-  'skewb': 0.7,    // Skewb
-  'sq1': 0.6,      // Square-1
-  '444bf': 0.4,    // 4x4x4 Blindfolded
-  '555bf': 0.3,    // 5x5x5 Blindfolded
-  '333mbf': 0.3,   // 3x3x3 Multi-Blind
+  '333': 1.0,
+  '222': 0.8,
+  '444': 0.9,
+  '555': 0.9,
+  '666': 0.7,
+  '777': 0.7,
+  '333bf': 0.6,
+  '333fm': 0.5,
+  '333oh': 0.8,
+  'clock': 0.6,
+  'minx': 0.7,
+  'pyram': 0.7,
+  'skewb': 0.7,
+  'sq1': 0.6,
+  '444bf': 0.4,
+  '555bf': 0.3,
+  '333mbf': 0.3,
 };
 
-/** MAX = Σ (w_e × (1/ln(2)) × 10). Matches EventScore when R_e = 1 for all events. */
+/** MAX = sum(w_e * (1/ln(2)) * 10). Matches EventScore when R_e = 1 for all events. */
 export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
   (sum, w) => sum + w * (1 / Math.log(2)) * 10,
   0,

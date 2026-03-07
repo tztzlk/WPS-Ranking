@@ -3,7 +3,8 @@ import { PrismaClient } from '../generated/prisma/client';
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient(): PrismaClient {
-  // Plain PrismaClient uses DATABASE_URL from env; generated types require adapter | accelerateUrl, runtime accepts neither.
+  // Prisma 7: datasource URL is set in prisma.config.ts for CLI operations.
+  // At runtime, PrismaClient reads DATABASE_URL from process.env automatically.
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   } as any);

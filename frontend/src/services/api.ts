@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { LeaderboardEntry, WPSProfile, SearchResult, AboutData, ApiResponse, LeaderboardCacheResponse } from '../types';
+import { WPSProfile, SearchResult, AboutData, LeaderboardCacheResponse } from '../types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
@@ -15,17 +15,6 @@ const api = axios.create({
   timeout: 30000,
 });
 
-api.interceptors.request.use(
-  (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
-
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -40,7 +29,6 @@ api.interceptors.response.use(
 
     if (isRetryable) {
       config._retryCount = retryCount + 1;
-      console.log(`Retrying request (${config._retryCount}/${MAX_RETRIES}) after ${RETRY_DELAY_MS}ms...`);
       await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
       return api(config);
     }
@@ -50,19 +38,11 @@ api.interceptors.response.use(
     } else if (error.response?.data && typeof (error.response.data as Record<string, unknown>).error === 'string') {
       (error as AxiosError & { userMessage?: string }).userMessage = (error.response.data as Record<string, unknown>).error as string;
     }
-    console.error('API Response Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
 export const apiService = {
-  async getLeaderboard(limit: number = 1000, offset: number = 0): Promise<ApiResponse<LeaderboardEntry>> {
-    const response = await api.get('/leaderboard', {
-      params: { limit, offset }
-    });
-    return response.data;
-  },
-
   async getCountries(): Promise<{ iso2: string; name: string }[]> {
     const response = await api.get<{ iso2: string; name: string }[]>('/countries');
     return response.data;
@@ -75,21 +55,19 @@ export const apiService = {
     return response.data;
   },
 
-  async getProfile(wcaId: string, includeBreakdown = false): Promise<WPSProfile> {
-    const response = await api.get(`/profile/${wcaId}`, {
-      params: includeBreakdown ? { includeBreakdown: 1 } : undefined,
-    });
+  async getProfile(wcaId: string): Promise<WPSProfile> {
+    const response = await api.get<WPSProfile>(`/profile/${wcaId}`);
     return response.data;
   },
 
-  async searchCubers(query: string, limit: number = 20): Promise<ApiResponse<SearchResult>> {
+  async searchCubers(query: string, limit: number = 20, signal?: AbortSignal): Promise<SearchResult[]> {
     const trimmed = query.trim();
     const isWcaId = /^\d{4}[A-Z]{4}\d{2}$/.test(trimmed);
     const params: Record<string, string | number> = isWcaId
       ? { wcaId: trimmed, limit }
       : { q: trimmed, limit };
-    const response = await api.get<ApiResponse<SearchResult>>('/search', { params });
-    return response.data;
+    const response = await api.get<{ results: SearchResult[] }>('/search', { params, signal });
+    return response.data.results;
   },
 
   async getCompare(left: string, right: string): Promise<{ left: WPSProfile; right: WPSProfile }> {
