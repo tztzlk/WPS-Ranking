@@ -2,29 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from '../generated/prisma';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-let connectionString =
+const connectionString =
   process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL ?? '';
 if (!connectionString) {
   throw new Error('DATABASE_URL or DIRECT_DATABASE_URL must be set');
 }
-// Strip sslmode so Pool uses our ssl config (connection-string sslmode overrides Pool.ssl)
-connectionString = connectionString
-  .replace(/\?sslmode=[^&]+&?/, '?')
-  .replace(/&sslmode=[^&]+/, '')
-  .replace(/\?$/, '');
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
-  max: 5,
+
+const prisma = new PrismaClient({
+  datasources: { db: { url: connectionString } },
 });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const BATCH_SIZE = 5000;
 
