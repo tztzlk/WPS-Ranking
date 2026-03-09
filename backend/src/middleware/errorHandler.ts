@@ -21,6 +21,11 @@ export const errorHandler = (
     stack: error.stack
   });
 
+   if (res.headersSent) {
+     // Delegate to Express' default error handling if headers are already sent.
+     return next(error);
+   }
+
   res.status(statusCode).json({
     error: message,
     status: statusCode,
