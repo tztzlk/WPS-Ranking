@@ -92,7 +92,7 @@ const globalOrderBy = [
 ];
 
 /**
- * Returns global top-N from cache, ordered by WPS score desc, rank asc, id asc.
+ * Returns global top-N, ordered by WPS score desc, rank asc, id asc.
  */
 export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalLeaderboardResponse | null> {
   const effectiveLimit = Math.max(1, limit);
@@ -142,7 +142,7 @@ export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalL
 }
 
 /**
- * Returns country rank and total for a person from cache.
+ * Returns country rank and total for a person.
  */
 export async function getCountryRank(
   personId: string,
@@ -204,7 +204,7 @@ const countryOrderBy = [
 ];
 
 /**
- * Returns top N cubers for a country by WPS from cache.
+ * Returns top N cubers for a country by WPS.
  */
 export async function getCountryLeaderboard(
   countryIso2: string,
@@ -212,6 +212,8 @@ export async function getCountryLeaderboard(
 ): Promise<CountryLeaderboardResponse | null> {
   const iso2Upper = countryIso2.trim().toUpperCase();
   if (!iso2Upper) return null;
+
+  const effectiveLimit = Math.max(1, limit);
 
   const [persons, totalRankedRaw, generatedAtMeta] = await Promise.all([
     prisma.person.findMany({
@@ -226,6 +228,7 @@ export async function getCountryLeaderboard(
         wpsRank: true,
       },
       orderBy: countryOrderBy,
+      take: effectiveLimit,
     }),
     getMetaValue('totalRanked'),
     getMetaValue('generatedAt'),
@@ -235,10 +238,7 @@ export async function getCountryLeaderboard(
 
   const totalRanked = parseTotalRanked(totalRankedRaw);
 
-  const effectiveLimit = Math.max(1, Math.min(limit, persons.length));
-  const limited = persons.slice(0, effectiveLimit);
-
-  const items: CountryLeaderboardItem[] = limited.map((p, index) => ({
+  const items: CountryLeaderboardItem[] = persons.map((p, index) => ({
     countryRank: index + 1,
     personId: p.id,
     name: p.name,
