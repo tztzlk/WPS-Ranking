@@ -4,7 +4,6 @@ import { searchPersons } from '../services/personDb';
 const router = Router();
 
 router.get('/', async (req, res) => {
-  const start = Date.now();
   try {
     const q = ((req.query.wcaId as string) ?? (req.query.q as string))?.trim();
     if (!q) {
@@ -17,8 +16,6 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('[search] error:', err);
     res.status(500).json({ error: 'Search failed' });
-  } finally {
-    console.log(`[search] ${Date.now() - start}ms`);
   }
 });
 

@@ -1,5 +1,71 @@
-import { prisma } from '../lib/prisma';
+import fs from 'fs';
+import path from 'path';
 import type { SearchResultItem, ProfileResponse } from '../types';
+
+const CACHE_DIR = process.env.CACHE_DIR
+  ? path.resolve(process.env.CACHE_DIR)
+  : path.join(process.cwd(), 'cache');
+
+const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
+const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
+const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
+
+interface PersonsIndexEntry {
+  name: string;
+  countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
+}
+
+type PersonsIndex = Record<string, PersonsIndexEntry>;
+
+interface WpsIndexEntry {
+  wps: number;
+}
+
+type WpsIndex = Record<string, WpsIndexEntry>;
+
+interface WpsRankIndex {
+  generatedAt: string;
+  totalRanked: number;
+  ranks: Record<string, number>;
+}
+
+let personsIndexCache: PersonsIndex | null = null;
+let wpsIndexCache: WpsIndex | null = null;
+let wpsRankIndexCache: WpsRankIndex | null = null;
+
+async function loadJsonIfExists<T>(filePath: string): Promise<T | null> {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const raw = await fs.promises.readFile(filePath, 'utf8');
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    console.error(`Failed to load JSON cache at ${filePath}:`, error);
+    return null;
+  }
+}
+
+async function getPersonsIndex(): Promise<PersonsIndex | null> {
+  if (!personsIndexCache) {
+    personsIndexCache = (await loadJsonIfExists<PersonsIndex>(PERSONS_INDEX_PATH)) ?? null;
+  }
+  return personsIndexCache;
+}
+
+async function getWpsIndex(): Promise<WpsIndex | null> {
+  if (!wpsIndexCache) {
+    wpsIndexCache = (await loadJsonIfExists<WpsIndex>(WPS_INDEX_PATH)) ?? null;
+  }
+  return wpsIndexCache;
+}
+
+async function getWpsRankIndex(): Promise<WpsRankIndex | null> {
+  if (!wpsRankIndexCache) {
+    wpsRankIndexCache = (await loadJsonIfExists<WpsRankIndex>(WPS_RANK_INDEX_PATH)) ?? null;
+  }
+  return wpsRankIndexCache;
+}
 
 export interface PersonWithScoreRank {
   id: string;
@@ -17,43 +83,33 @@ export function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
-function toPersonWithScoreRank(row: {
-  id: string;
-  name: string;
-  countryId: string | null;
-  countryName: string | null;
-  countryIso2: string | null;
-  wpsScore: { score: number } | null;
-  wpsRank: { rank: number } | null;
-}): PersonWithScoreRank {
-  return {
-    id: row.id,
-    name: row.name,
-    countryId: row.countryId,
-    countryName: row.countryName,
-    countryIso2: row.countryIso2,
-    score: row.wpsScore?.score ?? 0,
-    rank: row.wpsRank?.rank ?? null,
-  };
-}
-
 export async function findPersonById(personId: string): Promise<PersonWithScoreRank | null> {
   const normalized = personId.trim().toUpperCase();
   if (!normalized) return null;
 
-  const person = await prisma.person.findUnique({
-    where: { id: normalized },
-    select: {
-      id: true,
-      name: true,
-      countryId: true,
-      countryName: true,
-      countryIso2: true,
-      wpsScore: { select: { score: true } },
-      wpsRank: { select: { rank: true } },
-    },
-  });
-  return person ? toPersonWithScoreRank(person) : null;
+  const [personsIndex, wpsIndex, wpsRankIndex] = await Promise.all([
+    getPersonsIndex(),
+    getWpsIndex(),
+    getWpsRankIndex(),
+  ]);
+
+  if (!personsIndex) return null;
+
+  const person = personsIndex[normalized];
+  if (!person) return null;
+
+  const score = wpsIndex?.[normalized]?.wps ?? 0;
+  const rank = wpsRankIndex?.ranks?.[normalized] ?? null;
+
+  return {
+    id: normalized,
+    name: person.name,
+    countryId: person.countryId ?? null,
+    countryName: person.countryName ?? null,
+    countryIso2: person.countryIso2 ?? null,
+    score,
+    rank,
+  };
 }
 
 const SEARCH_LIMIT = 20;
@@ -71,42 +127,68 @@ export async function searchPersons(
 
   const take = Math.min(Math.max(1, limit), SEARCH_LIMIT);
 
-  const orConditions = [
-    { nameLower: { contains: queryLower } },
-    { id: { contains: queryUpper } },
-    { countryName: { contains: q, mode: 'insensitive' as const } },
-    ...(wcaIdExact ? [{ id: wcaIdExact }] : []),
-  ];
+  const [personsIndex, wpsIndex, wpsRankIndex] = await Promise.all([
+    getPersonsIndex(),
+    getWpsIndex(),
+    getWpsRankIndex(),
+  ]);
 
-  const persons = await prisma.person.findMany({
-    where: { OR: orConditions },
-    take,
-    orderBy: [
-      { wpsScore: { score: 'desc' } },
-      { wpsRank: { rank: 'asc' } },
-      { id: 'asc' },
-    ],
-    select: {
-      id: true,
-      name: true,
-      countryIso2: true,
-      wpsScore: { select: { score: true } },
-      wpsRank: { select: { rank: true } },
-    },
+  if (!personsIndex) return [];
+
+  const results: SearchResultItem[] = [];
+
+  for (const [id, info] of Object.entries(personsIndex)) {
+    const nameLower = info.name.toLowerCase();
+    const countryName = info.countryName ?? '';
+    const countryNameLower = countryName.toLowerCase();
+
+    const matches =
+      (wcaIdExact ? id === wcaIdExact : false) ||
+      nameLower.includes(queryLower) ||
+      id.includes(queryUpper) ||
+      countryNameLower.includes(queryLower);
+
+    if (!matches) continue;
+
+    const wpsScore = wpsIndex?.[id]?.wps ?? 0;
+    const wpsRank = wpsRankIndex?.ranks?.[id] ?? null;
+
+    results.push({
+      wcaId: id,
+      name: info.name,
+      countryIso2: info.countryIso2,
+      wpsScore,
+      wpsRank,
+    });
+  }
+
+  results.sort((a, b) => {
+    const scoreDiff = b.wpsScore - a.wpsScore;
+    if (scoreDiff !== 0) return scoreDiff;
+
+    const rankA = a.wpsRank ?? Number.POSITIVE_INFINITY;
+    const rankB = b.wpsRank ?? Number.POSITIVE_INFINITY;
+    if (rankA !== rankB) return rankA - rankB;
+
+    return a.wcaId.localeCompare(b.wcaId);
   });
 
-  return persons.map((p) => ({
-    wcaId: p.id,
-    name: p.name,
-    countryIso2: p.countryIso2,
-    wpsScore: p.wpsScore?.score ?? 0,
-    wpsRank: p.wpsRank?.rank ?? null,
-  }));
+  return results.slice(0, take);
 }
 
 export async function getMetaValue(key: string): Promise<string | null> {
-  const row = await prisma.meta.findUnique({ where: { key } });
-  return row?.value ?? null;
+  const wpsRankIndex = await getWpsRankIndex();
+  if (!wpsRankIndex) return null;
+
+  if (key === 'totalRanked') {
+    return String(wpsRankIndex.totalRanked);
+  }
+
+  if (key === 'generatedAt') {
+    return wpsRankIndex.generatedAt;
+  }
+
+  return null;
 }
 
 export function toProfileResponse(

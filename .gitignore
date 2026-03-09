@@ -25,6 +25,3 @@ backend/WCA_export*/
 backend/cache/**
 !backend/cache/*.json
 !backend/cache/.gitkeep
-.env
-backend/.env
-frontend/.env
