@@ -7,8 +7,52 @@ export interface CountryItem {
 }
 
 const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
+const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
+
 let countriesListCache: CountryItem[] | null = null;
 let countriesCacheAt = 0;
+
+type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
+};
+
+let globalLeaderboardCache = new Map<number, CacheEntry<GlobalLeaderboardResponse>>();
+let countryLeaderboardCache = new Map<string, CacheEntry<CountryLeaderboardResponse>>();
+
+function getCachedGlobalLeaderboard(limit: number): GlobalLeaderboardResponse | null {
+  const entry = globalLeaderboardCache.get(limit);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    globalLeaderboardCache.delete(limit);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCachedGlobalLeaderboard(limit: number, value: GlobalLeaderboardResponse): void {
+  globalLeaderboardCache.set(limit, {
+    value,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+  });
+}
+
+function getCachedCountryLeaderboard(key: string): CountryLeaderboardResponse | null {
+  const entry = countryLeaderboardCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    countryLeaderboardCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCachedCountryLeaderboard(key: string, value: CountryLeaderboardResponse): void {
+  countryLeaderboardCache.set(key, {
+    value,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+  });
+}
 
 function parseTotalRanked(value: string | null): number {
   if (value == null || value === '') return 0;
@@ -21,11 +65,21 @@ function parseTotalRanked(value: string | null): number {
  */
 export async function getCountriesList(): Promise<CountryItem[]> {
   if (countriesListCache && Date.now() - countriesCacheAt < COUNTRIES_CACHE_TTL_MS) {
+    console.log('[db-countries] cache hit', {
+      count: countriesListCache.length,
+      ageMs: Date.now() - countriesCacheAt,
+    });
     return countriesListCache;
   }
 
+  const startedAt = Date.now();
   const groups = await prisma.person.groupBy({
     by: ['countryIso2', 'countryName'],
+  });
+  const durationMs = Date.now() - startedAt;
+  console.log('[db-countries] query completed', {
+    groups: groups.length,
+    durationMs,
   });
 
   const map = new Map<string, CountryItem>();
@@ -63,7 +117,7 @@ export interface CountryLeaderboardResponse {
   totalRanked: number;
   count: number;
   items: CountryLeaderboardItem[];
-   source: string;
+  source: string;
 }
 
 export interface GlobalLeaderboardResponse {
@@ -96,7 +150,16 @@ const globalOrderBy = [
  */
 export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalLeaderboardResponse | null> {
   const effectiveLimit = Math.max(1, limit);
+  const cached = getCachedGlobalLeaderboard(effectiveLimit);
+  if (cached) {
+    console.log('[db-leaderboard-global] cache hit', {
+      limit: effectiveLimit,
+      count: cached.count,
+    });
+    return cached;
+  }
 
+  const startedAt = Date.now();
   const [persons, totalRankedRaw, generatedAtMeta] = await Promise.all([
     prisma.person.findMany({
       where: {
@@ -114,8 +177,13 @@ export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalL
     getMetaValue('totalRanked'),
     getMetaValue('generatedAt'),
   ]);
+  const durationMs = Date.now() - startedAt;
 
   if (!persons.length) {
+    console.warn('[db-leaderboard-global] empty result', {
+      limit: effectiveLimit,
+      durationMs,
+    });
     return null;
   }
 
@@ -131,7 +199,7 @@ export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalL
     wps: p.wpsScore?.score ?? 0,
   }));
 
-  return {
+  const response: GlobalLeaderboardResponse = {
     scope: 'global',
     generatedAt: generatedAtMeta ?? new Date().toISOString(),
     totalRanked,
@@ -139,6 +207,16 @@ export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalL
     items,
     source: 'postgres',
   };
+
+  console.log('[db-leaderboard-global] query completed', {
+    limit: effectiveLimit,
+    durationMs,
+    count: response.count,
+  });
+
+  setCachedGlobalLeaderboard(effectiveLimit, response);
+
+  return response;
 }
 
 /**
@@ -153,6 +231,7 @@ export async function getCountryRank(
 
   const id = personId.trim().toUpperCase();
 
+  const startedAt = Date.now();
   const person = await prisma.person.findUnique({
     where: { id },
     include: {
@@ -191,8 +270,15 @@ export async function getCountryRank(
       },
     }),
   ]);
+  const durationMs = Date.now() - startedAt;
 
   if (countryTotal === 0) return null;
+
+  console.log('[db-country-rank] completed', {
+    personId: id,
+    countryIso2: iso2Upper,
+    durationMs,
+  });
 
   return { countryRank: countHigher + 1, countryTotal };
 }
@@ -215,6 +301,18 @@ export async function getCountryLeaderboard(
 
   const effectiveLimit = Math.max(1, limit);
 
+  const cacheKey = `${iso2Upper}:${effectiveLimit}`;
+  const cached = getCachedCountryLeaderboard(cacheKey);
+  if (cached) {
+    console.log('[db-leaderboard-country] cache hit', {
+      countryIso2: iso2Upper,
+      limit: effectiveLimit,
+      count: cached.count,
+    });
+    return cached;
+  }
+
+  const startedAt = Date.now();
   const [persons, totalRankedRaw, generatedAtMeta] = await Promise.all([
     prisma.person.findMany({
       where: {
@@ -233,6 +331,7 @@ export async function getCountryLeaderboard(
     getMetaValue('totalRanked'),
     getMetaValue('generatedAt'),
   ]);
+  const durationMs = Date.now() - startedAt;
 
   if (!persons.length) return null;
 
@@ -250,7 +349,7 @@ export async function getCountryLeaderboard(
 
   const countryName = items[0].countryName;
 
-  return {
+  const response: CountryLeaderboardResponse = {
     scope: 'country',
     countryIso2: iso2Upper,
     countryName,
@@ -260,4 +359,15 @@ export async function getCountryLeaderboard(
     items,
     source: 'postgres',
   };
+
+  console.log('[db-leaderboard-country] query completed', {
+    countryIso2: iso2Upper,
+    limit: effectiveLimit,
+    durationMs,
+    count: response.count,
+  });
+
+  setCachedCountryLeaderboard(cacheKey, response);
+
+  return response;
 }

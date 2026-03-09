@@ -25,7 +25,11 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
-const REQUEST_TIMEOUT_MS = 25_000;
+// Keep this below any upstream/platform timeout, but comfortably above typical
+// Prisma/Postgres latency for leaderboard queries. Axios on the frontend uses
+// a 30s timeout, so 60s here ensures the backend doesn't cut off legitimate
+// requests prematurely while still providing an upper bound for stuck requests.
+const REQUEST_TIMEOUT_MS = 60_000;
 
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean)
@@ -37,11 +41,16 @@ app.use(cors({ origin: corsOrigins, credentials: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api', (_req: Request, res: Response, next: NextFunction) => {
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
 
   const timer = setTimeout(() => {
     if (!res.headersSent) {
+      console.warn('[api-timeout] sending 504 for slow request', {
+        method: req.method,
+        url: req.originalUrl,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
       res.status(504).json({ error: 'Request timed out' });
     }
   }, REQUEST_TIMEOUT_MS);
