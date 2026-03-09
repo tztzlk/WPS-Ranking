@@ -15,7 +15,6 @@ const MAX_LIMIT = 500;
  * Query: country (optional, ISO2), limit (default 100).
  */
 router.get('/', async (req: Request, res: Response) => {
-  const start = Date.now();
   try {
     const country = typeof req.query.country === 'string' ? req.query.country.trim() : undefined;
     const limitRaw = req.query.limit;
@@ -49,8 +48,6 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error serving leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
-  } finally {
-    console.log(`[leaderboard] ${Date.now() - start}ms`);
   }
 });
 

@@ -1,14 +1,11 @@
 # WPS Ranking Backend
 
-Backend API for WPS Ranking, built with Node.js, Express, TypeScript, and PostgreSQL (via Prisma).
+Backend API for WPS Ranking: **Express → file-based JSON/TSV cache** at runtime. Offline pipeline ingests WCA TSV export and regenerates JSON indexes used by the API.
 
-## Features
+## Architecture
 
-- **PostgreSQL + Prisma**: Person search, profiles, and rankings served from indexed database queries
-- **WCA API Integration**: Fetches data from the World Cube Association API
-- **WPS Calculation**: Implements the Weighted Performance Scale scoring system
-- **RESTful API**: Endpoints for leaderboard, profiles, search, and compare
-- **Connection Pooling**: PgBouncer-compatible via Supabase pooler
+- **Runtime (production)**: Client → Express → services → JSON index files under `CACHE_DIR`. No PostgreSQL or Prisma at runtime.
+- **Offline pipeline** (scripts only, not used by API): WCA TSV download → `updateData` / `leaderboardTop100` → JSON indexes used directly by the API.
 
 ## Getting Started
 
@@ -29,19 +26,9 @@ cp .env.example .env
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string (pooled, port 6543 for Supabase) with `?pgbouncer=true` |
 | `PORT` | Server port (default: 5000) |
 | `NODE_ENV` | `development` or `production` |
 | `CORS_ORIGINS` | Comma-separated allowed origins |
-
-#### Required at build / CLI time
-
-| Variable | Description |
-|---|---|
-| `DIRECT_DATABASE_URL` | Direct PostgreSQL connection (port 5432, `?sslmode=require`). Used by `prisma generate`, `prisma migrate`, `prisma db push`, and `import:data`. |
-| `DATABASE_URL` | Also required at build time because `postinstall` runs `prisma generate` via `prisma.config.ts`. |
-
-> **Note:** Both `DATABASE_URL` and `DIRECT_DATABASE_URL` must be available when `npm install` / `npm ci` runs, because `postinstall` executes `prisma generate` which loads `prisma.config.ts` and validates both variables. If deploying on a platform where secrets are only available at runtime, either set them as build-time env vars or remove the `postinstall` script and run `prisma generate` separately.
 
 #### Optional
 
@@ -49,36 +36,33 @@ cp .env.example .env
 |---|---|
 | `PUBLIC_PATH` | Path to frontend build for same-origin serving |
 | `SITE_URL` | Public base URL for OG meta tags (fallback: `http://localhost:PORT`) |
-| `CACHE_DIR` | Override cache directory for pipeline scripts (default: `./cache`) |
+| `CACHE_DIR` | Override cache directory for pipeline scripts and runtime (default: `./cache`) |
 | `WCA_EXPORT_URL` | Override WCA export download URL |
 
-### 3. Apply database schema
+### 3. Build JSON/TSV caches (offline pipeline)
 
-This project uses `prisma db push` (schemaless migrations). No migrations directory is needed.
-
-```bash
-npx prisma db push
-```
-
-This synchronizes the Prisma schema with the database without creating migration files.
-
-### 4. Import data into PostgreSQL
-
-Ensure the cache files exist (run `npm run update:data` first if needed), then:
+The API reads from JSON index files under `CACHE_DIR`. To (re)build them from the WCA TSV export, run:
 
 ```bash
-npm run import:data
+npm run update:data
 ```
 
-This reads from:
-- `cache/wca_export/Persons.tsv`
+This will download the latest WCA export, extract the TSVs, and regenerate:
+
+- `cache/leaderboard.top100.json`
+- `cache/persons.index.json`
 - `cache/wps.index.json`
 - `cache/wpsRank.index.json`
 - `cache/countries.index.json`
+- `cache/wps.breakdown.json`
 
-And upserts into `persons`, `wps_scores`, `wps_ranks`, and `meta` tables.
+You can also regenerate leaderboard/WPS JSON from existing TSVs only:
 
-### 5. Start the development server
+```bash
+npm run leaderboard:update
+```
+
+### 4. Start the development server
 
 ```bash
 npm run dev
@@ -113,23 +97,22 @@ The API will be available at `http://localhost:5000`.
 
 ## npm Scripts
 
+**Runtime (server)**  
 | Script | Description |
 |---|---|
 | `npm run dev` | Start dev server with hot reload |
 | `npm run build` | Compile TypeScript |
 | `npm start` | Run compiled JS |
-| `npm run db:push` | Apply Prisma schema to database (primary schema sync method) |
-| `npm run db:generate` | Regenerate Prisma client |
-| `npm run db:validate` | Validate Prisma schema |
-| `npm run update:data` | Download and process WCA export into JSON indexes |
-| `npm run import:data` | Import JSON indexes + Persons.tsv into PostgreSQL |
-| `npm run leaderboard:update` | Regenerate leaderboard JSON from existing TSVs |
-| `npm run debug:person` | Look up a person by WCA ID (debug script) |
+
+**Offline pipeline (not used by API)**  
+| Script | Description |
+|---|---|
+| `npm run update:data` | Download WCA export, extract TSVs, build JSON indexes |
+| `npm run leaderboard:update` | Regenerate leaderboard/WPS JSON from existing TSVs |
+| `npm run debug:person` | Look up a person by WCA ID (debug) |
 
 ## Tech Stack
 
-- **Node.js** with Express
-- **TypeScript** for type safety
-- **PostgreSQL** (Supabase) with **Prisma ORM**
-- **pg** + `@prisma/adapter-pg` for connection pooling
-- **Helmet** / **CORS** / **Compression** for security and performance
+- **Runtime**: Node.js, Express, TypeScript, file-based JSON indexes (no database).
+- **Pipeline**: WCA TSV → offline scripts → JSON indexes under `CACHE_DIR`.
+- **Helmet** / **CORS** / **Compression** for security and performance.

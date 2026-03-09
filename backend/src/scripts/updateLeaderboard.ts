@@ -1,3 +1,7 @@
+/**
+ * Offline script only. Not used by runtime API.
+ * Pipeline: regenerates leaderboard JSON and WPS indexes from existing TSVs.
+ */
 import path from 'path';
 import dotenv from 'dotenv';
 import { generateTop100Leaderboard } from './leaderboardTop100';

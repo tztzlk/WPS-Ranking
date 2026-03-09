@@ -1,3 +1,7 @@
+/**
+ * Offline script only. Not used by runtime API.
+ * Debug utility: looks up a person by WCA ID from PostgreSQL.
+ */
 import path from 'path';
 import dotenv from 'dotenv';
 import { findPersonById } from '../services/personDb';

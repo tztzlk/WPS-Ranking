@@ -1,3 +1,7 @@
+/**
+ * Offline script only. Not used by runtime API.
+ * Pipeline: reads WCA TSVs, computes WPS, writes JSON indexes (persons, countries, wps, wpsRank, leaderboard.top100).
+ */
 import fs from 'fs';
 import path from 'path';
 import { createReadStream } from 'fs';

@@ -1,3 +1,7 @@
+/**
+ * Offline script only. Not used by runtime API.
+ * Pipeline: downloads WCA export, extracts TSVs, runs leaderboardTop100 to rebuild JSON indexes.
+ */
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';

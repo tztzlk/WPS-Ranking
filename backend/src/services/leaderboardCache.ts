@@ -1,5 +1,98 @@
+import fs from 'fs';
+import path from 'path';
 import { getMetaValue } from './personDb';
-import { prisma } from '../lib/prisma';
+
+const CACHE_DIR = process.env.CACHE_DIR
+  ? path.resolve(process.env.CACHE_DIR)
+  : path.join(process.cwd(), 'cache');
+
+const LEADERBOARD_TOP100_PATH = path.join(CACHE_DIR, 'leaderboard.top100.json');
+const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
+const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
+const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
+
+interface PersonsIndexEntry {
+  name: string;
+  countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
+}
+
+type PersonsIndex = Record<string, PersonsIndexEntry>;
+
+interface WpsIndexEntry {
+  wps: number;
+}
+
+type WpsIndex = Record<string, WpsIndexEntry>;
+
+interface WpsRankIndex {
+  generatedAt: string;
+  totalRanked: number;
+  ranks: Record<string, number>;
+}
+
+interface LeaderboardItemCache {
+  rank: number;
+  personId: string;
+  name: string;
+  countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
+  wps: number;
+}
+
+interface LeaderboardResultCache {
+  source: string;
+  generatedAt: string;
+  count: number;
+  items: LeaderboardItemCache[];
+}
+
+let personsIndexCache: PersonsIndex | null = null;
+let wpsIndexCache: WpsIndex | null = null;
+let wpsRankIndexCache: WpsRankIndex | null = null;
+let leaderboardTop100Cache: LeaderboardResultCache | null = null;
+
+async function loadJsonIfExists<T>(filePath: string): Promise<T | null> {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const raw = await fs.promises.readFile(filePath, 'utf8');
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    console.error(`Failed to load JSON cache at ${filePath}:`, error);
+    return null;
+  }
+}
+
+async function getPersonsIndex(): Promise<PersonsIndex | null> {
+  if (!personsIndexCache) {
+    personsIndexCache = (await loadJsonIfExists<PersonsIndex>(PERSONS_INDEX_PATH)) ?? null;
+  }
+  return personsIndexCache;
+}
+
+async function getWpsIndex(): Promise<WpsIndex | null> {
+  if (!wpsIndexCache) {
+    wpsIndexCache = (await loadJsonIfExists<WpsIndex>(WPS_INDEX_PATH)) ?? null;
+  }
+  return wpsIndexCache;
+}
+
+async function getWpsRankIndex(): Promise<WpsRankIndex | null> {
+  if (!wpsRankIndexCache) {
+    wpsRankIndexCache = (await loadJsonIfExists<WpsRankIndex>(WPS_RANK_INDEX_PATH)) ?? null;
+  }
+  return wpsRankIndexCache;
+}
+
+async function getLeaderboardTop100(): Promise<LeaderboardResultCache | null> {
+  if (!leaderboardTop100Cache) {
+    leaderboardTop100Cache =
+      (await loadJsonIfExists<LeaderboardResultCache>(LEADERBOARD_TOP100_PATH)) ?? null;
+  }
+  return leaderboardTop100Cache;
+}
 
 export interface CountryItem {
   iso2: string;
@@ -17,23 +110,32 @@ function parseTotalRanked(value: string | null): number {
 }
 
 /**
- * Returns all distinct countries from persons table, sorted by name.
+ * Returns all distinct countries from cache, sorted by name.
  */
 export async function getCountriesList(): Promise<CountryItem[]> {
   if (countriesListCache && Date.now() - countriesCacheAt < COUNTRIES_CACHE_TTL_MS) {
     return countriesListCache;
   }
 
-  const rows = await prisma.person.findMany({
-    where: { countryIso2: { not: null }, countryName: { not: null } },
-    select: { countryIso2: true, countryName: true },
-    distinct: ['countryIso2'],
-  });
+  const personsIndex = await getPersonsIndex();
+  if (!personsIndex) {
+    countriesListCache = [];
+    countriesCacheAt = Date.now();
+    return countriesListCache;
+  }
 
-  const list: CountryItem[] = rows
-    .filter((r): r is typeof r & { countryIso2: string; countryName: string } => Boolean(r.countryIso2 && r.countryName))
-    .map((r) => ({ iso2: r.countryIso2, name: r.countryName }));
+  const map = new Map<string, CountryItem>();
+  for (const entry of Object.values(personsIndex)) {
+    if (!entry.countryIso2 || !entry.countryName) continue;
+    const iso2 = entry.countryIso2.toUpperCase();
+    if (!map.has(iso2)) {
+      map.set(iso2, { iso2, name: entry.countryName });
+    }
+  }
+
+  const list = Array.from(map.values());
   list.sort((a, b) => a.name.localeCompare(b.name));
+
   countriesListCache = list;
   countriesCacheAt = Date.now();
   return countriesListCache;
@@ -85,51 +187,44 @@ const globalOrderBy = [
 ];
 
 /**
- * Returns global top-N from PostgreSQL, ordered by WPS score desc, rank asc, id asc.
+ * Returns global top-N from cache, ordered by WPS score desc, rank asc, id asc.
  */
 export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalLeaderboardResponse | null> {
-  const [persons, totalRankedRaw, generatedAt] = await Promise.all([
-    prisma.person.findMany({
-      where: { wpsScore: { isNot: null } },
-      orderBy: globalOrderBy,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        countryId: true,
-        countryName: true,
-        countryIso2: true,
-        wpsScore: { select: { score: true } },
-        wpsRank: { select: { rank: true } },
-      },
-    }),
+  const [leaderboard, totalRankedRaw, generatedAtMeta] = await Promise.all([
+    getLeaderboardTop100(),
     getMetaValue('totalRanked'),
     getMetaValue('generatedAt'),
   ]);
 
+  if (!leaderboard || !leaderboard.items.length) {
+    return null;
+  }
+
   const totalRanked = parseTotalRanked(totalRankedRaw);
-  const items = persons.map((p, index) => ({
-    rank: p.wpsRank?.rank ?? index + 1,
-    personId: p.id,
+  const effectiveLimit = Math.max(1, Math.min(limit, leaderboard.items.length));
+
+  const items = leaderboard.items.slice(0, effectiveLimit).map((p) => ({
+    rank: p.rank,
+    personId: p.personId,
     name: p.name,
     countryId: p.countryId ?? undefined,
     countryName: p.countryName ?? undefined,
     countryIso2: p.countryIso2 ?? undefined,
-    wps: p.wpsScore?.score ?? 0,
+    wps: p.wps,
   }));
 
   return {
     scope: 'global',
-    generatedAt: generatedAt ?? new Date().toISOString(),
+    generatedAt: generatedAtMeta ?? leaderboard.generatedAt ?? new Date().toISOString(),
     totalRanked,
     count: items.length,
     items,
+    source: leaderboard.source,
   };
 }
 
 /**
- * Returns country rank and total for a person (from PostgreSQL).
- * Uses count queries instead of loading the full country list.
+ * Returns country rank and total for a person from cache.
  */
 export async function getCountryRank(
   personId: string,
@@ -138,32 +233,30 @@ export async function getCountryRank(
   const iso2Upper = countryIso2?.trim()?.toUpperCase();
   if (!iso2Upper) return null;
 
-  const person = await prisma.person.findUnique({
-    where: { id: personId },
-    select: {
-      countryIso2: true,
-      wpsScore: { select: { score: true } },
-    },
-  });
+  const [personsIndex, wpsIndex] = await Promise.all([getPersonsIndex(), getWpsIndex()]);
+  if (!personsIndex || !wpsIndex) return null;
 
-  if (!person || person.countryIso2 !== iso2Upper || person.wpsScore == null) return null;
+  const id = personId.trim().toUpperCase();
+  const person = personsIndex[id];
+  if (!person || !person.countryIso2 || person.countryIso2.toUpperCase() !== iso2Upper) {
+    return null;
+  }
 
-  const score = person.wpsScore.score;
+  const score = wpsIndex[id]?.wps;
+  if (score == null) return null;
 
-  const [countHigher, countryTotal] = await Promise.all([
-    prisma.person.count({
-      where: {
-        countryIso2: iso2Upper,
-        wpsScore: { score: { gt: score } },
-      },
-    }),
-    prisma.person.count({
-      where: {
-        countryIso2: iso2Upper,
-        wpsScore: { isNot: null },
-      },
-    }),
-  ]);
+  let countryTotal = 0;
+  let countHigher = 0;
+
+  for (const [otherId, info] of Object.entries(personsIndex)) {
+    if (!info.countryIso2 || info.countryIso2.toUpperCase() !== iso2Upper) continue;
+    const otherScore = wpsIndex[otherId]?.wps;
+    if (otherScore == null) continue;
+    countryTotal += 1;
+    if (otherScore > score) countHigher += 1;
+  }
+
+  if (countryTotal === 0) return null;
 
   return { countryRank: countHigher + 1, countryTotal };
 }
@@ -175,7 +268,7 @@ const countryOrderBy = [
 ];
 
 /**
- * Returns top N cubers for a country by WPS from PostgreSQL.
+ * Returns top N cubers for a country by WPS from cache.
  */
 export async function getCountryLeaderboard(
   countryIso2: string,
@@ -184,48 +277,65 @@ export async function getCountryLeaderboard(
   const iso2Upper = countryIso2.trim().toUpperCase();
   if (!iso2Upper) return null;
 
-  const [persons, totalRankedRaw, generatedAt] = await Promise.all([
-    prisma.person.findMany({
-      where: {
-        countryIso2: iso2Upper,
-        wpsScore: { isNot: null },
-      },
-      orderBy: countryOrderBy,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        countryName: true,
-        wpsScore: { select: { score: true } },
-        wpsRank: { select: { rank: true } },
-      },
-    }),
+  const [personsIndex, wpsIndex, wpsRankIndex, totalRankedRaw, generatedAtMeta] = await Promise.all([
+    getPersonsIndex(),
+    getWpsIndex(),
+    getWpsRankIndex(),
     getMetaValue('totalRanked'),
     getMetaValue('generatedAt'),
   ]);
 
-  if (!persons.length) return null;
+  if (!personsIndex || !wpsIndex || !wpsRankIndex) return null;
 
-  const countryName = persons[0].countryName ?? iso2Upper;
+  const entries: CountryLeaderboardItem[] = [];
+
+  for (const [id, info] of Object.entries(personsIndex)) {
+    if (!info.countryIso2 || info.countryIso2.toUpperCase() !== iso2Upper) continue;
+    const wpsScore = wpsIndex[id]?.wps;
+    if (wpsScore == null) continue;
+    const globalRank = wpsRankIndex.ranks[id] ?? 0;
+
+    entries.push({
+      countryRank: 0,
+      personId: id,
+      name: info.name,
+      countryIso2: iso2Upper,
+      countryName: info.countryName ?? iso2Upper,
+      wps: wpsScore,
+      globalWpsRank: globalRank,
+    });
+  }
+
+  if (!entries.length) return null;
+
+  entries.sort((a, b) => {
+    const scoreDiff = b.wps - a.wps;
+    if (scoreDiff !== 0) return scoreDiff;
+
+    const rankA = a.globalWpsRank || Number.POSITIVE_INFINITY;
+    const rankB = b.globalWpsRank || Number.POSITIVE_INFINITY;
+    if (rankA !== rankB) return rankA - rankB;
+
+    return a.personId.localeCompare(b.personId);
+  });
+
+  const effectiveLimit = Math.max(1, Math.min(limit, entries.length));
+  const limited = entries.slice(0, effectiveLimit);
+
+  limited.forEach((entry, index) => {
+    entry.countryRank = index + 1;
+  });
+
+  const countryName = limited[0].countryName;
   const totalRanked = parseTotalRanked(totalRankedRaw);
-
-  const items: CountryLeaderboardItem[] = persons.map((entry, index) => ({
-    countryRank: index + 1,
-    personId: entry.id,
-    name: entry.name,
-    countryIso2: iso2Upper,
-    countryName,
-    wps: entry.wpsScore?.score ?? 0,
-    globalWpsRank: entry.wpsRank?.rank ?? 0,
-  }));
 
   return {
     scope: 'country',
     countryIso2: iso2Upper,
     countryName,
-    generatedAt: generatedAt ?? new Date().toISOString(),
+    generatedAt: generatedAtMeta ?? new Date().toISOString(),
     totalRanked,
-    count: items.length,
-    items,
+    count: limited.length,
+    items: limited,
   };
 }
