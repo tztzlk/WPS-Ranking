@@ -29,27 +29,27 @@ router.get('/', async (req: Request, res: Response) => {
     if (!country) {
       data = await getGlobalLeaderboard(validLimit);
       if (!data) {
-        res.status(503).json({
+        return res.status(503).json({
           error: 'Leaderboard data unavailable',
         });
-        return;
       }
     } else {
       data = await getCountryLeaderboard(country, validLimit);
       if (!data) {
-        res.status(503).json({
+        return res.status(503).json({
           error: 'Country leaderboard unavailable',
         });
-        return;
       }
     }
 
     const countryLog = country && country.length > 0 ? country : 'GLOBAL';
     console.log(`[db-leaderboard] country=${countryLog} count=${data.count}`);
-    res.json(data);
+    return res.json(data);
   } catch (error) {
     console.error('Error serving leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
   }
 });
 
