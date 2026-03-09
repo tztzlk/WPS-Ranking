@@ -44,6 +44,8 @@ router.get('/', async (req: Request, res: Response) => {
       }
     }
 
+    const countryLog = country && country.length > 0 ? country : 'GLOBAL';
+    console.log(`[db-leaderboard] country=${countryLog} count=${data.count}`);
     res.json(data);
   } catch (error) {
     console.error('Error serving leaderboard:', error);

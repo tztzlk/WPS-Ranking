@@ -12,7 +12,8 @@ router.get('/', async (req, res) => {
     }
 
     const results = await searchPersons(q, 20);
-    res.json({ results });
+    console.log(`[db-search] q=${q} results=${results.length}`);
+    res.json({ results, source: 'postgres' });
   } catch (err) {
     console.error('[search] error:', err);
     res.status(500).json({ error: 'Search failed' });
