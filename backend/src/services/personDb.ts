@@ -1,4 +1,5 @@
 import type { SearchResultItem, ProfileResponse } from '../types';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 export interface PersonWithScoreRank {
@@ -44,6 +45,10 @@ export async function findPersonById(personId: string): Promise<PersonWithScoreR
 
 const SEARCH_LIMIT = 20;
 
+type PersonWithRelations = Prisma.PersonGetPayload<{
+  include: { wpsScore: true; wpsRank: true };
+}>;
+
 export async function searchPersons(
   query: string,
   limit: number = SEARCH_LIMIT,
@@ -82,15 +87,15 @@ export async function searchPersons(
 
   const remaining = take - results.length;
 
-  const baseWhere = {
+  const baseWhere: Prisma.PersonWhereInput = {
     OR: [
       { nameLower: { contains: queryLower } },
       { id: { contains: queryUpper } },
-      { countryName: { contains: q, mode: 'insensitive' as const } },
-    ],
-  } as const;
+      { countryName: { contains: q, mode: 'insensitive' } },
+    ] as Prisma.PersonWhereInput[],
+  };
 
-  const where =
+  const where: Prisma.PersonWhereInput =
     seenIds.size > 0
       ? {
           ...baseWhere,
@@ -98,7 +103,7 @@ export async function searchPersons(
         }
       : baseWhere;
 
-  const persons = await prisma.person.findMany({
+  const persons = (await prisma.person.findMany({
     where,
     include: {
       wpsScore: true,
@@ -110,7 +115,7 @@ export async function searchPersons(
       { id: 'asc' },
     ],
     take: remaining,
-  });
+  })) as PersonWithRelations[];
 
   for (const p of persons) {
     results.push({
