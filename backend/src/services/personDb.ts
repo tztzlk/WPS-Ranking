@@ -43,7 +43,7 @@ export async function findPersonById(personId: string): Promise<PersonWithScoreR
   };
 }
 
-const SEARCH_LIMIT = 20;
+const SEARCH_LIMIT = 50;
 
 type PersonWithRelations = Prisma.PersonGetPayload<{
   include: { wpsScore: true; wpsRank: true };
@@ -79,32 +79,22 @@ export async function searchPersons(
       });
       seenIds.add(person.id);
     }
+    // Fast path: exact WCA ID lookup only; do not run heavy text search.
+    if (results.length > 0) return results;
+    // Optional: for invalid/non-existent WCA ID, fall through to text search.
   }
 
-  if (results.length >= take) {
-    return results.slice(0, take);
-  }
-
-  const remaining = take - results.length;
-
-  const baseWhere: Prisma.PersonWhereInput = {
-    OR: [
-      { nameLower: { contains: queryLower } },
-      { id: { contains: queryUpper } },
-      { countryName: { contains: q, mode: 'insensitive' } },
-    ] as Prisma.PersonWhereInput[],
+  // Text search: fast paths using indexed fields (nameLower startsWith, countryIso2 equals).
+  const namePrefixWhere: Prisma.PersonWhereInput = {
+    nameLower: { startsWith: queryLower },
   };
-
-  const where: Prisma.PersonWhereInput =
-    seenIds.size > 0
-      ? {
-          ...baseWhere,
-          id: { notIn: Array.from(seenIds) },
-        }
-      : baseWhere;
+  const isTwoLetter = q.length === 2;
+  const textWhere: Prisma.PersonWhereInput = isTwoLetter
+    ? { OR: [namePrefixWhere, { countryIso2: { equals: queryUpper } }] }
+    : namePrefixWhere;
 
   const persons = (await prisma.person.findMany({
-    where,
+    where: textWhere,
     include: {
       wpsScore: true,
       wpsRank: true,
@@ -114,10 +104,11 @@ export async function searchPersons(
       { wpsRank: { rank: 'asc' } },
       { id: 'asc' },
     ],
-    take: remaining,
+    take,
   })) as PersonWithRelations[];
 
   for (const p of persons) {
+    if (seenIds.has(p.id)) continue;
     results.push({
       wcaId: p.id,
       name: p.name,

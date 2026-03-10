@@ -11,7 +11,9 @@ router.get('/', async (req, res) => {
       return;
     }
 
-    const results = await searchPersons(q, 20);
+    const parsed = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : NaN;
+    const limit = Math.min(Math.max(1, Number.isNaN(parsed) ? 20 : parsed), 50);
+    const results = await searchPersons(q, limit);
     console.log(`[db-search] q=${q} results=${results.length}`);
     res.json({ results, source: 'postgres' });
   } catch (err) {

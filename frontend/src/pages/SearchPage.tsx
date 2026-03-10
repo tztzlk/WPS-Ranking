@@ -5,7 +5,7 @@ import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 400;
 const MIN_QUERY_LENGTH = 2;
 
 export function SearchPage() {
