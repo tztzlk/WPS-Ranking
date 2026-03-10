@@ -8,15 +8,14 @@ datasource db {
 }
 
 model Person {
-  id          String   @id @db.VarChar(10)
+  id          String    @id @db.VarChar(10)
   name        String
-  nameLower   String   @map("name_lower")
-  countryId   String?  @map("country_id")
-  countryName String?  @map("country_name")
-  countryIso2 String?  @map("country_iso2") @db.VarChar(2)
-
-  wpsScore WpsScore?
-  wpsRank  WpsRank?
+  nameLower   String    @map("name_lower")
+  countryId   String?   @map("country_id")
+  countryName String?   @map("country_name")
+  countryIso2 String?   @map("country_iso2") @db.VarChar(2)
+  wpsRank     WpsRank?
+  wpsScore    WpsScore?
 
   @@index([nameLower], map: "idx_person_name_lower")
   @@index([countryIso2], map: "idx_person_country_iso2")
@@ -26,8 +25,7 @@ model Person {
 model WpsScore {
   personId String @id @map("person_id") @db.VarChar(10)
   score    Float
-
-  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([score], map: "idx_wps_score")
   @@map("wps_scores")
@@ -36,8 +34,7 @@ model WpsScore {
 model WpsRank {
   personId String @id @map("person_id") @db.VarChar(10)
   rank     Int
-
-  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([rank], map: "idx_wps_rank")
   @@map("wps_ranks")
@@ -48,4 +45,19 @@ model Meta {
   value String
 
   @@map("meta")
+}
+
+model LeaderboardEntry {
+  personId     String   @id @map("person_id") @db.VarChar(10)
+  name         String
+  countryIso2  String?  @map("country_iso2") @db.VarChar(2)
+  countryName  String?  @map("country_name")
+  wps          Float
+  globalRank   Int      @map("global_rank")
+  countryRank  Int?     @map("country_rank")
+  generatedAt  DateTime @map("generated_at")
+
+  @@index([globalRank], map: "idx_leaderboard_global_rank")
+  @@index([countryIso2, countryRank], map: "idx_leaderboard_country_rank")
+  @@map("leaderboard_entries")
 }

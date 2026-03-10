@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { rebuildLeaderboardSnapshot } from '../services/leaderboardCache';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -134,8 +135,9 @@ async function readWpsRankIndex(): Promise<WpsRankIndex> {
 }
 
 async function deleteExistingData(): Promise<void> {
-  console.log('[importData] Clearing existing data (WpsScore, WpsRank, Person, Meta) ...');
+  console.log('[importData] Clearing existing data (LeaderboardEntry, WpsScore, WpsRank, Person, Meta) ...');
 
+  await prisma.leaderboardEntry.deleteMany();
   await prisma.wpsScore.deleteMany();
   await prisma.wpsRank.deleteMany();
   await prisma.person.deleteMany();
@@ -251,6 +253,10 @@ async function main(): Promise<void> {
   const scoresCount = await importWpsScores(wpsIndex, validPersonIds);
   const ranksCount = await importWpsRanks(wpsRankIndex, validPersonIds);
   await importMeta(wpsRankIndex);
+
+  console.log('[importData] Rebuilding leaderboard snapshot ...');
+  await rebuildLeaderboardSnapshot();
+  console.log('[importData] Leaderboard snapshot rebuild complete.');
 
   console.log(`[importData] Summary: persons=${persons.length}, scores=${scoresCount}, ranks=${ranksCount}`);
   console.log('[importData] Import completed successfully.');
