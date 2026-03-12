@@ -148,44 +148,61 @@
   /**
    * Rebuilds the leaderboard snapshot table using SQL window functions.
    * Heavy joins and ranking are moved out of the HTTP request path.
+   * Uses separate direct calls (no interactive transaction) to avoid Prisma's
+   * 5s transaction timeout on large datasets (~275k+ rows).
    */
   export async function rebuildLeaderboardSnapshot(): Promise<void> {
     const generatedAt = new Date().toISOString();
 
-    await prisma.$transaction(async (tx) => {
-      await tx.leaderboardEntry.deleteMany();
+    await prisma.leaderboardEntry.deleteMany();
 
-      await tx.$executeRawUnsafe(
-        `
-        INSERT INTO "leaderboard_entries" (
-          "person_id",
-          "name",
-          "country_iso2",
-          "country_name",
-          "wps",
-          "global_rank",
-          "country_rank",
-          "generated_at"
-        )
-        SELECT
-          p.id,
-          p.name,
-          p.country_iso2,
-          p.country_name,
-          s.score,
-          RANK() OVER (ORDER BY s.score DESC) AS global_rank,
-          RANK() OVER (
-            PARTITION BY p.country_iso2
-            ORDER BY s.score DESC
-          ) AS country_rank,
-          $1::timestamptz AS generated_at
-        FROM "persons" p
-        JOIN "wps_scores" s ON s.person_id = p.id
-        WHERE s.score IS NOT NULL
-        `,
-        generatedAt,
-      );
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO "leaderboard_entries" (
+        "person_id",
+        "name",
+        "country_iso2",
+        "country_name",
+        "wps",
+        "global_rank",
+        "country_rank",
+        "generated_at"
+      )
+      SELECT
+        p.id,
+        p.name,
+        p.country_iso2,
+        p.country_name,
+        s.score,
+        RANK() OVER (ORDER BY s.score DESC) AS global_rank,
+        RANK() OVER (
+          PARTITION BY p.country_iso2
+          ORDER BY s.score DESC
+        ) AS country_rank,
+        $1::timestamptz AS generated_at
+      FROM "persons" p
+      JOIN "wps_scores" s ON s.person_id = p.id
+      WHERE s.score IS NOT NULL
+      `,
+      generatedAt,
+    );
+
+    const totalRanked = await prisma.leaderboardEntry.count();
+
+    await prisma.meta.upsert({
+      where: { key: 'generatedAt' },
+      create: { key: 'generatedAt', value: generatedAt },
+      update: { value: generatedAt },
     });
+    await prisma.meta.upsert({
+      where: { key: 'totalRanked' },
+      create: { key: 'totalRanked', value: String(totalRanked) },
+      update: { value: String(totalRanked) },
+    });
+
+    globalLeaderboardCache.clear();
+    countryLeaderboardCache.clear();
+    countriesListCache = null;
   }
 
   /**
