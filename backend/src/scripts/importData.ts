@@ -2,9 +2,12 @@
  * Offline script to import precomputed WPS data into PostgreSQL via Prisma.
  * Safe to re-run; it clears target tables and then bulk inserts fresh data.
  * Does not rebuild leaderboard snapshot; use refreshAllData or call rebuildLeaderboardSnapshot separately.
+ * Uses streaming for Persons.tsv to avoid loading large files into memory.
  */
 import fs from 'fs';
 import path from 'path';
+import { createReadStream } from 'fs';
+import { createInterface } from 'readline';
 import dotenv from 'dotenv';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
@@ -20,6 +23,7 @@ const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
 const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
 
 const BATCH_SIZE = 2000;
+const STREAM_HIGH_WATER_MARK = 64 * 1024;
 
 type CountriesIndex = {
   generatedAt: string;
@@ -56,51 +60,50 @@ async function readPersonsTsv(): Promise<
 > {
   assertFileExists(PERSONS_TSV_PATH, 'Persons.tsv');
 
-  console.log(`[importData] Reading Persons TSV from ${PERSONS_TSV_PATH} ...`);
-  const raw = await fs.promises.readFile(PERSONS_TSV_PATH, 'utf8');
-  const lines = raw.split(/\r?\n/);
+  console.log(`[importData] Reading Persons TSV from ${PERSONS_TSV_PATH} (streaming) ...`);
+  const countries = await readCountriesIndex();
 
   const persons: Array<Pick<
     Prisma.PersonCreateManyInput,
     'id' | 'name' | 'nameLower' | 'countryId' | 'countryName' | 'countryIso2'
   >> = [];
 
-  // Load countries index eagerly so we can enrich persons while parsing.
-  const countries = await readCountriesIndex();
+  const stream = createReadStream(PERSONS_TSV_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
+  const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
+  let isHeader = true;
   let headerIndices: Record<string, number> = {};
-  const getHeaderIndices = (cols: string[]) => {
-    const idx: Record<string, number> = {};
-    cols.forEach((name, i) => {
-      idx[name.trim().toLowerCase()] = i;
-    });
-    return idx;
-  };
 
-  lines.forEach((line, idx) => {
-    if (!line.trim()) return;
+  for await (const line of rl) {
+    if (!line.trim()) continue;
 
     const parts = line.split('\t');
-    if (parts.length < 3) return;
+    if (parts.length < 3) continue;
 
-    if (idx === 0) {
-      headerIndices = getHeaderIndices(parts);
-      return;
+    if (isHeader) {
+      parts.forEach((name, i) => {
+        headerIndices[name.trim().toLowerCase()] = i;
+      });
+      isHeader = false;
+      continue;
     }
 
     const nameIdx = headerIndices['name'];
     const wcaIdIdx = headerIndices['wca_id'];
     const subIdIdx = headerIndices['sub_id'];
     const countryIdIdx = headerIndices['country_id'];
-    if (nameIdx === undefined || wcaIdIdx === undefined || subIdIdx === undefined) return;
+    if (nameIdx === undefined || wcaIdIdx === undefined || subIdIdx === undefined) continue;
 
     const name = parts[nameIdx]?.trim();
     const wcaId = parts[wcaIdIdx]?.trim();
     const subId = parts[subIdIdx]?.trim();
     let countryIdRaw = countryIdIdx !== undefined ? parts[countryIdIdx]?.trim() : '';
 
-    if (!name || !wcaId || !subId) return;
-    if (subId !== '1') return;
+    if (!name || !wcaId || !subId) continue;
+    if (subId !== '1') continue;
 
     if (!countryIdRaw || countryIdRaw === '\\N') {
       countryIdRaw = '';
@@ -118,7 +121,7 @@ async function readPersonsTsv(): Promise<
       countryName,
       countryIso2,
     });
-  });
+  }
 
   console.log(`[importData] Parsed ${persons.length.toLocaleString()} persons with subId === "1".`);
   return persons;
