@@ -28,15 +28,25 @@ const V2_TSV_MAP: Record<string, string> = {
   ranks_average: 'RanksAverage',
 };
 
-function sha256File(filePath: string): string {
-  const buf = fs.readFileSync(filePath);
-  return crypto.createHash('sha256').update(buf).digest('hex');
+async function sha256File(filePath: string): Promise<string> {
+  const hash = crypto.createHash('sha256');
+  const stream = fs.createReadStream(filePath);
+  for await (const chunk of stream) {
+    hash.update(chunk);
+  }
+  return hash.digest('hex');
 }
 
 async function downloadZip(): Promise<void> {
   console.log(`Downloading WCA export from ${WCA_EXPORT_URL} ...`);
-  const response = await axios.get(WCA_EXPORT_URL, { responseType: 'arraybuffer', timeout: 300_000 });
-  fs.writeFileSync(ZIP_PATH, Buffer.from(response.data));
+  const response = await axios.get(WCA_EXPORT_URL, { responseType: 'stream', timeout: 300_000 });
+  const writer = fs.createWriteStream(ZIP_PATH);
+  response.data.pipe(writer);
+  await new Promise<void>((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+    response.data.on('error', reject);
+  });
   const sizeMB = (fs.statSync(ZIP_PATH).size / 1024 / 1024).toFixed(1);
   console.log(`Downloaded ${sizeMB} MB -> ${ZIP_PATH}`);
 }
@@ -86,7 +96,7 @@ export async function runUpdateRawData(): Promise<{ changed: boolean }> {
   console.log('[updateData] Downloading latest WCA export ...');
   await downloadZip();
 
-  const newHash = sha256File(ZIP_PATH);
+  const newHash = await sha256File(ZIP_PATH);
   const oldHash = fs.existsSync(HASH_PATH) ? fs.readFileSync(HASH_PATH, 'utf8').trim() : '';
 
   if (newHash === oldHash) {
