@@ -1,6 +1,7 @@
 /**
  * Offline script only. Not used by runtime API.
  * Pipeline: reads WCA TSVs, computes WPS, writes JSON indexes (persons, countries, wps, wpsRank, leaderboard.top100).
+ * Uses streaming + line-by-line parsing to avoid loading large TSVs into memory.
  */
 import fs from 'fs';
 import path from 'path';
@@ -21,6 +22,7 @@ const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
 const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 
 const TOP_N = 100;
+const STREAM_HIGH_WATER_MARK = 64 * 1024;
 
 export interface CountryInfo {
   name: string;
@@ -51,6 +53,24 @@ export interface LeaderboardResult {
   items: LeaderboardItem[];
 }
 
+/** Extract specific columns by index without splitting the entire line. Reduces allocations for large TSVs. */
+function extractColumns(line: string, indices: number[]): string[] {
+  const result: string[] = [];
+  let colIndex = 0;
+  let start = 0;
+  const maxIdx = Math.max(...indices);
+  for (let i = 0; i <= line.length && colIndex <= maxIdx; i++) {
+    if (i === line.length || line[i] === '\t') {
+      if (indices.includes(colIndex)) {
+        result.push(line.slice(start, i).trim());
+      }
+      colIndex++;
+      start = i + 1;
+    }
+  }
+  return result;
+}
+
 function parseTSVLine(line: string): string[] {
   return line.split('\t');
 }
@@ -67,7 +87,10 @@ function getHeaderIndices(headerRow: string[]): Record<string, number> {
 async function buildCountriesIndex(): Promise<Record<string, CountryInfo>> {
   const index: Record<string, CountryInfo> = {};
   if (!fs.existsSync(COUNTRIES_PATH)) return index;
-  const stream = createReadStream(COUNTRIES_PATH, { encoding: 'utf8' });
+  const stream = createReadStream(COUNTRIES_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
   let isHeader = true;
   let headerIndices: Record<string, number> = {};
@@ -105,7 +128,10 @@ async function buildPersonMap(
   onProgress?: (lineCount: number) => void
 ): Promise<Map<string, PersonInfo>> {
   const personMap = new Map<string, PersonInfo>();
-  const stream = createReadStream(PERSONS_PATH, { encoding: 'utf8' });
+  const stream = createReadStream(PERSONS_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
   let isHeader = true;
@@ -155,35 +181,49 @@ export interface PersonWPSBreakdown {
   breakdown: BreakdownItem[];
 }
 
-/** Accumulates sum and per-event breakdown per person. */
+/** Streams RanksAverage.tsv line-by-line; never loads the full file into memory.
+ * Uses createReadStream + readline for streaming; extractColumns for minimal parsing per line.
+ * Accumulates sum and per-event breakdown per person. */
 async function streamRanksAndAccumulate(
   scoreAndBreakdownByPerson: Map<string, { sum: number; breakdown: BreakdownItem[] }>,
   onProgress?: (lineCount: number) => void
 ): Promise<void> {
-  const stream = createReadStream(RANKS_AVERAGE_PATH, { encoding: 'utf8' });
+  const stream = createReadStream(RANKS_AVERAGE_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
   let isHeader = true;
   let headerIndices: Record<string, number> = {};
   let lineCount = 0;
+  const neededIndices: number[] = [];
 
   for await (const line of rl) {
     if (!line.trim()) continue;
-    const cols = parseTSVLine(line);
     if (isHeader) {
+      const cols = parseTSVLine(line);
       headerIndices = getHeaderIndices(cols);
+      const personIdIdx = headerIndices['person_id'];
+      const eventIdIdx = headerIndices['event_id'];
+      const worldRankIdx = headerIndices['world_rank'];
+      if (personIdIdx === undefined || eventIdIdx === undefined || worldRankIdx === undefined) {
+        throw new Error('RanksAverage.tsv missing required columns: person_id, event_id, world_rank');
+      }
+      neededIndices.length = 0;
+      neededIndices.push(personIdIdx, eventIdIdx, worldRankIdx);
+      neededIndices.sort((a, b) => a - b);
       isHeader = false;
       continue;
     }
+    const extracted = extractColumns(line, neededIndices);
     const personIdIdx = headerIndices['person_id'];
     const eventIdIdx = headerIndices['event_id'];
     const worldRankIdx = headerIndices['world_rank'];
-    if (personIdIdx === undefined || eventIdIdx === undefined || worldRankIdx === undefined) continue;
-
-    const personId = cols[personIdIdx]?.trim();
-    const eventId = cols[eventIdIdx]?.trim();
-    const worldRankRaw = cols[worldRankIdx]?.trim();
-    if (!personId || !eventId || worldRankRaw === undefined || worldRankRaw === '') continue;
+    const personId = extracted[neededIndices.indexOf(personIdIdx)] ?? '';
+    const eventId = extracted[neededIndices.indexOf(eventIdIdx)] ?? '';
+    const worldRankRaw = extracted[neededIndices.indexOf(worldRankIdx)] ?? '';
+    if (!personId || !eventId || worldRankRaw === '') continue;
 
     const weight = EVENT_WEIGHTS[eventId];
     if (weight === undefined) continue;
@@ -241,26 +281,39 @@ export async function generateTop100Leaderboard(
   );
 
   const wpsIndex: Record<string, { wps: number }> = {};
-  const breakdownIndex: Record<string, PersonWPSBreakdown> = {};
   for (const e of entries) {
     wpsIndex[e.personId] = { wps: Math.round(e.wps * 100) / 100 };
-    breakdownIndex[e.personId] = {
-      sumEventScores: e.sumEventScores,
-      maxPossible: MAX_WPS_SCORE,
-      eventsParticipated: e.breakdown.length,
-      breakdown: e.breakdown,
-    };
   }
   await fs.promises.writeFile(
     WPS_INDEX_PATH,
     JSON.stringify(wpsIndex),
     'utf8'
   );
-  await fs.promises.writeFile(
-    WPS_BREAKDOWN_PATH,
-    JSON.stringify(breakdownIndex),
-    'utf8'
-  );
+
+  // Stream-write wps.breakdown.json to avoid building a huge JSON string in memory
+  const breakdownStream = fs.createWriteStream(WPS_BREAKDOWN_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
+  breakdownStream.write('{');
+  let first = true;
+  for (const e of entries) {
+    if (!first) breakdownStream.write(',');
+    const entry: PersonWPSBreakdown = {
+      sumEventScores: e.sumEventScores,
+      maxPossible: MAX_WPS_SCORE,
+      eventsParticipated: e.breakdown.length,
+      breakdown: e.breakdown,
+    };
+    breakdownStream.write(`"${e.personId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}":${JSON.stringify(entry)}`);
+    first = false;
+  }
+  breakdownStream.write('}');
+  await new Promise<void>((resolve, reject) => {
+    breakdownStream.on('finish', resolve);
+    breakdownStream.on('error', reject);
+    breakdownStream.end();
+  });
 
   entries.sort((a, b) => {
     const diff = b.wps - a.wps;
