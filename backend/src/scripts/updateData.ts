@@ -21,11 +21,15 @@ const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
 const ZIP_PATH = path.join(CACHE_DIR, 'wca_export.zip');
 const HASH_PATH = path.join(CACHE_DIR, 'export.sha256');
 
-/** v2 export uses snake_case filenames; we copy to PascalCase for downstream compatibility. */
-const V2_TSV_MAP: Record<string, string> = {
-  persons: 'Persons',
-  countries: 'Countries',
-  ranks_average: 'RanksAverage',
+/**
+ * Maps WCA v2 export filenames to legacy names expected by the rest of the codebase.
+ * WCA v2 uses: WCA_export_<name>.tsv
+ * Downstream expects: <PascalCase>.tsv
+ */
+const V2_TO_LEGACY_TSV_MAP: Record<string, string> = {
+  'WCA_export_persons.tsv': 'Persons.tsv',
+  'WCA_export_countries.tsv': 'Countries.tsv',
+  'WCA_export_ranks_average.tsv': 'RanksAverage.tsv',
 };
 
 async function sha256File(filePath: string): Promise<string> {
@@ -61,16 +65,18 @@ function extractTsvs(): void {
   console.log('Extracting ZIP ...');
   execSync(`unzip -o "${ZIP_PATH}" -d "${tmpDir}"`, { stdio: 'pipe' });
 
-  for (const [v2Name, destName] of Object.entries(V2_TSV_MAP)) {
-    const pattern = `${v2Name}.tsv`;
-    const found = findFile(tmpDir, pattern);
+  for (const [v2Filename, legacyFilename] of Object.entries(V2_TO_LEGACY_TSV_MAP)) {
+    const found = findFile(tmpDir, v2Filename);
     if (!found) {
-      throw new Error(`Required TSV not found in export: ${pattern}`);
+      throw new Error(
+        `Required WCA v2 TSV not found in export: ${v2Filename}. ` +
+          `Ensure the export contains files like WCA_export_persons.tsv, WCA_export_countries.tsv, etc.`
+      );
     }
-    const dest = path.join(WCA_EXPORT_DIR, `${destName}.tsv`);
+    const dest = path.join(WCA_EXPORT_DIR, legacyFilename);
     fs.copyFileSync(found, dest);
     const sizeMB = (fs.statSync(dest).size / 1024 / 1024).toFixed(1);
-    console.log(`  ${destName}.tsv  ${sizeMB} MB`);
+    console.log(`  ${v2Filename} -> ${legacyFilename}  (${sizeMB} MB)`);
   }
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
