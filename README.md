@@ -138,6 +138,19 @@ npm run import:data
 6. Set environment variables: `DATABASE_URL`, `DIRECT_DATABASE_URL`, `NODE_ENV=production`, `CORS_ORIGINS`.
 7. Verify: `curl https://<backend>/api/health` should return `{"ok":true,"env":"production"}`.
 
+### Render Cron Job (data refresh)
+
+Create a Cron Job on Render to run the data refresh pipeline daily. Use the same repo and environment variables as the Web Service.
+
+| Setting | Value |
+|--------|-------|
+| **Root Directory** | `backend` |
+| **Build Command** | `npm ci && npm run build` |
+| **Schedule** | `0 3 * * *` (daily at 03:00 UTC) |
+| **Command** | `npm run refresh:data` |
+
+> If Root Directory is already `backend`, do **not** prepend `cd backend &&` to the command.
+
 ### Deploy frontend (Vercel)
 
 1. Import repo, set **Root directory** to `frontend`.

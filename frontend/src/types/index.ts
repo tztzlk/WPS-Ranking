@@ -69,6 +69,21 @@ export interface LeaderboardCacheResponse {
   items: LeaderboardCacheItem[];
 }
 
+/** WPS breakdown per event (GET /api/cuber/:id/wps-breakdown). */
+export interface WpsBreakdownEvent {
+  eventId: string;
+  eventName: string;
+  weight: number;
+  worldRank: number;
+  eventScore: number;
+}
+
+export interface WpsBreakdownResponse {
+  personId: string;
+  events: WpsBreakdownEvent[];
+  wps: number;
+}
+
 export const EVENT_NAMES: Record<string, string> = {
   '333': '3x3x3 Cube',
   '222': '2x2x2 Cube',

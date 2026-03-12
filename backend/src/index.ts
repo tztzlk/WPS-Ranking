@@ -10,6 +10,7 @@ import { profileRoutes } from './routes/profile';
 import { searchRoutes } from './routes/search';
 import { aboutRoutes } from './routes/about';
 import { compareRoutes } from './routes/compare';
+import { cuberRoutes } from './routes/cuber';
 import { ogRoutes } from './routes/og';
 import { ogMetaRoutes } from './routes/ogMeta';
 import { errorHandler } from './middleware/errorHandler';
@@ -66,6 +67,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/compare', compareRoutes);
+app.use('/api/cuber', cuberRoutes);
 app.use('/api/og', ogRoutes);
 
 app.get('/api/health', (_req, res) => {

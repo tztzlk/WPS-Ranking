@@ -61,3 +61,14 @@ model LeaderboardEntry {
   @@index([countryIso2, countryRank], map: "idx_leaderboard_country_rank")
   @@map("leaderboard_entries")
 }
+
+model HistorySnapshot {
+  personId     String   @map("person_id") @db.VarChar(10)
+  snapshotDate DateTime @map("snapshot_date") @db.Date
+  wps          Float
+  globalRank   Int      @map("global_rank")
+  countryRank  Int?     @map("country_rank")
+
+  @@id([personId, snapshotDate])
+  @@map("history_snapshots")
+}

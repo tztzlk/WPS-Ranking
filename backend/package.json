@@ -13,7 +13,8 @@
     "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
     "update:data": "tsx src/scripts/updateData.ts",
     "import:data": "tsx src/scripts/importData.ts",
-    "debug:person": "tsx src/scripts/debugFindPerson.ts"
+    "debug:person": "tsx src/scripts/debugFindPerson.ts",
+    "refresh:data": "tsx src/scripts/refreshAllData.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
