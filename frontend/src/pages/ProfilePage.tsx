@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2 } from 'lucide-react';
+import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
@@ -172,32 +172,37 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* WPS Breakdown */}
+      {/* WPS Calculation (collapsible) */}
       {breakdown && breakdown.events.length > 0 && (
-        <div className="card bg-gray-800/50">
-          <div className="flex items-center justify-between gap-4 mb-2">
-            <h3 className="text-lg font-semibold text-white">WPS Breakdown</h3>
-            <button
-              type="button"
-              onClick={() => setShowBreakdown((v) => !v)}
-              className="text-sm text-green-400 hover:text-green-300 font-medium transition"
-            >
-              {showBreakdown ? 'Hide' : 'Show'}
-            </button>
-          </div>
+        <div className="rounded-lg border border-gray-700 bg-gray-800/50 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowBreakdown((v) => !v)}
+            className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+          >
+            <span className="font-medium">
+              {showBreakdown ? 'Hide WPS calculation' : 'Show WPS calculation'}
+            </span>
+            {showBreakdown ? (
+              <ChevronUp className="w-5 h-5 shrink-0 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 shrink-0 text-gray-400" />
+            )}
+          </button>
           {showBreakdown && (
-            <>
-              <p className="text-gray-300 mb-4 text-sm">
-                WPS measures overall performance across all WCA events.
-                Each event contributes based on two factors: the event&apos;s popularity (weight) and the cuber&apos;s world rank in that event.
+            <div className="border-t border-gray-700 px-6 py-5 space-y-4">
+              <h3 className="text-lg font-semibold text-white">WPS Calculation Breakdown</h3>
+              <p className="text-gray-300 text-sm">
+                WPS is calculated from the cuber&apos;s current WCA world rank in each event and the event&apos;s weight.
+                Each event contributes to the final score based on the current WPS formula.
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-gray-600">
                       <th className="py-2 pr-4 text-gray-400 font-medium">Event</th>
-                      <th className="py-2 pr-4 text-gray-400 font-medium">Weight</th>
                       <th className="py-2 pr-4 text-gray-400 font-medium">World Rank</th>
+                      <th className="py-2 pr-4 text-gray-400 font-medium">Weight</th>
                       <th className="py-2 text-gray-400 font-medium">Contribution</th>
                     </tr>
                   </thead>
@@ -205,18 +210,47 @@ export function ProfilePage() {
                     {breakdown.events.map((row) => (
                       <tr key={row.eventId} className="border-b border-gray-700/50">
                         <td className="py-2 pr-4 text-white">{row.eventName}</td>
+                        <td className="py-2 pr-4 text-gray-300">#{row.worldRank.toLocaleString()}</td>
                         <td className="py-2 pr-4 text-gray-300">{row.weight.toFixed(2)}</td>
-                        <td className="py-2 pr-4 text-gray-300">#{row.worldRank}</td>
                         <td className="py-2 text-green-400">{row.eventScore.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-600">
+                      <td className="py-3 pr-4 font-medium text-white" colSpan={3}>
+                        Total WPS
+                      </td>
+                      <td className="py-3 text-green-400 font-semibold">
+                        {breakdown.wps.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
-              <p className="text-gray-300 mt-4 font-medium">
-                Total WPS: <span className="text-green-400">{breakdown.wps.toFixed(2)}</span>
-              </p>
-            </>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 text-sm text-gray-400">
+                <span>
+                  <span className="text-gray-500">Most valuable event:</span>{' '}
+                  <span className="text-white">
+                    {breakdown.events[0]?.eventName ?? '—'}
+                  </span>
+                </span>
+                <span>
+                  <span className="text-gray-500">Best world rank used:</span>{' '}
+                  <span className="text-white">
+                    #{Math.min(...breakdown.events.map((e) => e.worldRank)).toLocaleString()}
+                  </span>
+                </span>
+                <span>
+                  <span className="text-gray-500">Snapshot date:</span>{' '}
+                  <span className="text-white">
+                    {profile.lastUpdated
+                      ? new Date(profile.lastUpdated).toLocaleDateString()
+                      : '—'}
+                  </span>
+                </span>
+              </div>
+            </div>
           )}
         </div>
       )}
