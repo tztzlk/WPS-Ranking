@@ -1,5 +1,6 @@
 import { runUpdateRawData } from './updateData';
 import { runImport } from './importData';
+import { prisma } from '../lib/prisma';
 import { rebuildLeaderboardSnapshot } from '../services/leaderboardCache';
 import { saveHistorySnapshotForToday } from '../services/historySnapshot';
 
@@ -33,7 +34,11 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((err) => {
-  console.error('[refresh] Pipeline failed:', err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error('[refresh] Pipeline failed:', err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

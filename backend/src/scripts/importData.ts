@@ -68,22 +68,36 @@ async function readPersonsTsv(): Promise<
   // Load countries index eagerly so we can enrich persons while parsing.
   const countries = await readCountriesIndex();
 
+  let headerIndices: Record<string, number> = {};
+  const getHeaderIndices = (cols: string[]) => {
+    const idx: Record<string, number> = {};
+    cols.forEach((name, i) => {
+      idx[name.trim().toLowerCase()] = i;
+    });
+    return idx;
+  };
+
   lines.forEach((line, idx) => {
     if (!line.trim()) return;
 
     const parts = line.split('\t');
-    // Expected: name (0), ..., wcaId (2), subId (3), countryId (4), ...
-    if (parts.length < 5) return;
+    if (parts.length < 3) return;
 
-    // Skip header row if present
-    if (idx === 0 && parts[0].toLowerCase() === 'name') {
+    if (idx === 0) {
+      headerIndices = getHeaderIndices(parts);
       return;
     }
 
-    const name = parts[0]?.trim();
-    const wcaId = parts[2]?.trim();
-    const subId = parts[3]?.trim();
-    let countryIdRaw = parts[4]?.trim();
+    const nameIdx = headerIndices['name'];
+    const wcaIdIdx = headerIndices['wca_id'];
+    const subIdIdx = headerIndices['sub_id'];
+    const countryIdIdx = headerIndices['country_id'];
+    if (nameIdx === undefined || wcaIdIdx === undefined || subIdIdx === undefined) return;
+
+    const name = parts[nameIdx]?.trim();
+    const wcaId = parts[wcaIdIdx]?.trim();
+    const subId = parts[subIdIdx]?.trim();
+    let countryIdRaw = countryIdIdx !== undefined ? parts[countryIdIdx]?.trim() : '';
 
     if (!name || !wcaId || !subId) return;
     if (subId !== '1') return;
@@ -251,20 +265,4 @@ export async function runImport(): Promise<void> {
 
   console.log(`[importData] Summary: persons=${persons.length}, scores=${scoresCount}, ranks=${ranksCount}`);
 }
-
-async function main(): Promise<void> {
-  console.log('[importData] Starting import ...');
-  const started = Date.now();
-  await runImport();
-  console.log('[importData] Import completed successfully in %d ms.', Date.now() - started);
-}
-
-main()
-  .catch((err) => {
-    console.error('[importData] Import failed:', err);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
 

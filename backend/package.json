@@ -11,8 +11,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
-    "update:data": "tsx src/scripts/updateData.ts",
-    "import:data": "tsx src/scripts/importData.ts",
+    "update:data": "tsx src/scripts/updateData.cli.ts",
+    "import:data": "tsx src/scripts/importData.cli.ts",
     "debug:person": "tsx src/scripts/debugFindPerson.ts",
     "refresh:data": "tsx src/scripts/refreshAllData.ts"
   },
