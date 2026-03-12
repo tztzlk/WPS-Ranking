@@ -14,14 +14,19 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const WCA_EXPORT_URL =
   process.env.WCA_EXPORT_URL ??
-  'https://www.worldcubeassociation.org/export/results/WCA_export.tsv.zip';
+  'https://www.worldcubeassociation.org/export/results/v2/tsv';
 
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
 const ZIP_PATH = path.join(CACHE_DIR, 'wca_export.zip');
 const HASH_PATH = path.join(CACHE_DIR, 'export.sha256');
 
-const NEEDED_TSVS = ['Persons', 'Countries', 'RanksAverage'];
+/** v2 export uses snake_case filenames; we copy to PascalCase for downstream compatibility. */
+const V2_TSV_MAP: Record<string, string> = {
+  persons: 'Persons',
+  countries: 'Countries',
+  ranks_average: 'RanksAverage',
+};
 
 function sha256File(filePath: string): string {
   const buf = fs.readFileSync(filePath);
@@ -46,16 +51,16 @@ function extractTsvs(): void {
   console.log('Extracting ZIP ...');
   execSync(`unzip -o "${ZIP_PATH}" -d "${tmpDir}"`, { stdio: 'pipe' });
 
-  for (const name of NEEDED_TSVS) {
-    const pattern = `WCA_export_${name}.tsv`;
+  for (const [v2Name, destName] of Object.entries(V2_TSV_MAP)) {
+    const pattern = `${v2Name}.tsv`;
     const found = findFile(tmpDir, pattern);
     if (!found) {
       throw new Error(`Required TSV not found in export: ${pattern}`);
     }
-    const dest = path.join(WCA_EXPORT_DIR, `${name}.tsv`);
+    const dest = path.join(WCA_EXPORT_DIR, `${destName}.tsv`);
     fs.copyFileSync(found, dest);
     const sizeMB = (fs.statSync(dest).size / 1024 / 1024).toFixed(1);
-    console.log(`  ${name}.tsv  ${sizeMB} MB`);
+    console.log(`  ${destName}.tsv  ${sizeMB} MB`);
   }
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -106,15 +111,3 @@ export async function runUpdateRawData(): Promise<{ changed: boolean }> {
   console.log('[updateData] Raw data update complete.');
   return { changed: true };
 }
-
-async function main(): Promise<void> {
-  const startedAt = Date.now();
-  console.log('[updateData] Starting raw data update ...');
-  const result = await runUpdateRawData();
-  console.log('[updateData] Finished. changed=%s durationMs=%d', result.changed, Date.now() - startedAt);
-}
-
-main().catch((err) => {
-  console.error('[updateData] Failed:', err);
-  process.exit(1);
-});
