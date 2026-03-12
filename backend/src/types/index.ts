@@ -41,6 +41,27 @@ export const EVENT_WEIGHTS: Record<string, number> = {
   '333mbf': 0.3,
 };
 
+/** Display names for WCA events (for WPS breakdown API). */
+export const EVENT_NAMES: Record<string, string> = {
+  '333': '3x3 Cube',
+  '222': '2x2 Cube',
+  '444': '4x4 Cube',
+  '555': '5x5 Cube',
+  '666': '6x6 Cube',
+  '777': '7x7 Cube',
+  '333bf': '3x3 Blindfolded',
+  '333fm': '3x3 Fewest Moves',
+  '333oh': '3x3 One-Handed',
+  'clock': 'Clock',
+  'minx': 'Megaminx',
+  'pyram': 'Pyraminx',
+  'skewb': 'Skewb',
+  'sq1': 'Square-1',
+  '444bf': '4x4 Blindfolded',
+  '555bf': '5x5 Blindfolded',
+  '333mbf': '3x3 Multi-Blind',
+};
+
 /** MAX = sum(w_e * (1/ln(2)) * 10). Matches EventScore when R_e = 1 for all events. */
 export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
   (sum, w) => sum + w * (1 / Math.log(2)) * 10,

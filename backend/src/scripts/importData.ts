@@ -1,18 +1,15 @@
 /**
  * Offline script to import precomputed WPS data into PostgreSQL via Prisma.
  * Safe to re-run; it clears target tables and then bulk inserts fresh data.
+ * Does not rebuild leaderboard snapshot; use refreshAllData or call rebuildLeaderboardSnapshot separately.
  */
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { PrismaClient, Prisma } from '@prisma/client';
-import { rebuildLeaderboardSnapshot } from '../services/leaderboardCache';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-});
 
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const WCA_EXPORT_DIR = path.join(CACHE_DIR, 'wca_export');
@@ -238,9 +235,7 @@ async function importMeta(rankIndex: WpsRankIndex): Promise<void> {
   console.log('[importData] Meta import complete.');
 }
 
-async function main(): Promise<void> {
-  console.log('[importData] Starting import ...');
-
+export async function runImport(): Promise<void> {
   const persons = await readPersonsTsv();
   const wpsIndex = await readWpsIndex();
   const wpsRankIndex = await readWpsRankIndex();
@@ -254,12 +249,14 @@ async function main(): Promise<void> {
   const ranksCount = await importWpsRanks(wpsRankIndex, validPersonIds);
   await importMeta(wpsRankIndex);
 
-  console.log('[importData] Rebuilding leaderboard snapshot ...');
-  await rebuildLeaderboardSnapshot();
-  console.log('[importData] Leaderboard snapshot rebuild complete.');
-
   console.log(`[importData] Summary: persons=${persons.length}, scores=${scoresCount}, ranks=${ranksCount}`);
-  console.log('[importData] Import completed successfully.');
+}
+
+async function main(): Promise<void> {
+  console.log('[importData] Starting import ...');
+  const started = Date.now();
+  await runImport();
+  console.log('[importData] Import completed successfully in %d ms.', Date.now() - started);
 }
 
 main()

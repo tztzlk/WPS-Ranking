@@ -2,15 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
-import { WPSProfile } from '../types';
+import { WPSProfile, WpsBreakdownResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 
 export function ProfilePage() {
   const { wcaId } = useParams<{ wcaId: string }>();
   const [profile, setProfile] = useState<WPSProfile | null>(null);
+  const [breakdown, setBreakdown] = useState<WpsBreakdownResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -26,8 +28,17 @@ export function ProfilePage() {
     try {
       setLoading(true);
       setError(null);
+      setBreakdown(null);
       const data = await apiService.getProfile(id);
       if (!controller.signal.aborted) setProfile(data);
+      if (!controller.signal.aborted && data?.wcaId) {
+        try {
+          const b = await apiService.getWpsBreakdown(data.wcaId);
+          if (!controller.signal.aborted) setBreakdown(b);
+        } catch {
+          // Breakdown optional; profile still works
+        }
+      }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
@@ -160,6 +171,55 @@ export function ProfilePage() {
           <p className="text-gray-400">Last Updated</p>
         </div>
       </div>
+
+      {/* WPS Breakdown */}
+      {breakdown && breakdown.events.length > 0 && (
+        <div className="card bg-gray-800/50">
+          <div className="flex items-center justify-between gap-4 mb-2">
+            <h3 className="text-lg font-semibold text-white">WPS Breakdown</h3>
+            <button
+              type="button"
+              onClick={() => setShowBreakdown((v) => !v)}
+              className="text-sm text-green-400 hover:text-green-300 font-medium transition"
+            >
+              {showBreakdown ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {showBreakdown && (
+            <>
+              <p className="text-gray-300 mb-4 text-sm">
+                WPS measures overall performance across all WCA events.
+                Each event contributes based on two factors: the event&apos;s popularity (weight) and the cuber&apos;s world rank in that event.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-600">
+                      <th className="py-2 pr-4 text-gray-400 font-medium">Event</th>
+                      <th className="py-2 pr-4 text-gray-400 font-medium">Weight</th>
+                      <th className="py-2 pr-4 text-gray-400 font-medium">World Rank</th>
+                      <th className="py-2 text-gray-400 font-medium">Contribution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {breakdown.events.map((row) => (
+                      <tr key={row.eventId} className="border-b border-gray-700/50">
+                        <td className="py-2 pr-4 text-white">{row.eventName}</td>
+                        <td className="py-2 pr-4 text-gray-300">{row.weight.toFixed(2)}</td>
+                        <td className="py-2 pr-4 text-gray-300">#{row.worldRank}</td>
+                        <td className="py-2 text-green-400">{row.eventScore.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-gray-300 mt-4 font-medium">
+                Total WPS: <span className="text-green-400">{breakdown.wps.toFixed(2)}</span>
+              </p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* WPS Explanation */}
       <div className="card bg-gray-800/50">

@@ -75,24 +75,26 @@ function findFile(dir: string, target: string): string | null {
   return null;
 }
 
-async function main(): Promise<void> {
+export async function runUpdateRawData(): Promise<{ changed: boolean }> {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
 
+  console.log('[updateData] Downloading latest WCA export ...');
   await downloadZip();
 
   const newHash = sha256File(ZIP_PATH);
   const oldHash = fs.existsSync(HASH_PATH) ? fs.readFileSync(HASH_PATH, 'utf8').trim() : '';
 
   if (newHash === oldHash) {
-    console.log('WCA export unchanged — skipping recompute.');
-    process.exit(0);
+    console.log('[updateData] WCA export unchanged — skipping recompute.');
+    return { changed: false };
   }
 
   fs.writeFileSync(HASH_PATH, newHash);
 
+  console.log('[updateData] Export changed. Extracting TSVs ...');
   extractTsvs();
 
-  console.log('Rebuilding JSON caches ...');
+  console.log('[updateData] Rebuilding JSON caches ...');
   await generateTop100Leaderboard({
     onRanksLineProgress: (count) => {
       if (count % 500_000 === 0) {
@@ -101,10 +103,18 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Done — all caches updated.');
+  console.log('[updateData] Raw data update complete.');
+  return { changed: true };
+}
+
+async function main(): Promise<void> {
+  const startedAt = Date.now();
+  console.log('[updateData] Starting raw data update ...');
+  const result = await runUpdateRawData();
+  console.log('[updateData] Finished. changed=%s durationMs=%d', result.changed, Date.now() - startedAt);
 }
 
 main().catch((err) => {
-  console.error('updateData failed:', err);
+  console.error('[updateData] Failed:', err);
   process.exit(1);
 });
