@@ -9,21 +9,19 @@ on:
 jobs:
   build-backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --include=dev
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
 
-      - run: npm ci --include=dev
-      - run: npm run build
-
+   
   build-frontend:
     runs-on: ubuntu-latest
     defaults:
