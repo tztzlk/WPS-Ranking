@@ -85,26 +85,25 @@ export function HomePage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold text-white md:text-6xl">
+        <h1 className="mb-4 text-4xl font-bold leading-tight text-white md:text-6xl">
           Global Rankings for <span className="text-green-400">Speedcubers</span>
         </h1>
-        <p className="mx-auto mb-8 max-w-3xl text-xl text-gray-300">
-          Track your performance across all WCA events with the Weighted Performance Scale.
-          See who&apos;s the most complete cuber in the world.
+        <p className="mx-auto mb-6 max-w-2xl text-lg text-gray-300 md:text-xl">
+          WPS Ranking measures all-around speedcubing strength using weighted WCA event rankings, not just a single specialty.
         </p>
-        <div className="flex justify-center gap-4 sm:flex-row">
+        <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
           <Link to="/search" className="btn-primary flex items-center justify-center space-x-2">
             <Search className="h-5 w-5" />
             <span>Search Your Rank</span>
           </Link>
           <Link to="/about" className="btn-secondary flex items-center justify-center space-x-2">
             <Award className="h-5 w-5" />
-            <span>Learn About WPS</span>
+            <span>Why WPS Is Different</span>
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
         <div className="card text-center">
           <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
           <h3 className="text-2xl font-bold text-white">1000+</h3>
@@ -123,7 +122,17 @@ export function HomePage() {
       </div>
 
       <div className="card">
-        <h2 className="mb-6 text-2xl font-bold text-white">Top 5 Cubers Worldwide</h2>
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Top 5 Cubers Worldwide</h2>
+            <p className="mt-2 max-w-3xl text-gray-400">
+              The current top five cubers by weighted all-around performance.
+            </p>
+          </div>
+          <Link to="/leaderboard" className="text-sm font-medium text-green-400 hover:text-green-300 md:text-right">
+            View full leaderboard
+          </Link>
+        </div>
 
         {loading ? (
           <div className="py-12 text-center">
@@ -193,11 +202,11 @@ export function HomePage() {
             </div>
 
             <div className="mt-6 flex flex-col items-center gap-2">
-              <Link to="/leaderboard" className="btn-primary flex items-center justify-center space-x-2">
+              <Link to="/leaderboard" className="btn-primary flex w-full items-center justify-center space-x-2 sm:w-auto">
                 <TrendingUp className="h-5 w-5" />
                 <span>View Full Leaderboard</span>
               </Link>
-              <p className="text-sm text-gray-500">Showing top 5 of all ranked cubers</p>
+              <p className="text-sm text-gray-500">Showing the current top 5 by weighted all-around performance</p>
             </div>
 
             <div className="mt-8 border-t border-gray-700 pt-6">
@@ -205,6 +214,9 @@ export function HomePage() {
                 <span className="text-lg">🔥</span>
                 <h3 className="text-xl font-semibold text-white">Biggest Movers This Week</h3>
               </div>
+              <p className="mb-4 max-w-3xl text-sm text-gray-400">
+                These are the largest weekly rank changes based on historical snapshots. It helps surface momentum, not just the current order.
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <WeeklyMoversList title="▲ Movers Up" items={biggestMoversUp} direction="up" />
                 <WeeklyMoversList title="▼ Movers Down" items={biggestMoversDown} direction="down" />
@@ -217,9 +229,9 @@ export function HomePage() {
       <div className="rounded-lg bg-gray-800 p-8 text-center">
         <h3 className="mb-4 text-2xl font-bold text-white">Ready to Find Your Rank?</h3>
         <p className="mb-6 text-gray-300">
-          Search for your WCA ID or name to see your WPS score and global ranking.
+          Search for your WCA ID or name to see your WPS score, global standing, and profile history over time.
         </p>
-        <Link to="/search" className="btn-primary">
+        <Link to="/search" className="btn-primary inline-flex w-full items-center justify-center sm:w-auto">
           Search Now
         </Link>
       </div>

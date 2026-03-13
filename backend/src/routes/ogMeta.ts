@@ -27,10 +27,6 @@ function isCrawler(userAgent: string): boolean {
   return CRAWLER_AGENTS.some((bot) => ua.includes(bot));
 }
 
-/**
- * GET /profile/:personId
- * For crawler User-Agents only: returns minimal HTML with OpenGraph meta tags.
- */
 router.get('/profile/:personId', async (req: Request, res: Response, next: NextFunction) => {
   if (!isCrawler(req.get('User-Agent') || '')) {
     next();
@@ -56,12 +52,11 @@ router.get('/profile/:personId', async (req: Request, res: Response, next: NextF
 
   const rankText =
     profile.globalWpsRank != null && profile.globalWpsRank > 0 && profile.totalRanked > 0
-      ? `#${profile.globalWpsRank.toLocaleString()} of ${profile.totalRanked.toLocaleString()}`
-      : '';
-  const title = rankText
-    ? `${profile.name} — WPS ${profile.wps.toFixed(2)} (${rankText})`
-    : `${profile.name} — WPS ${profile.wps.toFixed(2)}`;
-  const description = 'World Performance Score based on official WCA rankings';
+      ? `Global Rank #${profile.globalWpsRank.toLocaleString()}`
+      : 'Global rank unavailable';
+  const countryText = profile.countryName ?? 'Country unavailable';
+  const title = `${profile.name} — WPS ${profile.wps.toFixed(2)}`;
+  const description = `${rankText} • ${countryText} • Weighted Performance Score profile`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
