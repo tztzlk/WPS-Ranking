@@ -4,14 +4,13 @@ import { getProfileByPersonId } from '../services/profileFromCache';
 
 const router = Router();
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
+const ogImageCache = new Map<string, { buffer: Buffer; at: number }>();
+const CACHE_MAX = 500;
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
-
-const ogImageCache = new Map<string, { buffer: Buffer; at: number }>();
-const CACHE_MAX = 500;
-const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function getCached(personId: string): Buffer | null {
   const entry = ogImageCache.get(personId);
@@ -41,6 +40,7 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
   const cached = getCached(personId);
   if (cached) {
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', String(cached.length));
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     res.send(cached);
     return;
@@ -57,11 +57,9 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
       ? `Global Rank #${profile.globalWpsRank.toLocaleString()}`
       : 'Global rank unavailable';
   const countryText = profile.countryName ?? 'Country unavailable';
+  const countryBadgeText =
+    profile.countryIso2 && profile.countryIso2.length === 2 ? profile.countryIso2.toUpperCase() : countryText;
   const wpsText = profile.wps.toFixed(2);
-  const flagUrl =
-    profile.countryIso2 && profile.countryIso2.length === 2
-      ? `https://flagcdn.com/w160/${profile.countryIso2.toLowerCase()}.png`
-      : null;
 
   try {
     const { ImageResponse } = await import('@vercel/og');
@@ -75,8 +73,7 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          background:
-            'linear-gradient(135deg, #0f172a 0%, #111827 55%, #0a0f1f 100%)',
+          background: 'linear-gradient(135deg, #0f172a 0%, #111827 55%, #0a0f1f 100%)',
           fontFamily: 'system-ui, sans-serif',
           padding: 56,
           color: '#f8fafc',
@@ -147,25 +144,26 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
             )
           )
         ),
-        flagUrl
-          ? React.createElement('img', {
-              src: flagUrl,
-              width: 88,
-              height: 66,
-              style: {
-                borderRadius: 10,
-              },
-            })
-          : React.createElement(
-              'div',
-              {
-                style: {
-                  fontSize: 18,
-                  color: '#94a3b8',
-                },
-              },
-              countryText
-            )
+        React.createElement(
+          'div',
+          {
+            style: {
+              minWidth: 88,
+              minHeight: 66,
+              borderRadius: 10,
+              border: '1px solid rgba(148, 163, 184, 0.3)',
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 18px',
+              fontSize: 18,
+              fontWeight: 700,
+              color: '#e2e8f0',
+            },
+          },
+          countryBadgeText
+        )
       ),
       React.createElement(
         'div',
@@ -298,9 +296,11 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
     });
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
     setCached(personId, buffer);
 
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', String(buffer.length));
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     res.send(buffer);
   } catch (err) {
