@@ -1,6 +1,41 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
+export interface ProfileHistoryItem {
+  date: string;
+  wps: number;
+  globalRank: number;
+  countryRank: number | null;
+}
+
+const DAYS_LIMIT = 180;
+
+export async function getProfileHistory(personId: string): Promise<ProfileHistoryItem[]> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - DAYS_LIMIT);
+
+  const rows = await prisma.historySnapshot.findMany({
+    where: {
+      personId,
+      snapshotDate: { gte: cutoff },
+    },
+    orderBy: { snapshotDate: 'asc' },
+    select: {
+      snapshotDate: true,
+      wps: true,
+      globalRank: true,
+      countryRank: true,
+    },
+  });
+
+  return rows.map((r) => ({
+    date: r.snapshotDate.toISOString().slice(0, 10),
+    wps: r.wps,
+    globalRank: r.globalRank,
+    countryRank: r.countryRank,
+  }));
+}
+
 export async function saveHistorySnapshotForToday(): Promise<void> {
   const now = new Date();
   const utcDateOnly = new Date(

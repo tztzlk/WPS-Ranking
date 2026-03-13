@@ -2,13 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiService } from '../services/api';
-import { WPSProfile, WpsBreakdownResponse } from '../types';
+import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { WpsProgressChart } from '../components/WpsProgressChart';
 
 export function ProfilePage() {
   const { wcaId } = useParams<{ wcaId: string }>();
   const [profile, setProfile] = useState<WPSProfile | null>(null);
   const [breakdown, setBreakdown] = useState<WpsBreakdownResponse | null>(null);
+  const [history, setHistory] = useState<ProfileHistoryItem[]>([]);
+  const [historyLoadError, setHistoryLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
@@ -29,14 +32,23 @@ export function ProfilePage() {
       setLoading(true);
       setError(null);
       setBreakdown(null);
+      setHistory([]);
+      setHistoryLoadError(false);
       const data = await apiService.getProfile(id);
       if (!controller.signal.aborted) setProfile(data);
       if (!controller.signal.aborted && data?.wcaId) {
-        try {
-          const b = await apiService.getWpsBreakdown(data.wcaId);
-          if (!controller.signal.aborted) setBreakdown(b);
-        } catch {
-          // Breakdown optional; profile still works
+        const [breakdownRes, historyRes] = await Promise.allSettled([
+          apiService.getWpsBreakdown(data.wcaId),
+          apiService.getProfileHistory(data.wcaId),
+        ]);
+        if (!controller.signal.aborted && breakdownRes.status === 'fulfilled') setBreakdown(breakdownRes.value);
+        if (!controller.signal.aborted) {
+          if (historyRes.status === 'fulfilled') {
+            setHistory(historyRes.value);
+            setHistoryLoadError(false);
+          } else {
+            setHistoryLoadError(true);
+          }
         }
       }
     } catch (err: unknown) {
@@ -171,6 +183,9 @@ export function ProfilePage() {
           <p className="text-gray-400">Last Updated</p>
         </div>
       </div>
+
+      {/* WPS Progress Chart */}
+      <WpsProgressChart data={history} loadError={historyLoadError} />
 
       {/* WPS Calculation (collapsible) */}
       {breakdown && breakdown.events.length > 0 && (
