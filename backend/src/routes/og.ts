@@ -31,10 +31,6 @@ function setCached(personId: string, buffer: Buffer): void {
   ogImageCache.set(personId, { buffer, at: Date.now() });
 }
 
-/**
- * GET /api/og/profile/:personId
- * Returns 1200x630 PNG for Open Graph preview.
- */
 router.get('/profile/:personId', async (req: Request, res: Response) => {
   const personId = (req.params.personId ?? '').trim();
   if (!personId || !isValidWCAId(personId)) {
@@ -58,8 +54,9 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
 
   const rankText =
     profile.globalWpsRank != null && profile.globalWpsRank > 0 && profile.totalRanked > 0
-      ? `#${profile.globalWpsRank.toLocaleString()} of ${profile.totalRanked.toLocaleString()}`
-      : '—';
+      ? `Global Rank #${profile.globalWpsRank.toLocaleString()}`
+      : 'Global rank unavailable';
+  const countryText = profile.countryName ?? 'Country unavailable';
   const wpsText = profile.wps.toFixed(2);
   const flagUrl =
     profile.countryIso2 && profile.countryIso2.length === 2
@@ -68,6 +65,7 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
 
   try {
     const { ImageResponse } = await import('@vercel/og');
+
     const element = React.createElement(
       'div',
       {
@@ -76,11 +74,12 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#0f172a',
+          justifyContent: 'space-between',
+          background:
+            'linear-gradient(135deg, #0f172a 0%, #111827 55%, #0a0f1f 100%)',
           fontFamily: 'system-ui, sans-serif',
-          padding: 48,
+          padding: 56,
+          color: '#f8fafc',
         },
       },
       React.createElement(
@@ -88,67 +87,208 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
         {
           style: {
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 24,
-            marginBottom: 24,
           },
         },
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: 18,
+            },
+          },
+          React.createElement(
+            'div',
+            {
+              style: {
+                width: 56,
+                height: 56,
+                borderRadius: 14,
+                backgroundColor: '#16a34a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 28,
+                fontWeight: 700,
+              },
+            },
+            'W'
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+              },
+            },
+            React.createElement(
+              'div',
+              {
+                style: {
+                  fontSize: 26,
+                  fontWeight: 700,
+                },
+              },
+              'WPS Ranking'
+            ),
+            React.createElement(
+              'div',
+              {
+                style: {
+                  fontSize: 18,
+                  color: '#94a3b8',
+                },
+              },
+              'Shareable speedcubing profile card'
+            )
+          )
+        ),
         flagUrl
           ? React.createElement('img', {
               src: flagUrl,
-              width: 80,
-              height: 60,
-              style: { borderRadius: 8 },
+              width: 88,
+              height: 66,
+              style: {
+                borderRadius: 10,
+              },
             })
-          : null,
+          : React.createElement(
+              'div',
+              {
+                style: {
+                  fontSize: 18,
+                  color: '#94a3b8',
+                },
+              },
+              countryText
+            )
+      ),
+      React.createElement(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+          },
+        },
         React.createElement(
-          'span',
+          'div',
           {
             style: {
-              fontSize: 48,
-              fontWeight: 700,
-              color: '#f8fafc',
-              maxWidth: 800,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              fontSize: 58,
+              fontWeight: 800,
+              lineHeight: 1.05,
+              maxWidth: 900,
             },
           },
           profile.name
+        ),
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              fontSize: 24,
+              color: '#94a3b8',
+            },
+          },
+          React.createElement('span', null, personId),
+          React.createElement('span', null, '•'),
+          React.createElement('span', null, countryText)
+        ),
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'flex-end',
+              gap: 18,
+              marginTop: 8,
+            },
+          },
+          React.createElement(
+            'div',
+            {
+              style: {
+                fontSize: 84,
+                fontWeight: 800,
+                color: '#4ade80',
+                lineHeight: 1,
+              },
+            },
+            wpsText
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
+                fontSize: 26,
+                color: '#cbd5e1',
+                paddingBottom: 10,
+              },
+            },
+            'WPS'
+          )
         )
       ),
       React.createElement(
         'div',
         {
           style: {
-            fontSize: 56,
-            fontWeight: 700,
-            color: '#4ade80',
-            marginBottom: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderTop: '1px solid rgba(148, 163, 184, 0.22)',
+            paddingTop: 24,
           },
         },
-        `WPS ${wpsText}`
-      ),
-      React.createElement(
-        'div',
-        {
-          style: {
-            fontSize: 32,
-            color: '#94a3b8',
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            },
           },
-        },
-        rankText
-      ),
-      React.createElement(
-        'div',
-        {
-          style: {
-            fontSize: 22,
-            color: '#64748b',
-            marginTop: 24,
+          React.createElement(
+            'div',
+            {
+              style: {
+                fontSize: 18,
+                color: '#94a3b8',
+              },
+            },
+            'Current all-around standing'
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
+                fontSize: 32,
+                fontWeight: 700,
+              },
+            },
+            rankText
+          )
+        ),
+        React.createElement(
+          'div',
+          {
+            style: {
+              fontSize: 18,
+              color: '#94a3b8',
+            },
           },
-        },
-        'World Performance Score — WPS Ranking'
+          'Weighted Performance Score'
+        )
       )
     );
 

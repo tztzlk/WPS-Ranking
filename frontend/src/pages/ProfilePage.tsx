@@ -1,10 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
+
+function getApiBaseOrigin(): string | null {
+  const rawBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (!rawBase) return null;
+
+  try {
+    const parsed = new URL(rawBase, window.location.origin);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return null;
+  }
+}
 
 export function ProfilePage() {
   const { wcaId } = useParams<{ wcaId: string }>();
@@ -20,7 +32,9 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (wcaId) loadProfile(wcaId);
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [wcaId]);
 
   const loadProfile = async (id: string) => {
@@ -53,10 +67,14 @@ export function ProfilePage() {
       }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
-      const ax = err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { data?: { error?: string } } })
-        : null;
+      const userMsg =
+        err && typeof err === 'object' && 'userMessage' in err
+          ? (err as { userMessage?: string }).userMessage
+          : null;
+      const ax =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } })
+          : null;
       setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load profile');
     } finally {
       setLoading(false);
@@ -65,12 +83,31 @@ export function ProfilePage() {
 
   const formatScore = (score: number) => score.toFixed(2);
 
+  const globalRankText =
+    (profile?.totalRanked ?? 0) > 0 && profile?.globalWpsRank != null && profile.globalWpsRank > 0
+      ? `#${profile.globalWpsRank.toLocaleString()} of ${(profile.totalRanked ?? 0).toLocaleString()}`
+      : null;
+
   const handleShareProfile = async () => {
+    if (!profile) return;
+
     const url = window.location.href;
+    const rankTextForShare = globalRankText ? ` (${globalRankText})` : '';
+    const shareTitle = `${profile.name} — WPS ${formatScore(profile.wpsScore)}`;
+    const shareText = `${profile.name} has a WPS of ${formatScore(profile.wpsScore)}${rankTextForShare} on WPS Ranking.`;
+
     try {
-      await navigator.clipboard.writeText(url);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
     } catch {
       setShareCopied(false);
     }
@@ -78,17 +115,17 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto"></div>
-        <p className="text-gray-400 mt-4">Loading profile...</p>
+      <div className="py-12 text-center">
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-green-400" />
+        <p className="mt-4 text-gray-400">Loading profile...</p>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-400 mb-4">{error || 'Profile not found'}</p>
+      <div className="py-12 text-center">
+        <p className="mb-4 text-red-400">{error || 'Profile not found'}</p>
         <Link to="/" className="btn-primary">
           Back to Leaderboard
         </Link>
@@ -96,48 +133,53 @@ export function ProfilePage() {
     );
   }
 
-  const globalRankText =
-    (profile.totalRanked ?? 0) > 0 && profile.globalWpsRank != null && profile.globalWpsRank > 0
-      ? `#${profile.globalWpsRank.toLocaleString()} of ${(profile.totalRanked ?? 0).toLocaleString()}`
-      : null;
-
   const countryRankText =
     profile.countryRank != null && profile.countryTotal != null && profile.countryTotal > 0
       ? `#${profile.countryRank.toLocaleString()} of ${profile.countryTotal.toLocaleString()} in ${profile.countryName ?? 'country'}`
       : null;
+  const shareCardUrl = `${getApiBaseOrigin() ?? window.location.origin}/api/og/profile/${encodeURIComponent(profile.wcaId)}`;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Back + Share */}
+    <div className="mx-auto max-w-6xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           <span>Back to Leaderboard</span>
         </Link>
-        <button
-          type="button"
-          onClick={handleShareProfile}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition"
-        >
-          <Share2 className="w-4 h-4" />
-          {shareCopied ? 'Copied!' : 'Share profile'}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleShareProfile}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
+          >
+            <Share2 className="h-4 w-4" />
+            {shareCopied ? 'Copied!' : 'Share profile'}
+          </button>
+          <a
+            href={shareCardUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-gray-500 hover:text-white"
+          >
+            <ImageIcon className="h-4 w-4" />
+            Open share card
+          </a>
+        </div>
       </div>
 
-      {/* Profile Header */}
       <div className="card">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+        <div className="flex flex-col items-start justify-between md:flex-row md:items-center">
           <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center">
-              <Trophy className="w-10 h-10 text-gray-300" />
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-700">
+              <Trophy className="h-10 w-10 text-gray-300" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
-              <div className="flex items-center space-x-4 text-gray-400 mt-2">
+              <div className="mt-2 flex items-center space-x-4 text-gray-400">
                 <span className="font-mono">{profile.wcaId}</span>
                 {profile.countryIso2 && (
                   <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4 shrink-0" />
+                    <MapPin className="h-4 w-4 shrink-0" />
                     <CountryFlag iso2={profile.countryIso2} name={profile.countryName} />
                     <span>{profile.countryName ?? '—'}</span>
                   </div>
@@ -145,38 +187,46 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
-          <div className="mt-6 md:mt-0 text-center md:text-right">
-            <div className="text-4xl font-bold text-green-400">
-              {formatScore(profile.wpsScore)}
-            </div>
+          <div className="mt-6 text-center md:mt-0 md:text-right">
+            <div className="text-4xl font-bold text-green-400">{formatScore(profile.wpsScore)}</div>
             <div className="text-gray-400">WPS Score</div>
-            {globalRankText && (
-              <div className="text-lg text-gray-300 mt-2">
-                Global Rank: {globalRankText}
-              </div>
-            )}
+            {globalRankText && <div className="mt-2 text-lg text-gray-300">Global Rank: {globalRankText}</div>}
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="font-semibold text-white">Shareable profile card</p>
+            <p className="text-sm text-gray-400">
+              Share this profile link for a social preview, or open the generated profile card image directly.
+            </p>
+          </div>
+          <a
+            href={shareCardUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-green-400 hover:text-green-300"
+          >
+            Preview share card
+          </a>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="card text-center">
-          <Award className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">
-            {globalRankText ?? '—'}
-          </h3>
+          <Award className="mx-auto mb-2 h-8 w-8 text-green-400" />
+          <h3 className="text-2xl font-bold text-white">{globalRankText ?? '—'}</h3>
           <p className="text-gray-400">Global WPS Rank</p>
         </div>
         <div className="card text-center">
-          <Trophy className="w-8 h-8 text-green-400 mx-auto mb-2" />
-          <h3 className="text-2xl font-bold text-white">
-            {countryRankText ?? '—'}
-          </h3>
+          <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
+          <h3 className="text-2xl font-bold text-white">{countryRankText ?? '—'}</h3>
           <p className="text-gray-400">Country Rank</p>
         </div>
         <div className="card text-center">
-          <Calendar className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <Calendar className="mx-auto mb-2 h-8 w-8 text-green-400" />
           <h3 className="text-sm font-bold text-white">
             {profile.lastUpdated ? new Date(profile.lastUpdated).toLocaleDateString() : '—'}
           </h3>
@@ -184,41 +234,37 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* WPS Progress Chart */}
       <WpsProgressChart data={history} loadError={historyLoadError} />
 
-      {/* WPS Calculation (collapsible) */}
       {breakdown && breakdown.events.length > 0 && (
-        <div className="rounded-lg border border-gray-700 bg-gray-800/50 overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
           <button
             type="button"
-            onClick={() => setShowBreakdown((v) => !v)}
-            className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+            onClick={() => setShowBreakdown((value) => !value)}
+            className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
           >
-            <span className="font-medium">
-              {showBreakdown ? 'Hide WPS calculation' : 'Show WPS calculation'}
-            </span>
+            <span className="font-medium">{showBreakdown ? 'Hide WPS calculation' : 'Show WPS calculation'}</span>
             {showBreakdown ? (
-              <ChevronUp className="w-5 h-5 shrink-0 text-gray-400" />
+              <ChevronUp className="h-5 w-5 shrink-0 text-gray-400" />
             ) : (
-              <ChevronDown className="w-5 h-5 shrink-0 text-gray-400" />
+              <ChevronDown className="h-5 w-5 shrink-0 text-gray-400" />
             )}
           </button>
           {showBreakdown && (
-            <div className="border-t border-gray-700 px-6 py-5 space-y-4">
+            <div className="space-y-4 border-t border-gray-700 px-6 py-5">
               <h3 className="text-lg font-semibold text-white">WPS Calculation Breakdown</h3>
-              <p className="text-gray-300 text-sm">
+              <p className="text-sm text-gray-300">
                 WPS is calculated from the cuber&apos;s current WCA world rank in each event and the event&apos;s weight.
                 Each event contributes to the final score based on the current WPS formula.
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-gray-600">
-                      <th className="py-2 pr-4 text-gray-400 font-medium">Event</th>
-                      <th className="py-2 pr-4 text-gray-400 font-medium">World Rank</th>
-                      <th className="py-2 pr-4 text-gray-400 font-medium">Weight</th>
-                      <th className="py-2 text-gray-400 font-medium">Contribution</th>
+                      <th className="py-2 pr-4 font-medium text-gray-400">Event</th>
+                      <th className="py-2 pr-4 font-medium text-gray-400">World Rank</th>
+                      <th className="py-2 pr-4 font-medium text-gray-400">Weight</th>
+                      <th className="py-2 font-medium text-gray-400">Contribution</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -236,9 +282,7 @@ export function ProfilePage() {
                       <td className="py-3 pr-4 font-medium text-white" colSpan={3}>
                         Total WPS
                       </td>
-                      <td className="py-3 text-green-400 font-semibold">
-                        {breakdown.wps.toFixed(2)}
-                      </td>
+                      <td className="py-3 font-semibold text-green-400">{breakdown.wps.toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -246,22 +290,16 @@ export function ProfilePage() {
               <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 text-sm text-gray-400">
                 <span>
                   <span className="text-gray-500">Most valuable event:</span>{' '}
-                  <span className="text-white">
-                    {breakdown.events[0]?.eventName ?? '—'}
-                  </span>
+                  <span className="text-white">{breakdown.events[0]?.eventName ?? '—'}</span>
                 </span>
                 <span>
                   <span className="text-gray-500">Best world rank used:</span>{' '}
-                  <span className="text-white">
-                    #{Math.min(...breakdown.events.map((e) => e.worldRank)).toLocaleString()}
-                  </span>
+                  <span className="text-white">#{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}</span>
                 </span>
                 <span>
                   <span className="text-gray-500">Snapshot date:</span>{' '}
                   <span className="text-white">
-                    {profile.lastUpdated
-                      ? new Date(profile.lastUpdated).toLocaleDateString()
-                      : '—'}
+                    {profile.lastUpdated ? new Date(profile.lastUpdated).toLocaleDateString() : '—'}
                   </span>
                 </span>
               </div>
@@ -270,13 +308,11 @@ export function ProfilePage() {
         </div>
       )}
 
-      {/* WPS Explanation */}
       <div className="card bg-gray-800/50">
-        <h3 className="text-lg font-semibold text-white mb-4">About WPS Score</h3>
-        <p className="text-gray-300 mb-4">
-          The Weighted Performance Scale (WPS) calculates a fair score based on performance
-          across all WCA events. Each event is weighted according to its popularity and difficulty,
-          ensuring balanced recognition for versatile cubers.
+        <h3 className="mb-4 text-lg font-semibold text-white">About WPS Score</h3>
+        <p className="mb-4 text-gray-300">
+          The Weighted Performance Scale (WPS) calculates a fair score based on performance across all WCA events.
+          Each event is weighted according to its popularity and difficulty, ensuring balanced recognition for versatile cubers.
         </p>
         <Link to="/about" className="text-green-400 hover:text-green-300">
           Learn more about the WPS formula →
