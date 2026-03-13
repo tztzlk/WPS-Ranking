@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
@@ -48,14 +48,20 @@ export function ProfilePage() {
       setBreakdown(null);
       setHistory([]);
       setHistoryLoadError(false);
+
       const data = await apiService.getProfile(id);
       if (!controller.signal.aborted) setProfile(data);
+
       if (!controller.signal.aborted && data?.wcaId) {
         const [breakdownRes, historyRes] = await Promise.allSettled([
           apiService.getWpsBreakdown(data.wcaId),
           apiService.getProfileHistory(data.wcaId),
         ]);
-        if (!controller.signal.aborted && breakdownRes.status === 'fulfilled') setBreakdown(breakdownRes.value);
+
+        if (!controller.signal.aborted && breakdownRes.status === 'fulfilled') {
+          setBreakdown(breakdownRes.value);
+        }
+
         if (!controller.signal.aborted) {
           if (historyRes.status === 'fulfilled') {
             setHistory(historyRes.value);
@@ -67,6 +73,7 @@ export function ProfilePage() {
       }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
+
       const userMsg =
         err && typeof err === 'object' && 'userMessage' in err
           ? (err as { userMessage?: string }).userMessage
@@ -75,6 +82,7 @@ export function ProfilePage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } })
           : null;
+
       setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load profile');
     } finally {
       setLoading(false);
@@ -91,20 +99,13 @@ export function ProfilePage() {
   const handleShareProfile = async () => {
     if (!profile) return;
 
-    const url = window.location.href;
-    const rankTextForShare = globalRankText ? ` (${globalRankText})` : '';
-    const shareTitle = `${profile.name} — WPS ${formatScore(profile.wpsScore)}`;
-    const shareText = `${profile.name} has a WPS of ${formatScore(profile.wpsScore)}${rankTextForShare} on WPS Ranking.`;
+    const shareCardUrl = `${getApiBaseOrigin() ?? window.location.origin}/api/og/profile/${encodeURIComponent(profile.wcaId)}`;
 
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url,
-        });
+        await navigator.share({ url: shareCardUrl });
       } else {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(shareCardUrl);
         setShareCopied(true);
         setTimeout(() => setShareCopied(false), 2000);
       }
@@ -137,7 +138,6 @@ export function ProfilePage() {
     profile.countryRank != null && profile.countryTotal != null && profile.countryTotal > 0
       ? `#${profile.countryRank.toLocaleString()} of ${profile.countryTotal.toLocaleString()} in ${profile.countryName ?? 'country'}`
       : null;
-  const shareCardUrl = `${getApiBaseOrigin() ?? window.location.origin}/api/og/profile/${encodeURIComponent(profile.wcaId)}`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -146,25 +146,16 @@ export function ProfilePage() {
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Leaderboard</span>
         </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleShareProfile}
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
-          >
-            <Share2 className="h-4 w-4" />
-            {shareCopied ? 'Copied!' : 'Share profile'}
-          </button>
-          <a
-            href={shareCardUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-gray-500 hover:text-white"
-          >
-            <ImageIcon className="h-4 w-4" />
-            Open share card
-          </a>
-        </div>
+        <button
+          type="button"
+          onClick={handleShareProfile}
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
+          aria-label="Share profile card"
+          title="Share profile card"
+        >
+          <Share2 className="h-4 w-4" />
+          {shareCopied ? 'Copied!' : 'Share'}
+        </button>
       </div>
 
       <div className="card">
@@ -192,25 +183,6 @@ export function ProfilePage() {
             <div className="text-gray-400">WPS Score</div>
             {globalRankText && <div className="mt-2 text-lg text-gray-300">Global Rank: {globalRankText}</div>}
           </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="font-semibold text-white">Shareable profile card</p>
-            <p className="text-sm text-gray-400">
-              Share this profile link for a social preview, or open the generated profile card image directly.
-            </p>
-          </div>
-          <a
-            href={shareCardUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-green-400 hover:text-green-300"
-          >
-            Preview share card
-          </a>
         </div>
       </div>
 
@@ -294,7 +266,9 @@ export function ProfilePage() {
                 </span>
                 <span>
                   <span className="text-gray-500">Best world rank used:</span>{' '}
-                  <span className="text-white">#{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}</span>
+                  <span className="text-white">
+                    #{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}
+                  </span>
                 </span>
                 <span>
                   <span className="text-gray-500">Snapshot date:</span>{' '}
