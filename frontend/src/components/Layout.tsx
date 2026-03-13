@@ -104,14 +104,17 @@ export function Layout() {
                 Global speedcubing leaderboard powered by the Weighted Performance Scale system.
               </p>
               <div className="mt-6">
-                <p className="text-green-300 font-semibold mb-2">Support the Founder:</p>
+                <p className="mb-2 font-semibold text-green-300">Support WPS Ranking</p>
+                <p className="mb-3 text-sm text-gray-400">
+                  Donations help cover hosting, database, and ongoing development costs.
+                </p>
                 <a
-                  href="https://www.paypal.com/donate?hosted_button_id=PLACEHOLDER"
+                  href="https://ko-fi.com/tonyokoo"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded-lg shadow transition"
+                  className="inline-block rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
                 >
-                  Donate with PayPal
+                  Support on Ko-fi
                 </a>
               </div>
             </div>

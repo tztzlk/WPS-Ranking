@@ -274,6 +274,116 @@ export function AboutPage() {
         </div>
       </div>
 
+      {/* Support */}
+      <div className="card bg-gray-800/50">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-2xl font-bold text-white">Support WPS Ranking</h3>
+            <p className="mt-2 text-gray-300">
+              WPS Ranking is an independent project built and maintained by one person. If you find it useful,
+              donations help keep the project reliable and growing.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+              <h4 className="font-semibold text-white">What donations fund</h4>
+              <p className="mt-2 text-sm text-gray-400">
+                Hosting, PostgreSQL, data refresh jobs, and infrastructure upgrades to reduce downtime and cold starts.
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+              <h4 className="font-semibold text-white">Why it matters</h4>
+              <p className="mt-2 text-sm text-gray-400">
+                Support helps keep rankings updated, profile history available, and new features shipping over time.
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+              <h4 className="font-semibold text-white">Transparency</h4>
+              <p className="mt-2 text-sm text-gray-400">
+                Donations support the project itself. The core ranking experience stays public and free to use.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+            <div>
+              <p className="font-semibold text-white">Help keep WPS Ranking online and improving.</p>
+              <p className="text-sm text-gray-400">Support hosting, database costs, and continued development on Ko-fi.</p>
+            </div>
+            <a
+              href="https://ko-fi.com/tonyokoo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
+            >
+              Support on Ko-fi
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Founder / Trust */}
+      <div className="card">
+        <h2 className="text-2xl font-bold text-white mb-4">Why I Built WPS Ranking</h2>
+        <div className="space-y-4 text-gray-300 leading-relaxed">
+          <p>
+            I built WPS Ranking as an independent project to explore a more balanced way of comparing speedcubers
+            across many WCA events, not just a single specialty.
+          </p>
+          <p>
+            The goal is to make rankings more interesting, more transparent, and more useful for cubers who care
+            about all-around performance. The site is actively maintained and improved over time.
+          </p>
+        </div>
+      </div>
+
+      {/* Recent Updates */}
+      <div className="card">
+        <h2 className="text-2xl font-bold text-white mb-6">Recent Updates</h2>
+        <div className="space-y-4">
+          {[
+            'Added daily rank change indicators to the leaderboard.',
+            'Added weekly biggest movers highlights on the homepage.',
+            'Added profile history charts with range toggles for 7D, 30D, 90D, and All.',
+            'Improved daily refresh reliability so snapshots continue to be saved even when the export hash is unchanged.',
+          ].map((item) => (
+            <div key={item} className="flex items-start gap-3">
+              <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+              <p className="text-gray-300">{item}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Roadmap */}
+      <div className="card">
+        <h2 className="text-2xl font-bold text-white mb-6">Roadmap</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-lg border border-gray-700 bg-gray-800 p-5">
+            <div className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-400">Now</div>
+            <h3 className="text-lg font-semibold text-white">Stability and trust</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">
+              Improve refresh reliability, make snapshot status clearer, and tighten the core leaderboard and profile experience.
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-700 bg-gray-800 p-5">
+            <div className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-400">Next</div>
+            <h3 className="text-lg font-semibold text-white">Deeper ranking insights</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">
+              Add monthly movers, best-ever rank and WPS on profiles, and stronger country-level leaderboard insights.
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-700 bg-gray-800 p-5">
+            <div className="mb-2 text-sm font-semibold uppercase tracking-wide text-sky-400">Later</div>
+            <h3 className="text-lg font-semibold text-white">Sharing and discovery</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">
+              Build shareable ranking cards, richer comparison views, and better ways to explore rising cubers over time.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Call to Action */}
       <div className="text-center bg-gray-800 rounded-lg p-8">
         <h3 className="text-2xl font-bold text-white mb-4">
