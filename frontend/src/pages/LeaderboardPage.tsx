@@ -7,6 +7,18 @@ import { CountryFlag } from '../components/CountryFlag';
 
 const ALL = 'ALL';
 
+function RankChange({ change }: { change: number | null }) {
+  if (typeof change !== 'number' || Number.isNaN(change) || change === 0) {
+    return <span className="text-gray-500">&mdash;</span>;
+  }
+
+  if (change > 0) {
+    return <span className="text-green-400">▲{change}</span>;
+  }
+
+  return <span className="text-red-400">▼{Math.abs(change)}</span>;
+}
+
 function formatGeneratedAt(iso: string): string {
   try {
     const d = new Date(iso);
@@ -33,7 +45,10 @@ export function LeaderboardPage() {
       const result = await apiService.getLeaderboardTop100(100, country === ALL ? undefined : country);
       setData(result);
     } catch (err: unknown) {
-      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
+      const userMsg =
+        err && typeof err === 'object' && 'userMessage' in err
+          ? (err as { userMessage?: string }).userMessage
+          : null;
       const message =
         userMsg ??
         (err && typeof err === 'object' && 'response' in err
@@ -79,7 +94,7 @@ export function LeaderboardPage() {
   const isFiltered = selectedCountry !== ALL;
   const selectedCountryName =
     countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
-  const pageTitle = isFiltered ? `WPS Leaderboard — ${selectedCountryName}` : 'Global WPS Leaderboard';
+  const pageTitle = isFiltered ? `WPS Leaderboard - ${selectedCountryName}` : 'Global WPS Leaderboard';
   const subtitle = generatedAt
     ? `Updated: ${formatGeneratedAt(generatedAt)} · ${items.length} cubers`
     : `${items.length} cubers`;
@@ -112,23 +127,23 @@ export function LeaderboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-          <Trophy className="w-8 h-8 text-green-400" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="flex items-center gap-2 text-3xl font-bold text-white">
+          <Trophy className="h-8 w-8 text-green-400" />
           {pageTitle}
         </h1>
-        <p className="text-gray-400 text-sm">{subtitle}</p>
+        <p className="text-sm text-gray-400">{subtitle}</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <label htmlFor="country-filter" className="text-gray-400 text-sm font-medium shrink-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <label htmlFor="country-filter" className="shrink-0 text-sm font-medium text-gray-400">
           Filter by country
         </label>
         <select
           id="country-filter"
           value={selectedCountry}
           onChange={(e) => handleCountryChange(e.target.value)}
-          className="bg-gray-800 border border-gray-600 text-white rounded px-3 py-2 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="min-w-[200px] rounded border border-gray-600 bg-gray-800 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           {countryOptions.map((opt) => (
             <option key={opt.countryIso2} value={opt.countryIso2}>
@@ -148,28 +163,33 @@ export function LeaderboardPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-700 bg-gray-800/50">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">WCA ID</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">Rank</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">Δ</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">Name</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">Country</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">WPS</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-400">WCA ID</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((row, index) => {
                   const displayRank = row.rank ?? row.countryRank ?? index + 1;
+
                   return (
                     <tr
                       key={row.personId}
-                      className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
+                      className="border-b border-gray-700 transition-colors hover:bg-gray-800/50"
                     >
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3">
                         {displayRank <= 3 ? (
                           <span className="flex items-center gap-1">
                             <Trophy
-                              className={`w-5 h-5 ${
-                                displayRank === 1 ? 'text-yellow-400' :
-                                displayRank === 2 ? 'text-gray-300' : 'text-amber-600'
+                              className={`h-5 w-5 ${
+                                displayRank === 1
+                                  ? 'text-yellow-400'
+                                  : displayRank === 2
+                                    ? 'text-gray-300'
+                                    : 'text-amber-600'
                               }`}
                             />
                             {displayRank}
@@ -178,20 +198,21 @@ export function LeaderboardPage() {
                           <span className="text-gray-300">{displayRank}</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-medium text-white">{row.name}</td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3">
+                        <RankChange change={row.rankChange} />
+                      </td>
+                      <td className="px-4 py-3 font-medium text-white">{row.name}</td>
+                      <td className="px-4 py-3">
                         <span className="flex items-center gap-2">
                           <CountryFlag iso2={row.countryIso2} name={row.countryName ?? row.countryId} />
                           <span className="text-gray-300">{row.countryName ?? row.countryId ?? '—'}</span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-green-400">
-                        {row.wps.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3 font-mono text-green-400">{row.wps.toFixed(2)}</td>
+                      <td className="px-4 py-3">
                         <Link
                           to={`/profile/${row.personId}`}
-                          className="text-green-400 hover:text-green-300 text-sm font-medium"
+                          className="text-sm font-medium text-green-400 hover:text-green-300"
                         >
                           {row.personId}
                         </Link>

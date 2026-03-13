@@ -5,8 +5,52 @@ import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheItem } from '../types';
 
+function WeeklyMoversList({
+  title,
+  items,
+  direction,
+}: {
+  title: string;
+  items: LeaderboardCacheItem[];
+  direction: 'up' | 'down';
+}) {
+  const isUp = direction === 'up';
+
+  return (
+    <div className="rounded-lg border border-gray-700 bg-gray-800/40 p-4">
+      <h3 className={`mb-4 text-sm font-semibold uppercase tracking-wide ${isUp ? 'text-green-400' : 'text-red-400'}`}>
+        {title}
+      </h3>
+      {items.length === 0 ? (
+        <p className="text-sm text-gray-500">No weekly movement data available.</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <Link
+              key={`${direction}-${item.personId}`}
+              to={`/profile/${item.personId}`}
+              className="flex items-center justify-between gap-4 text-sm transition-colors hover:text-white"
+            >
+              <div className="min-w-0">
+                <div className={`font-mono ${isUp ? 'text-green-400' : 'text-red-400'}`}>
+                  {isUp ? '▲' : '▼'}
+                  {Math.abs(item.rankChange ?? 0)}
+                </div>
+                <div className="truncate font-medium text-gray-200">{item.name}</div>
+              </div>
+              <div className="shrink-0 text-xs text-gray-500">{item.personId}</div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function HomePage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardCacheItem[]>([]);
+  const [biggestMoversUp, setBiggestMoversUp] = useState<LeaderboardCacheItem[]>([]);
+  const [biggestMoversDown, setBiggestMoversDown] = useState<LeaderboardCacheItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,9 +63,17 @@ export function HomePage() {
       setLoading(true);
       const result = await apiService.getLeaderboardTop100(5);
       setLeaderboard(result.items);
+      setBiggestMoversUp(result.biggestMoversUp ?? []);
+      setBiggestMoversDown(result.biggestMoversDown ?? []);
     } catch (err: unknown) {
-      const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
-      const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { data?: { error?: string } } }) : null;
+      const userMsg =
+        err && typeof err === 'object' && 'userMessage' in err
+          ? (err as { userMessage?: string }).userMessage
+          : null;
+      const ax =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } })
+          : null;
       setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load leaderboard');
     } finally {
       setLoading(false);
@@ -32,58 +84,54 @@ export function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
       <div className="text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-          Global Rankings for{' '}
-          <span className="text-green-400">Speedcubers</span>
+        <h1 className="mb-4 text-4xl font-bold text-white md:text-6xl">
+          Global Rankings for <span className="text-green-400">Speedcubers</span>
         </h1>
-        <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-          Track your performance across all WCA events with the Weighted Performance Scale. 
-          See who's the most complete cuber in the world.
+        <p className="mx-auto mb-8 max-w-3xl text-xl text-gray-300">
+          Track your performance across all WCA events with the Weighted Performance Scale.
+          See who&apos;s the most complete cuber in the world.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex justify-center gap-4 sm:flex-row">
           <Link to="/search" className="btn-primary flex items-center justify-center space-x-2">
-            <Search className="w-5 h-5" />
+            <Search className="h-5 w-5" />
             <span>Search Your Rank</span>
           </Link>
           <Link to="/about" className="btn-secondary flex items-center justify-center space-x-2">
-            <Award className="w-5 h-5" />
+            <Award className="h-5 w-5" />
             <span>Learn About WPS</span>
           </Link>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="card text-center">
-          <Trophy className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
           <h3 className="text-2xl font-bold text-white">1000+</h3>
           <p className="text-gray-400">Ranked Cubers</p>
         </div>
         <div className="card text-center">
-          <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <TrendingUp className="mx-auto mb-2 h-8 w-8 text-green-400" />
           <h3 className="text-2xl font-bold text-white">17</h3>
           <p className="text-gray-400">WCA Events</p>
         </div>
         <div className="card text-center">
-          <Users className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <Users className="mx-auto mb-2 h-8 w-8 text-green-400" />
           <h3 className="text-2xl font-bold text-white">100+</h3>
           <p className="text-gray-400">Countries</p>
         </div>
       </div>
 
-      {/* Leaderboard — Top 5 */}
       <div className="card">
-        <h2 className="text-2xl font-bold text-white mb-6">Top 5 Cubers Worldwide</h2>
+        <h2 className="mb-6 text-2xl font-bold text-white">Top 5 Cubers Worldwide</h2>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto"></div>
-            <p className="text-gray-400 mt-4">Loading leaderboard...</p>
+          <div className="py-12 text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-green-400" />
+            <p className="mt-4 text-gray-400">Loading leaderboard...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <p className="text-red-400">{error}</p>
             <button type="button" onClick={() => loadLeaderboard()} className="btn-primary mt-4">
               Try Again
@@ -95,47 +143,47 @@ export function HomePage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Rank</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Country</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-medium">WPS</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-400">Rank</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-400">Name</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-400">Country</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-400">WPS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboard.map((cuber, index) => (
                     <tr key={cuber.personId} className="border-b border-gray-700 hover:bg-gray-800/50">
-                      <td className="py-4 px-4">
+                      <td className="px-4 py-4">
                         <div className="flex items-center space-x-2">
                           {index < 3 ? (
-                            <Trophy className={`w-5 h-5 ${
-                              index === 0 ? 'text-yellow-400' :
-                              index === 1 ? 'text-gray-300' :
-                              'text-amber-600'
-                            }`} />
+                            <Trophy
+                              className={`h-5 w-5 ${
+                                index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-300' : 'text-amber-600'
+                              }`}
+                            />
                           ) : (
-                            <span className="w-5 h-5 flex items-center justify-center text-sm font-medium text-gray-400">
+                            <span className="flex h-5 w-5 items-center justify-center text-sm font-medium text-gray-400">
                               {cuber.rank ?? index + 1}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="px-4 py-4">
                         <Link to={`/profile/${cuber.personId}`} className="font-medium text-white hover:text-green-400">
                           {cuber.name}
                         </Link>
                         <div className="text-sm text-gray-400">{cuber.personId}</div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           {cuber.countryIso2 ? (
-                            <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!w-5 !h-4" />
+                            <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!h-4 !w-5" />
                           ) : (
                             <span className="text-gray-500">--</span>
                           )}
                           <span className="text-gray-300">{cuber.countryName ?? cuber.countryId ?? '--'}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="px-4 py-4">
                         <div className="font-bold text-green-400">{formatScore(cuber.wps)}</div>
                       </td>
                     </tr>
@@ -143,23 +191,32 @@ export function HomePage() {
                 </tbody>
               </table>
             </div>
+
             <div className="mt-6 flex flex-col items-center gap-2">
               <Link to="/leaderboard" className="btn-primary flex items-center justify-center space-x-2">
-                <TrendingUp className="w-5 h-5" />
+                <TrendingUp className="h-5 w-5" />
                 <span>View Full Leaderboard</span>
               </Link>
-              <p className="text-gray-500 text-sm">Showing top 5 of all ranked cubers</p>
+              <p className="text-sm text-gray-500">Showing top 5 of all ranked cubers</p>
+            </div>
+
+            <div className="mt-8 border-t border-gray-700 pt-6">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="text-lg">🔥</span>
+                <h3 className="text-xl font-semibold text-white">Biggest Movers This Week</h3>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <WeeklyMoversList title="▲ Movers Up" items={biggestMoversUp} direction="up" />
+                <WeeklyMoversList title="▼ Movers Down" items={biggestMoversDown} direction="down" />
+              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Call to Action */}
-      <div className="text-center bg-gray-800 rounded-lg p-8">
-        <h3 className="text-2xl font-bold text-white mb-4">
-          Ready to Find Your Rank?
-        </h3>
-        <p className="text-gray-300 mb-6">
+      <div className="rounded-lg bg-gray-800 p-8 text-center">
+        <h3 className="mb-4 text-2xl font-bold text-white">Ready to Find Your Rank?</h3>
+        <p className="mb-6 text-gray-300">
           Search for your WCA ID or name to see your WPS score and global ranking.
         </p>
         <Link to="/search" className="btn-primary">

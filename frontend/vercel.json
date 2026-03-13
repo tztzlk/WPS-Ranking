@@ -2,5 +2,27 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "npm ci"
+  "installCommand": "npm ci",
+  "rewrites": [
+    {
+      "source": "/leaderboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/profile/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/compare",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/search",
+      "destination": "/index.html"
+    }
+  ]
 }

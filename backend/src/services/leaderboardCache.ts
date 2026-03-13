@@ -12,10 +12,15 @@
   let countriesListCache: CountryItem[] | null = null;
   let countriesCacheAt = 0;
 
-  type CacheEntry<T> = {
-    value: T;
-    expiresAt: number;
-  };
+type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
+};
+
+type SnapshotDatePair = {
+  latestSnapshotDate: Date;
+  comparisonSnapshotDate: Date;
+};
 
   let globalLeaderboardCache = new Map<number, CacheEntry<GlobalLeaderboardResponse>>();
   let countryLeaderboardCache = new Map<string, CacheEntry<CountryLeaderboardResponse>>();
@@ -105,45 +110,294 @@
     return countriesListCache;
   }
 
-  export interface CountryLeaderboardItem {
-    countryRank: number;
-    personId: string;
-    name: string;
-    countryIso2: string;
-    countryName: string;
-    wps: number;
-    globalWpsRank: number;
+export interface CountryLeaderboardItem {
+  countryRank: number;
+  personId: string;
+  name: string;
+  countryIso2: string;
+  countryName: string;
+  wps: number;
+  globalWpsRank: number;
+  rankChange: number | null;
+}
+
+export interface GlobalLeaderboardItem {
+  rank: number;
+  personId: string;
+  name: string;
+  countryId?: string;
+  countryName?: string;
+  countryIso2?: string;
+  wps: number;
+  rankChange: number | null;
+}
+
+export interface CountryLeaderboardResponse {
+  scope: 'country';
+  countryIso2: string;
+  countryName: string;
+  generatedAt: string;
+  totalRanked: number;
+  count: number;
+  items: CountryLeaderboardItem[];
+  biggestMoversUp: CountryLeaderboardItem[];
+  biggestMoversDown: CountryLeaderboardItem[];
+  source: string;
+}
+
+export interface GlobalLeaderboardResponse {
+  scope: 'global';
+  generatedAt: string;
+  totalRanked?: number;
+  count: number;
+  items: GlobalLeaderboardItem[];
+  biggestMoversUp: GlobalLeaderboardItem[];
+  biggestMoversDown: GlobalLeaderboardItem[];
+  source: string;
+}
+
+export type LeaderboardResponse = CountryLeaderboardResponse | GlobalLeaderboardResponse;
+
+function getBiggestMovers<T extends { rankChange: number | null }>(
+  items: T[],
+  limit: number = 10,
+): { biggestMoversUp: T[]; biggestMoversDown: T[] } {
+  const withRankChange = items.filter(
+    (item): item is T & { rankChange: number } =>
+      typeof item.rankChange === 'number' && !Number.isNaN(item.rankChange) && item.rankChange !== 0,
+  );
+
+  return {
+    biggestMoversUp: [...withRankChange]
+      .filter((item) => item.rankChange > 0)
+      .sort((a, b) => b.rankChange - a.rankChange)
+      .slice(0, limit),
+    biggestMoversDown: [...withRankChange]
+      .filter((item) => item.rankChange < 0)
+      .sort((a, b) => a.rankChange - b.rankChange)
+      .slice(0, limit),
+  };
+}
+
+async function getLatestAndDailyComparisonDates(): Promise<SnapshotDatePair | null> {
+  const snapshotDates = await prisma.historySnapshot.findMany({
+    distinct: ['snapshotDate'],
+    select: {
+      snapshotDate: true,
+    },
+    orderBy: {
+      snapshotDate: 'desc',
+    },
+    take: 2,
+  });
+
+  if (snapshotDates.length < 2) {
+    return null;
   }
 
-  export interface CountryLeaderboardResponse {
-    scope: 'country';
-    countryIso2: string;
-    countryName: string;
-    generatedAt: string;
-    totalRanked: number;
-    count: number;
-    items: CountryLeaderboardItem[];
-    source: string;
+  return {
+    latestSnapshotDate: snapshotDates[0].snapshotDate,
+    comparisonSnapshotDate: snapshotDates[1].snapshotDate,
+  };
+}
+
+async function getLatestAndWeeklyComparisonDates(): Promise<SnapshotDatePair | null> {
+  const latestSnapshot = await prisma.historySnapshot.findFirst({
+    select: {
+      snapshotDate: true,
+    },
+    orderBy: {
+      snapshotDate: 'desc',
+    },
+  });
+
+  if (!latestSnapshot) {
+    return null;
   }
 
-  export interface GlobalLeaderboardResponse {
-    scope: 'global';
-    generatedAt: string;
-    totalRanked?: number;
-    count: number;
-    items: Array<{
-      rank: number;
-      personId: string;
-      name: string;
-      countryId?: string;
-      countryName?: string;
-      countryIso2?: string;
-      wps: number;
-    }>;
-    source: string;
+  const thresholdDate = new Date(latestSnapshot.snapshotDate);
+  thresholdDate.setUTCDate(thresholdDate.getUTCDate() - 7);
+
+  const comparisonSnapshot = await prisma.historySnapshot.findFirst({
+    where: {
+      snapshotDate: {
+        lte: thresholdDate,
+      },
+    },
+    select: {
+      snapshotDate: true,
+    },
+    orderBy: {
+      snapshotDate: 'desc',
+    },
+  });
+
+  if (!comparisonSnapshot) {
+    return null;
   }
 
-  export type LeaderboardResponse = CountryLeaderboardResponse | GlobalLeaderboardResponse;
+  return {
+    latestSnapshotDate: latestSnapshot.snapshotDate,
+    comparisonSnapshotDate: comparisonSnapshot.snapshotDate,
+  };
+}
+
+async function getRankChangeMapForDates(
+  personIds: string[],
+  datePair: SnapshotDatePair | null,
+): Promise<Map<string, number | null>> {
+  const rankChanges = new Map<string, number | null>();
+  for (const personId of personIds) {
+    rankChanges.set(personId, null);
+  }
+
+  if (personIds.length === 0) {
+    return rankChanges;
+  }
+
+  if (!datePair) {
+    return rankChanges;
+  }
+
+  const [currentRows, previousRows] = await Promise.all([
+    prisma.historySnapshot.findMany({
+      where: {
+        snapshotDate: datePair.latestSnapshotDate,
+        personId: {
+          in: personIds,
+        },
+      },
+      select: {
+        personId: true,
+        globalRank: true,
+      },
+    }),
+    prisma.historySnapshot.findMany({
+      where: {
+        snapshotDate: datePair.comparisonSnapshotDate,
+        personId: {
+          in: personIds,
+        },
+      },
+      select: {
+        personId: true,
+        globalRank: true,
+      },
+    }),
+  ]);
+
+  const currentRanks = new Map(currentRows.map((row) => [row.personId, row.globalRank]));
+  const previousRanks = new Map(previousRows.map((row) => [row.personId, row.globalRank]));
+
+  for (const personId of personIds) {
+    const currentRank = currentRanks.get(personId);
+    const previousRank = previousRanks.get(personId);
+    rankChanges.set(
+      personId,
+      currentRank == null || previousRank == null ? null : previousRank - currentRank,
+    );
+  }
+
+  return rankChanges;
+}
+
+async function getGlobalWeeklyMovers(): Promise<{
+  biggestMoversUp: GlobalLeaderboardItem[];
+  biggestMoversDown: GlobalLeaderboardItem[];
+}> {
+  const datePair = await getLatestAndWeeklyComparisonDates();
+  if (!datePair) {
+    return {
+      biggestMoversUp: [],
+      biggestMoversDown: [],
+    };
+  }
+
+  const [currentRows, previousRows] = await Promise.all([
+    prisma.historySnapshot.findMany({
+      where: {
+        snapshotDate: datePair.latestSnapshotDate,
+      },
+      select: {
+        personId: true,
+        globalRank: true,
+        wps: true,
+      },
+    }),
+    prisma.historySnapshot.findMany({
+      where: {
+        snapshotDate: datePair.comparisonSnapshotDate,
+      },
+      select: {
+        personId: true,
+        globalRank: true,
+      },
+    }),
+  ]);
+
+  if (!currentRows.length || !previousRows.length) {
+    return {
+      biggestMoversUp: [],
+      biggestMoversDown: [],
+    };
+  }
+
+  const previousRanks = new Map(previousRows.map((row) => [row.personId, row.globalRank]));
+  const movingRows = currentRows
+    .map<GlobalLeaderboardItem | null>((row) => {
+      const previousRank = previousRanks.get(row.personId);
+      if (previousRank == null) {
+        return null;
+      }
+
+      return {
+        rank: row.globalRank,
+        personId: row.personId,
+        name: '',
+        countryId: undefined,
+        countryIso2: undefined,
+        countryName: undefined,
+        wps: row.wps,
+        rankChange: previousRank - row.globalRank,
+      };
+    })
+    .filter((row): row is GlobalLeaderboardItem => row !== null);
+
+  if (!movingRows.length) {
+    return {
+      biggestMoversUp: [],
+      biggestMoversDown: [],
+    };
+  }
+
+  const moverIds = movingRows.map((row) => row.personId);
+  const leaderboardRows = await prisma.leaderboardEntry.findMany({
+    where: {
+      personId: {
+        in: moverIds,
+      },
+    },
+    select: {
+      personId: true,
+      name: true,
+      countryIso2: true,
+      countryName: true,
+    },
+  });
+
+  const leaderboardByPerson = new Map(leaderboardRows.map((row) => [row.personId, row]));
+  const hydratedRows = movingRows.map((row) => {
+    const leaderboardRow = leaderboardByPerson.get(row.personId);
+    return {
+      ...row,
+      name: leaderboardRow?.name ?? row.personId,
+      countryIso2: leaderboardRow?.countryIso2 ?? undefined,
+      countryName: leaderboardRow?.countryName ?? undefined,
+    };
+  });
+
+  return getBiggestMovers(hydratedRows, 5);
+}
 
   /**
    * Rebuilds the leaderboard snapshot table using SQL window functions.
@@ -220,13 +474,15 @@
     }
 
     const startedAt = Date.now();
-    const [entries, totalRankedRaw, generatedAtMeta] = await Promise.all([
+    const [entries, totalRankedRaw, generatedAtMeta, dailyDatePair, weeklyMovers] = await Promise.all([
       prisma.leaderboardEntry.findMany({
         orderBy: { globalRank: 'asc' },
         take: effectiveLimit,
       }),
       getMetaValue('totalRanked'),
       getMetaValue('generatedAt'),
+      getLatestAndDailyComparisonDates(),
+      getGlobalWeeklyMovers(),
     ]);
     const durationMs = Date.now() - startedAt;
 
@@ -239,8 +495,12 @@
     }
 
     const totalRanked = parseTotalRanked(totalRankedRaw);
+    const rankChangeByPerson = await getRankChangeMapForDates(
+      entries.map((entry) => entry.personId),
+      dailyDatePair,
+    );
 
-    const items = entries.map((e) => ({
+    const items: GlobalLeaderboardItem[] = entries.map((e) => ({
       rank: e.globalRank,
       personId: e.personId,
       name: e.name,
@@ -248,14 +508,16 @@
       countryName: e.countryName ?? undefined,
       countryIso2: e.countryIso2 ?? undefined,
       wps: e.wps,
+      rankChange: rankChangeByPerson.get(e.personId) ?? null,
     }));
-
     const response: GlobalLeaderboardResponse = {
       scope: 'global',
       generatedAt: generatedAtMeta ?? new Date().toISOString(),
       totalRanked,
       count: items.length,
       items,
+      biggestMoversUp: weeklyMovers.biggestMoversUp,
+      biggestMoversDown: weeklyMovers.biggestMoversDown,
       source: 'postgres',
     };
 
@@ -330,7 +592,7 @@
     }
 
     const startedAt = Date.now();
-    const [entries, totalRankedRaw, generatedAtMeta] = await Promise.all([
+    const [entries, totalRankedRaw, generatedAtMeta, dailyDatePair] = await Promise.all([
       prisma.leaderboardEntry.findMany({
         where: { countryIso2: iso2Upper },
         orderBy: { countryRank: 'asc' },
@@ -338,12 +600,17 @@
       }),
       getMetaValue('totalRanked'),
       getMetaValue('generatedAt'),
+      getLatestAndDailyComparisonDates(),
     ]);
     const durationMs = Date.now() - startedAt;
 
     if (!entries.length) return null;
 
     const totalRanked = parseTotalRanked(totalRankedRaw);
+    const rankChangeByPerson = await getRankChangeMapForDates(
+      entries.map((entry) => entry.personId),
+      dailyDatePair,
+    );
 
     const items: CountryLeaderboardItem[] = entries.map((e) => ({
       countryRank: e.countryRank ?? 0,
@@ -353,8 +620,8 @@
       countryName: e.countryName ?? iso2Upper,
       wps: e.wps,
       globalWpsRank: e.globalRank,
+      rankChange: rankChangeByPerson.get(e.personId) ?? null,
     }));
-
     const countryName = items[0].countryName;
 
     const response: CountryLeaderboardResponse = {
@@ -365,6 +632,8 @@
       totalRanked,
       count: items.length,
       items,
+      biggestMoversUp: [],
+      biggestMoversDown: [],
       source: 'postgres',
     };
 
