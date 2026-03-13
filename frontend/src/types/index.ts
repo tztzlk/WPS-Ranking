@@ -84,6 +84,14 @@ export interface WpsBreakdownResponse {
   wps: number;
 }
 
+/** Profile history for WPS progress chart (GET /api/profile/:wcaId/history). */
+export interface ProfileHistoryItem {
+  date: string;
+  wps: number;
+  globalRank: number;
+  countryRank: number | null;
+}
+
 export const EVENT_NAMES: Record<string, string> = {
   '333': '3x3x3 Cube',
   '222': '2x2x2 Cube',

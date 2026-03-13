@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { WPSProfile, SearchResult, AboutData, LeaderboardCacheResponse, WpsBreakdownResponse } from '../types';
+import { WPSProfile, SearchResult, AboutData, LeaderboardCacheResponse, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
@@ -85,6 +85,11 @@ export const apiService = {
   async getWpsBreakdown(wcaId: string): Promise<WpsBreakdownResponse> {
     const response = await api.get<WpsBreakdownResponse>(`/cuber/${encodeURIComponent(wcaId)}/wps-breakdown`);
     return response.data;
+  },
+
+  async getProfileHistory(wcaId: string): Promise<ProfileHistoryItem[]> {
+    const response = await api.get<{ history: ProfileHistoryItem[] }>(`/profile/${encodeURIComponent(wcaId)}/history`);
+    return response.data.history;
   },
 
   async getHealth(): Promise<{ ok: boolean; env: string }> {
