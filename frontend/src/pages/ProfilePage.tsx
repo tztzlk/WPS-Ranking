@@ -99,13 +99,13 @@ export function ProfilePage() {
   const handleShareProfile = async () => {
     if (!profile) return;
 
-    const shareCardUrl = `${getApiBaseOrigin() ?? window.location.origin}/api/og/profile/${encodeURIComponent(profile.wcaId)}`;
+    const shareUrl = `${getApiBaseOrigin() ?? window.location.origin}/profile/${encodeURIComponent(profile.wcaId)}`;
 
     try {
       if (navigator.share) {
-        await navigator.share({ url: shareCardUrl });
+        await navigator.share({ url: shareUrl });
       } else {
-        await navigator.clipboard.writeText(shareCardUrl);
+        await navigator.clipboard.writeText(shareUrl);
         setShareCopied(true);
         setTimeout(() => setShareCopied(false), 2000);
       }
