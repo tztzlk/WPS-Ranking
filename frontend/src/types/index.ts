@@ -56,6 +56,7 @@ export interface LeaderboardCacheItem {
   countryIso2?: string;
   wps: number;
   globalWpsRank?: number;
+  rankChange: number | null;
 }
 
 export interface LeaderboardCacheResponse {
@@ -67,6 +68,8 @@ export interface LeaderboardCacheResponse {
   countryName?: string;
   source?: string;
   items: LeaderboardCacheItem[];
+  biggestMoversUp: LeaderboardCacheItem[];
+  biggestMoversDown: LeaderboardCacheItem[];
 }
 
 /** WPS breakdown per event (GET /api/cuber/:id/wps-breakdown). */

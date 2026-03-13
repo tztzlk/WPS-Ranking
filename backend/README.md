@@ -1,11 +1,11 @@
 # WPS Ranking Backend
 
-Backend API for WPS Ranking: **Express → file-based JSON/TSV cache** at runtime. Offline pipeline ingests WCA TSV export and regenerates JSON indexes used by the API.
+Backend API for WPS Ranking: **Express → Prisma → PostgreSQL** at runtime. Offline pipeline ingests the WCA TSV export, regenerates JSON indexes used for import, then refreshes PostgreSQL tables used by the API.
 
 ## Architecture
 
-- **Runtime (production)**: Client → Express → services → JSON index files under `CACHE_DIR`. No PostgreSQL or Prisma at runtime.
-- **Offline pipeline** (scripts only, not used by API): WCA TSV download → `updateData` / `leaderboardTop100` → JSON indexes used directly by the API.
+- **Runtime (production)**: Client → Express → services → Prisma → PostgreSQL.
+- **Offline pipeline**: WCA TSV download → JSON/index regeneration → PostgreSQL import → leaderboard rebuild → history snapshots.
 
 ## Getting Started
 
@@ -39,9 +39,27 @@ cp .env.example .env
 | `CACHE_DIR` | Override cache directory for pipeline scripts and runtime (default: `./cache`) |
 | `WCA_EXPORT_URL` | Override WCA export download URL |
 
-### 3. Build JSON/TSV caches (offline pipeline)
+### 3. Refresh data end-to-end
 
-The API reads from JSON index files under `CACHE_DIR`. To (re)build them from the WCA TSV export, run:
+To run the full refresh pipeline used for daily updates, run:
+
+```bash
+npm run refresh:data
+```
+
+This pipeline:
+
+- downloads the latest WCA export
+- regenerates JSON/index files under `CACHE_DIR`
+- imports data into PostgreSQL
+- rebuilds `leaderboard_entries`
+- saves a daily row set into `history_snapshots`
+
+If the export hash is unchanged, the pipeline now keeps the existing PostgreSQL leaderboard and still saves a daily history snapshot.
+
+### 4. Rebuild JSON/TSV caches only
+
+If you only want to refresh offline JSON/index files, run:
 
 ```bash
 npm run update:data
@@ -62,7 +80,7 @@ You can also regenerate leaderboard/WPS JSON from existing TSVs only:
 npm run leaderboard:update
 ```
 
-### 4. Start the development server
+### 5. Start the development server
 
 ```bash
 npm run dev
@@ -104,15 +122,17 @@ The API will be available at `http://localhost:5000`.
 | `npm run build` | Compile TypeScript |
 | `npm start` | Run compiled JS |
 
-**Offline pipeline (not used by API)**  
+**Offline / refresh pipeline**  
 | Script | Description |
 |---|---|
-| `npm run update:data` | Download WCA export, extract TSVs, build JSON indexes |
+| `npm run refresh:data` | Full daily refresh: update raw data, import PostgreSQL, rebuild leaderboard, save history snapshot |
+| `npm run update:data` | Download WCA export, extract TSVs, build JSON indexes only |
+| `npm run import:data` | Import existing JSON/index files into PostgreSQL only |
 | `npm run leaderboard:update` | Regenerate leaderboard/WPS JSON from existing TSVs |
 | `npm run debug:person` | Look up a person by WCA ID (debug) |
 
 ## Tech Stack
 
-- **Runtime**: Node.js, Express, TypeScript, file-based JSON indexes (no database).
-- **Pipeline**: WCA TSV → offline scripts → JSON indexes under `CACHE_DIR`.
+- **Runtime**: Node.js, Express, TypeScript, Prisma, PostgreSQL.
+- **Pipeline**: WCA TSV → offline scripts → JSON indexes under `CACHE_DIR` → PostgreSQL tables.
 - **Helmet** / **CORS** / **Compression** for security and performance.
