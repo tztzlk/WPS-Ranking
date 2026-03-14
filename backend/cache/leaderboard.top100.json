@@ -1,6 +1,6 @@
 {
   "source": "WCA Results Export",
-  "generatedAt": "2026-03-13T04:29:55.183Z",
+  "generatedAt": "2026-03-14T04:28:43.909Z",
   "count": 100,
   "items": [
     {
@@ -19,7 +19,7 @@
       "countryId": "Poland",
       "countryName": "Poland",
       "countryIso2": "PL",
-      "wps": 30.55
+      "wps": 30.54
     },
     {
       "rank": 3,
@@ -28,7 +28,7 @@
       "countryId": "Russia",
       "countryName": "Russia",
       "countryIso2": "RU",
-      "wps": 23.93
+      "wps": 23.87
     },
     {
       "rank": 4,
@@ -91,7 +91,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 17.47
+      "wps": 17.46
     },
     {
       "rank": 11,
@@ -100,7 +100,7 @@
       "countryId": "Indonesia",
       "countryName": "Indonesia",
       "countryIso2": "ID",
-      "wps": 17.14
+      "wps": 17.13
     },
     {
       "rank": 12,
@@ -127,7 +127,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 15.98
+      "wps": 15.97
     },
     {
       "rank": 15,
@@ -136,7 +136,7 @@
       "countryId": "Denmark",
       "countryName": "Denmark",
       "countryIso2": "DK",
-      "wps": 15.76
+      "wps": 15.75
     },
     {
       "rank": 16,
@@ -163,7 +163,7 @@
       "countryId": "Australia",
       "countryName": "Australia",
       "countryIso2": "AU",
-      "wps": 15.67
+      "wps": 15.66
     },
     {
       "rank": 19,
@@ -217,7 +217,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 14.44
+      "wps": 14.39
     },
     {
       "rank": 25,
@@ -289,7 +289,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 14
+      "wps": 13.99
     },
     {
       "rank": 33,
@@ -316,7 +316,7 @@
       "countryId": "Poland",
       "countryName": "Poland",
       "countryIso2": "PL",
-      "wps": 13.72
+      "wps": 13.71
     },
     {
       "rank": 36,
@@ -325,7 +325,7 @@
       "countryId": "Romania",
       "countryName": "Romania",
       "countryIso2": "RO",
-      "wps": 13.69
+      "wps": 13.67
     },
     {
       "rank": 37,
@@ -406,7 +406,7 @@
       "countryId": "Russia",
       "countryName": "Russia",
       "countryIso2": "RU",
-      "wps": 13.34
+      "wps": 13.33
     },
     {
       "rank": 46,
@@ -424,7 +424,7 @@
       "countryId": "New Zealand",
       "countryName": "New Zealand",
       "countryIso2": "NZ",
-      "wps": 13.31
+      "wps": 13.3
     },
     {
       "rank": 48,
@@ -433,7 +433,7 @@
       "countryId": "Australia",
       "countryName": "Australia",
       "countryIso2": "AU",
-      "wps": 13.28
+      "wps": 13.27
     },
     {
       "rank": 49,
@@ -442,7 +442,7 @@
       "countryId": "Argentina",
       "countryName": "Argentina",
       "countryIso2": "AR",
-      "wps": 13.24
+      "wps": 13.23
     },
     {
       "rank": 50,
@@ -455,20 +455,20 @@
     },
     {
       "rank": 51,
-      "personId": "2017GOLU01",
-      "name": "Theo Goluboff",
-      "countryId": "Argentina",
-      "countryName": "Argentina",
-      "countryIso2": "AR",
-      "wps": 13.18
-    },
-    {
-      "rank": 52,
       "personId": "2015LARS04",
       "name": "Kim Roger Haraldsen",
       "countryId": "Norway",
       "countryName": "Norway",
       "countryIso2": "NO",
+      "wps": 13.17
+    },
+    {
+      "rank": 52,
+      "personId": "2017GOLU01",
+      "name": "Theo Goluboff",
+      "countryId": "Argentina",
+      "countryName": "Argentina",
+      "countryIso2": "AR",
       "wps": 13.17
     },
     {
@@ -523,7 +523,7 @@
       "countryId": "China",
       "countryName": "China",
       "countryIso2": "CN",
-      "wps": 12.9
+      "wps": 12.88
     },
     {
       "rank": 59,
@@ -532,7 +532,7 @@
       "countryId": "Greece",
       "countryName": "Greece",
       "countryIso2": "GR",
-      "wps": 12.85
+      "wps": 12.84
     },
     {
       "rank": 60,
@@ -559,7 +559,7 @@
       "countryId": "Norway",
       "countryName": "Norway",
       "countryIso2": "NO",
-      "wps": 12.78
+      "wps": 12.77
     },
     {
       "rank": 63,
@@ -622,7 +622,7 @@
       "countryId": "Thailand",
       "countryName": "Thailand",
       "countryIso2": "TH",
-      "wps": 12.64
+      "wps": 12.63
     },
     {
       "rank": 70,
@@ -640,7 +640,7 @@
       "countryId": "Sweden",
       "countryName": "Sweden",
       "countryIso2": "SE",
-      "wps": 12.49
+      "wps": 12.48
     },
     {
       "rank": 72,
@@ -649,7 +649,7 @@
       "countryId": "Poland",
       "countryName": "Poland",
       "countryIso2": "PL",
-      "wps": 12.48
+      "wps": 12.47
     },
     {
       "rank": 73,
@@ -694,25 +694,25 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 12.18
+      "wps": 12.17
     },
     {
       "rank": 78,
-      "personId": "2016YONG02",
-      "name": "Tristan Chua Yong",
-      "countryId": "Singapore",
-      "countryName": "Singapore",
-      "countryIso2": "SG",
-      "wps": 12.15
-    },
-    {
-      "rank": 79,
       "personId": "2022CHAI02",
       "name": "Curtis Chai",
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 12.15
+      "wps": 12.14
+    },
+    {
+      "rank": 79,
+      "personId": "2016YONG02",
+      "name": "Tristan Chua Yong",
+      "countryId": "Singapore",
+      "countryName": "Singapore",
+      "countryIso2": "SG",
+      "wps": 12.14
     },
     {
       "rank": 80,
@@ -766,10 +766,19 @@
       "countryId": "Indonesia",
       "countryName": "Indonesia",
       "countryIso2": "ID",
-      "wps": 11.95
+      "wps": 11.94
     },
     {
       "rank": 86,
+      "personId": "2023MALO01",
+      "name": "Quinn Maloney",
+      "countryId": "USA",
+      "countryName": "United States",
+      "countryIso2": "US",
+      "wps": 11.92
+    },
+    {
+      "rank": 87,
       "personId": "2019ECKE02",
       "name": "Ryan Eckersley",
       "countryId": "United Kingdom",
@@ -778,7 +787,7 @@
       "wps": 11.91
     },
     {
-      "rank": 87,
+      "rank": 88,
       "personId": "2015CECC01",
       "name": "Vicenzo Guerino Cecchini",
       "countryId": "Brazil",
@@ -787,21 +796,12 @@
       "wps": 11.9
     },
     {
-      "rank": 88,
+      "rank": 89,
       "personId": "2022RUDA02",
       "name": "Roman Rudakov",
       "countryId": "Australia",
       "countryName": "Australia",
       "countryIso2": "AU",
-      "wps": 11.86
-    },
-    {
-      "rank": 89,
-      "personId": "2023MALO01",
-      "name": "Quinn Maloney",
-      "countryId": "USA",
-      "countryName": "United States",
-      "countryIso2": "US",
       "wps": 11.86
     },
     {
@@ -824,15 +824,6 @@
     },
     {
       "rank": 92,
-      "personId": "2018KUZM02",
-      "name": "Olaf Kuźmiński",
-      "countryId": "Poland",
-      "countryName": "Poland",
-      "countryIso2": "PL",
-      "wps": 11.82
-    },
-    {
-      "rank": 93,
       "personId": "2017SANK04",
       "name": "Vishwa Sankar",
       "countryId": "USA",
@@ -841,12 +832,21 @@
       "wps": 11.79
     },
     {
-      "rank": 94,
+      "rank": 93,
       "personId": "2018SATO01",
       "name": "Sora Sato",
       "countryId": "Australia",
       "countryName": "Australia",
       "countryIso2": "AU",
+      "wps": 11.78
+    },
+    {
+      "rank": 94,
+      "personId": "2018KUZM02",
+      "name": "Olaf Kuźmiński",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
       "wps": 11.78
     },
     {
@@ -856,7 +856,7 @@
       "countryId": "China",
       "countryName": "China",
       "countryIso2": "CN",
-      "wps": 11.78
+      "wps": 11.77
     },
     {
       "rank": 96,
@@ -865,7 +865,7 @@
       "countryId": "Malaysia",
       "countryName": "Malaysia",
       "countryIso2": "MY",
-      "wps": 11.77
+      "wps": 11.76
     },
     {
       "rank": 97,
@@ -883,7 +883,7 @@
       "countryId": "Germany",
       "countryName": "Germany",
       "countryIso2": "DE",
-      "wps": 11.71
+      "wps": 11.7
     },
     {
       "rank": 99,
