@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Search, Trophy, Info, Home, GitCompare } from 'lucide-react';
+import { captureEvent } from '../lib/analytics';
 
 export function Layout() {
   const location = useLocation();
@@ -112,6 +113,7 @@ export function Layout() {
                   href="https://ko-fi.com/tonyokoo"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => captureEvent('support_clicked', { source: 'footer' })}
                   className="inline-block rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
                 >
                   Support on Ko-fi

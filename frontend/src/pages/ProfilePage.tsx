@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
+import { captureEvent } from '../lib/analytics';
 
 function getApiBaseOrigin(): string | null {
   const rawBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
@@ -29,6 +30,7 @@ export function ProfilePage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const trackedProfileRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (wcaId) loadProfile(wcaId);
@@ -36,6 +38,13 @@ export function ProfilePage() {
       abortRef.current?.abort();
     };
   }, [wcaId]);
+
+  useEffect(() => {
+    if (!profile?.wcaId || trackedProfileRef.current === profile.wcaId) return;
+
+    trackedProfileRef.current = profile.wcaId;
+    captureEvent('cuber_profile_opened', { wca_id: profile.wcaId, source: 'profile_page' });
+  }, [profile]);
 
   const loadProfile = async (id: string) => {
     abortRef.current?.abort();
@@ -212,7 +221,15 @@ export function ProfilePage() {
         <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
           <button
             type="button"
-            onClick={() => setShowBreakdown((value) => !value)}
+            onClick={() =>
+              setShowBreakdown((value) => {
+                const nextValue = !value;
+                if (nextValue) {
+                  captureEvent('breakdown_viewed', { wca_id: profile.wcaId });
+                }
+                return nextValue;
+              })
+            }
             className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
           >
             <span className="font-medium">{showBreakdown ? 'Hide WPS calculation' : 'Show WPS calculation'}</span>
