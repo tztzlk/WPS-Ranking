@@ -1,6 +1,6 @@
 {
   "source": "WCA Results Export",
-  "generatedAt": "2026-03-14T04:28:43.909Z",
+  "generatedAt": "2026-03-15T05:01:20.337Z",
   "count": 100,
   "items": [
     {
@@ -95,21 +95,21 @@
     },
     {
       "rank": 11,
+      "personId": "2016WUZI04",
+      "name": "Ziyu Wu (吴子钰)",
+      "countryId": "China",
+      "countryName": "China",
+      "countryIso2": "CN",
+      "wps": 17.15
+    },
+    {
+      "rank": 12,
       "personId": "2015FUSH01",
       "name": "Firstian Fushada (符逢城)",
       "countryId": "Indonesia",
       "countryName": "Indonesia",
       "countryIso2": "ID",
       "wps": 17.13
-    },
-    {
-      "rank": 12,
-      "personId": "2016WUZI04",
-      "name": "Ziyu Wu (吴子钰)",
-      "countryId": "China",
-      "countryName": "China",
-      "countryIso2": "CN",
-      "wps": 17.11
     },
     {
       "rank": 13,
@@ -208,7 +208,7 @@
       "countryId": "Ireland",
       "countryName": "Ireland",
       "countryIso2": "IE",
-      "wps": 14.7
+      "wps": 14.69
     },
     {
       "rank": 24,
@@ -357,7 +357,7 @@
     {
       "rank": 40,
       "personId": "2014CHIC01",
-      "name": "Christopher Chi",
+      "name": "Chris Chi",
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
@@ -451,25 +451,25 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 13.23
+      "wps": 13.22
     },
     {
       "rank": 51,
-      "personId": "2015LARS04",
-      "name": "Kim Roger Haraldsen",
-      "countryId": "Norway",
-      "countryName": "Norway",
-      "countryIso2": "NO",
-      "wps": 13.17
-    },
-    {
-      "rank": 52,
       "personId": "2017GOLU01",
       "name": "Theo Goluboff",
       "countryId": "Argentina",
       "countryName": "Argentina",
       "countryIso2": "AR",
-      "wps": 13.17
+      "wps": 13.16
+    },
+    {
+      "rank": 52,
+      "personId": "2015LARS04",
+      "name": "Kim Roger Haraldsen",
+      "countryId": "Norway",
+      "countryName": "Norway",
+      "countryIso2": "NO",
+      "wps": 13.16
     },
     {
       "rank": 53,
@@ -487,7 +487,7 @@
       "countryId": "Sweden",
       "countryName": "Sweden",
       "countryIso2": "SE",
-      "wps": 13.01
+      "wps": 13
     },
     {
       "rank": 55,
@@ -604,7 +604,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 12.65
+      "wps": 12.64
     },
     {
       "rank": 68,
@@ -739,25 +739,25 @@
       "countryId": "United Kingdom",
       "countryName": "United Kingdom",
       "countryIso2": "GB",
-      "wps": 12.04
+      "wps": 12.03
     },
     {
       "rank": 83,
-      "personId": "2016JONE04",
-      "name": "Jode Brewster",
-      "countryId": "Australia",
-      "countryName": "Australia",
-      "countryIso2": "AU",
-      "wps": 12
-    },
-    {
-      "rank": 84,
       "personId": "2018RUSH01",
       "name": "Daniel Rush",
       "countryId": "South Africa",
       "countryName": "South Africa",
       "countryIso2": "ZA",
       "wps": 12
+    },
+    {
+      "rank": 84,
+      "personId": "2016JONE04",
+      "name": "Jode Brewster",
+      "countryId": "Australia",
+      "countryName": "Australia",
+      "countryIso2": "AU",
+      "wps": 11.99
     },
     {
       "rank": 85,
@@ -775,7 +775,7 @@
       "countryId": "USA",
       "countryName": "United States",
       "countryIso2": "US",
-      "wps": 11.92
+      "wps": 11.91
     },
     {
       "rank": 87,
@@ -842,20 +842,20 @@
     },
     {
       "rank": 94,
-      "personId": "2018KUZM02",
-      "name": "Olaf Kuźmiński",
-      "countryId": "Poland",
-      "countryName": "Poland",
-      "countryIso2": "PL",
-      "wps": 11.78
-    },
-    {
-      "rank": 95,
       "personId": "2017MAZH04",
       "name": "Zhiyuan Ma (马之元)",
       "countryId": "China",
       "countryName": "China",
       "countryIso2": "CN",
+      "wps": 11.77
+    },
+    {
+      "rank": 95,
+      "personId": "2018KUZM02",
+      "name": "Olaf Kuźmiński",
+      "countryId": "Poland",
+      "countryName": "Poland",
+      "countryIso2": "PL",
       "wps": 11.77
     },
     {
@@ -901,7 +901,7 @@
       "countryId": "New Zealand",
       "countryName": "New Zealand",
       "countryIso2": "NZ",
-      "wps": 11.68
+      "wps": 11.67
     }
   ]
 }
