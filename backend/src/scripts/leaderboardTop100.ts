@@ -20,6 +20,7 @@ const PERSONS_INDEX_PATH = path.join(CACHE_DIR, 'persons.index.json');
 const COUNTRIES_INDEX_PATH = path.join(CACHE_DIR, 'countries.index.json');
 const WPS_INDEX_PATH = path.join(CACHE_DIR, 'wps.index.json');
 const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
+const WPS_BREAKDOWN_NDJSON_PATH = path.join(CACHE_DIR, 'wps.breakdown.ndjson');
 
 const TOP_N = 100;
 const STREAM_HIGH_WATER_MARK = 64 * 1024;
@@ -175,6 +176,7 @@ export interface BreakdownItem {
 }
 
 export interface PersonWPSBreakdown {
+  personId?: string;
   sumEventScores: number;
   maxPossible: number;
   eventsParticipated: number;
@@ -295,25 +297,38 @@ export async function generateTop100Leaderboard(
     encoding: 'utf8',
     highWaterMark: STREAM_HIGH_WATER_MARK,
   });
+  const breakdownNdjsonStream = fs.createWriteStream(WPS_BREAKDOWN_NDJSON_PATH, {
+    encoding: 'utf8',
+    highWaterMark: STREAM_HIGH_WATER_MARK,
+  });
   breakdownStream.write('{');
   let first = true;
   for (const e of entries) {
     if (!first) breakdownStream.write(',');
     const entry: PersonWPSBreakdown = {
+      personId: e.personId,
       sumEventScores: e.sumEventScores,
       maxPossible: MAX_WPS_SCORE,
       eventsParticipated: e.breakdown.length,
       breakdown: e.breakdown,
     };
     breakdownStream.write(`"${e.personId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}":${JSON.stringify(entry)}`);
+    breakdownNdjsonStream.write(`${JSON.stringify(entry)}\n`);
     first = false;
   }
   breakdownStream.write('}');
-  await new Promise<void>((resolve, reject) => {
-    breakdownStream.on('finish', resolve);
-    breakdownStream.on('error', reject);
-    breakdownStream.end();
-  });
+  await Promise.all([
+    new Promise<void>((resolve, reject) => {
+      breakdownStream.on('finish', resolve);
+      breakdownStream.on('error', reject);
+      breakdownStream.end();
+    }),
+    new Promise<void>((resolve, reject) => {
+      breakdownNdjsonStream.on('finish', resolve);
+      breakdownNdjsonStream.on('error', reject);
+      breakdownNdjsonStream.end();
+    }),
+  ]);
 
   entries.sort((a, b) => {
     const diff = b.wps - a.wps;

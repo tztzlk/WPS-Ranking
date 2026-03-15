@@ -28,9 +28,19 @@ function isCrawler(userAgent: string): boolean {
   return CRAWLER_AGENTS.some((bot) => ua.includes(bot));
 }
 
-function getBackendBaseUrl(): string {
-  const siteUrl = process.env.SITE_URL || `http://localhost:${process.env.PORT || 5000}`;
-  return siteUrl.replace(/\/$/, '');
+function getBackendBaseUrl(req: Request): string {
+  const configured = process.env.SITE_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+
+  const forwardedProto = (req.get('x-forwarded-proto') || '').split(',')[0]?.trim();
+  const protocol = forwardedProto || req.protocol || 'https';
+  const host = req.get('x-forwarded-host') || req.get('host');
+
+  if (host) {
+    return `${protocol}://${host}`.replace(/\/$/, '');
+  }
+
+  return `http://localhost:${process.env.PORT || 5000}`;
 }
 
 function getFrontendBaseUrl(): string {
@@ -65,7 +75,7 @@ router.get('/profile/:personId', async (req: Request, res: Response, next: NextF
     return;
   }
 
-  const backendBaseUrl = getBackendBaseUrl();
+  const backendBaseUrl = getBackendBaseUrl(req);
   const shareUrl = `${backendBaseUrl}/profile/${personId}`;
   const imageUrl = `${backendBaseUrl}/api/og/profile/${personId}`;
 

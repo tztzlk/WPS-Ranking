@@ -40,6 +40,16 @@ model WpsRank {
   @@map("wps_ranks")
 }
 
+model WpsBreakdown {
+  personId            String @id @map("person_id") @db.VarChar(10)
+  sumEventScores      Float  @map("sum_event_scores")
+  maxPossible         Float  @map("max_possible")
+  eventsParticipated  Int    @map("events_participated")
+  breakdown           Json
+
+  @@map("wps_breakdowns")
+}
+
 model Meta {
   key   String @id
   value String
@@ -70,5 +80,7 @@ model HistorySnapshot {
   countryRank  Int?     @map("country_rank")
 
   @@id([personId, snapshotDate])
+  @@index([snapshotDate], map: "idx_history_snapshot_date")
+  @@index([snapshotDate, globalRank], map: "idx_history_snapshot_date_global_rank")
   @@map("history_snapshots")
 }
