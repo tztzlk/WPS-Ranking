@@ -1,13 +1,9 @@
 /**
- * Serves WPS breakdown per event for a cuber (for profile transparency).
- * Reads from the precomputed cache file written by the leaderboard pipeline.
+ * Serves WPS breakdown per event for a cuber from PostgreSQL.
+ * Runtime intentionally avoids loading large repo-local cache files into memory.
  */
-import path from 'path';
-import fs from 'fs';
+import { prisma } from '../lib/prisma';
 import { EVENT_NAMES } from '../types';
-
-const CACHE_DIR = process.env.CACHE_DIR ? path.resolve(process.env.CACHE_DIR) : path.join(process.cwd(), 'cache');
-const WPS_BREAKDOWN_PATH = path.join(CACHE_DIR, 'wps.breakdown.json');
 
 export interface WpsBreakdownEventItem {
   eventId: string;
@@ -30,56 +26,41 @@ interface BreakdownRow {
   eventScore: number;
 }
 
-interface PersonWPSBreakdown {
-  sumEventScores: number;
-  maxPossible: number;
-  eventsParticipated: number;
-  breakdown: BreakdownRow[];
-}
-
-type BreakdownIndex = Record<string, PersonWPSBreakdown>;
-
-let breakdownCache: BreakdownIndex | null = null;
-
-function loadBreakdownIndex(): BreakdownIndex | null {
-  if (breakdownCache !== null) return breakdownCache;
-  if (!fs.existsSync(WPS_BREAKDOWN_PATH)) return null;
-  try {
-    const raw = fs.readFileSync(WPS_BREAKDOWN_PATH, 'utf8');
-    breakdownCache = JSON.parse(raw) as BreakdownIndex;
-    return breakdownCache;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Returns WPS breakdown per event for a given cuber.
- * Events are sorted by contribution (eventScore) descending.
- * Only includes events where the cuber has a rank.
- */
-export function getWpsBreakdown(personId: string): WpsBreakdownResponse | null {
+export async function getWpsBreakdown(personId: string): Promise<WpsBreakdownResponse | null> {
   const normalized = personId.trim().toUpperCase();
   if (!normalized) return null;
 
-  const index = loadBreakdownIndex();
-  if (!index) return null;
+  const row = await prisma.wpsBreakdown.findUnique({
+    where: { personId: normalized },
+    select: {
+      sumEventScores: true,
+      maxPossible: true,
+      breakdown: true,
+    },
+  });
 
-  const data = index[normalized];
-  if (!data || !Array.isArray(data.breakdown) || data.breakdown.length === 0) return null;
+  if (!row || !Array.isArray(row.breakdown) || row.breakdown.length === 0) {
+    return null;
+  }
 
-  const maxPossible = data.maxPossible > 0 ? data.maxPossible : 1;
-  const wps = Math.round((data.sumEventScores / maxPossible) * 100 * 100) / 100;
+  const breakdown = row.breakdown as unknown as BreakdownRow[];
+  const maxPossible = row.maxPossible > 0 ? row.maxPossible : 1;
+  const wps = Math.round((row.sumEventScores / maxPossible) * 100 * 100) / 100;
 
-  const events: WpsBreakdownEventItem[] = [...data.breakdown]
+  const events: WpsBreakdownEventItem[] = [...breakdown]
+    .filter((item) => item && typeof item.eventId === 'string')
     .sort((a, b) => b.eventScore - a.eventScore)
-    .map((row) => ({
-      eventId: row.eventId,
-      eventName: EVENT_NAMES[row.eventId] ?? row.eventId,
-      weight: Math.round(row.weight * 100) / 100,
-      worldRank: row.worldRank,
-      eventScore: Math.round(row.eventScore * 100) / 100,
+    .map((item) => ({
+      eventId: item.eventId,
+      eventName: EVENT_NAMES[item.eventId] ?? item.eventId,
+      weight: Math.round(item.weight * 100) / 100,
+      worldRank: item.worldRank,
+      eventScore: Math.round(item.eventScore * 100) / 100,
     }));
+
+  if (events.length === 0) {
+    return null;
+  }
 
   return {
     personId: normalized,

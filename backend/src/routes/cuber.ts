@@ -11,7 +11,7 @@ router.get('/:id/wps-breakdown', async (req, res) => {
     return;
   }
 
-  const breakdown = getWpsBreakdown(id);
+  const breakdown = await getWpsBreakdown(id);
   if (!breakdown) {
     res.status(404).json({ error: 'WPS breakdown not found for this cuber' });
     return;

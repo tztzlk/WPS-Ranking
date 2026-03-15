@@ -1,3 +1,4 @@
+  import { Prisma } from '@prisma/client';
   import { getMetaValue } from './personDb';
   import { prisma } from '../lib/prisma';
 
@@ -22,8 +23,25 @@ type SnapshotDatePair = {
   comparisonSnapshotDate: Date;
 };
 
+type SnapshotDatePairCacheEntry = {
+  value: SnapshotDatePair | null;
+  expiresAt: number;
+};
+
+type WeeklyMoverRow = {
+  personId: string;
+  rank: number;
+  wps: number;
+  rankChange: number;
+  name: string;
+  countryIso2: string | null;
+  countryName: string | null;
+};
+
   let globalLeaderboardCache = new Map<number, CacheEntry<GlobalLeaderboardResponse>>();
   let countryLeaderboardCache = new Map<string, CacheEntry<CountryLeaderboardResponse>>();
+  let dailySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
+  let weeklySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
 
   function getCachedGlobalLeaderboard(limit: number): GlobalLeaderboardResponse | null {
     const entry = globalLeaderboardCache.get(limit);
@@ -180,6 +198,10 @@ function getBiggestMovers<T extends { rankChange: number | null }>(
 }
 
 async function getLatestAndDailyComparisonDates(): Promise<SnapshotDatePair | null> {
+  if (dailySnapshotDatePairCache && dailySnapshotDatePairCache.expiresAt > Date.now()) {
+    return dailySnapshotDatePairCache.value;
+  }
+
   const snapshotDates = await prisma.historySnapshot.findMany({
     distinct: ['snapshotDate'],
     select: {
@@ -191,17 +213,27 @@ async function getLatestAndDailyComparisonDates(): Promise<SnapshotDatePair | nu
     take: 2,
   });
 
-  if (snapshotDates.length < 2) {
-    return null;
-  }
+  const value =
+    snapshotDates.length < 2
+      ? null
+      : {
+      latestSnapshotDate: snapshotDates[0].snapshotDate,
+      comparisonSnapshotDate: snapshotDates[1].snapshotDate,
+        };
 
-  return {
-    latestSnapshotDate: snapshotDates[0].snapshotDate,
-    comparisonSnapshotDate: snapshotDates[1].snapshotDate,
+  dailySnapshotDatePairCache = {
+    value,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
   };
+
+  return value;
 }
 
 async function getLatestAndWeeklyComparisonDates(): Promise<SnapshotDatePair | null> {
+  if (weeklySnapshotDatePairCache && weeklySnapshotDatePairCache.expiresAt > Date.now()) {
+    return weeklySnapshotDatePairCache.value;
+  }
+
   const latestSnapshot = await prisma.historySnapshot.findFirst({
     select: {
       snapshotDate: true,
@@ -212,6 +244,10 @@ async function getLatestAndWeeklyComparisonDates(): Promise<SnapshotDatePair | n
   });
 
   if (!latestSnapshot) {
+    weeklySnapshotDatePairCache = {
+      value: null,
+      expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+    };
     return null;
   }
 
@@ -232,14 +268,19 @@ async function getLatestAndWeeklyComparisonDates(): Promise<SnapshotDatePair | n
     },
   });
 
-  if (!comparisonSnapshot) {
-    return null;
-  }
+  const value = !comparisonSnapshot
+    ? null
+    : {
+      latestSnapshotDate: latestSnapshot.snapshotDate,
+      comparisonSnapshotDate: comparisonSnapshot.snapshotDate,
+      };
 
-  return {
-    latestSnapshotDate: latestSnapshot.snapshotDate,
-    comparisonSnapshotDate: comparisonSnapshot.snapshotDate,
+  weeklySnapshotDatePairCache = {
+    value,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
   };
+
+  return value;
 }
 
 async function getRankChangeMapForDates(
@@ -313,90 +354,75 @@ async function getGlobalWeeklyMovers(): Promise<{
     };
   }
 
-  const [currentRows, previousRows] = await Promise.all([
-    prisma.historySnapshot.findMany({
-      where: {
-        snapshotDate: datePair.latestSnapshotDate,
-      },
-      select: {
-        personId: true,
-        globalRank: true,
-        wps: true,
-      },
-    }),
-    prisma.historySnapshot.findMany({
-      where: {
-        snapshotDate: datePair.comparisonSnapshotDate,
-      },
-      select: {
-        personId: true,
-        globalRank: true,
-      },
-    }),
-  ]);
+  const latestDate = datePair.latestSnapshotDate.toISOString().slice(0, 10);
+  const comparisonDate = datePair.comparisonSnapshotDate.toISOString().slice(0, 10);
+  const query = Prisma.sql`
+    WITH movers AS (
+      SELECT
+        current.person_id AS "personId",
+        current.global_rank AS rank,
+        current.wps AS wps,
+        previous.global_rank - current.global_rank AS "rankChange",
+        entry.name AS name,
+        entry.country_iso2 AS "countryIso2",
+        entry.country_name AS "countryName"
+      FROM history_snapshots current
+      JOIN history_snapshots previous
+        ON previous.person_id = current.person_id
+       AND previous.snapshot_date = ${comparisonDate}::date
+      JOIN leaderboard_entries entry
+        ON entry.person_id = current.person_id
+      WHERE current.snapshot_date = ${latestDate}::date
+        AND previous.global_rank <> current.global_rank
+    ),
+    up_rows AS (
+      SELECT * FROM movers
+      WHERE "rankChange" > 0
+      ORDER BY "rankChange" DESC, rank ASC
+      LIMIT 5
+    ),
+    down_rows AS (
+      SELECT * FROM movers
+      WHERE "rankChange" < 0
+      ORDER BY "rankChange" ASC, rank ASC
+      LIMIT 5
+    )
+    SELECT 'up' AS direction, * FROM up_rows
+    UNION ALL
+    SELECT 'down' AS direction, * FROM down_rows
+  `;
 
-  if (!currentRows.length || !previousRows.length) {
+  const rows = await prisma.$queryRaw<(WeeklyMoverRow & { direction: 'up' | 'down' })[]>(query);
+  if (!rows.length) {
     return {
       biggestMoversUp: [],
       biggestMoversDown: [],
     };
   }
 
-  const previousRanks = new Map(previousRows.map((row) => [row.personId, row.globalRank]));
-  const movingRows = currentRows
-    .map<GlobalLeaderboardItem | null>((row) => {
-      const previousRank = previousRanks.get(row.personId);
-      if (previousRank == null) {
-        return null;
-      }
+  const biggestMoversUp: GlobalLeaderboardItem[] = [];
+  const biggestMoversDown: GlobalLeaderboardItem[] = [];
 
-      return {
-        rank: row.globalRank,
-        personId: row.personId,
-        name: '',
-        countryId: undefined,
-        countryIso2: undefined,
-        countryName: undefined,
-        wps: row.wps,
-        rankChange: previousRank - row.globalRank,
-      };
-    })
-    .filter((row): row is GlobalLeaderboardItem => row !== null);
-
-  if (!movingRows.length) {
-    return {
-      biggestMoversUp: [],
-      biggestMoversDown: [],
+  for (const row of rows) {
+    const item: GlobalLeaderboardItem = {
+      rank: row.rank,
+      personId: row.personId,
+      name: row.name,
+      countryId: undefined,
+      countryIso2: row.countryIso2 ?? undefined,
+      countryName: row.countryName ?? undefined,
+      wps: row.wps,
+      rankChange: row.rankChange,
     };
+
+    if (row.direction === 'up') {
+      biggestMoversUp.push(item);
+    } else {
+      biggestMoversDown.push(item);
+    }
   }
 
-  const moverIds = movingRows.map((row) => row.personId);
-  const leaderboardRows = await prisma.leaderboardEntry.findMany({
-    where: {
-      personId: {
-        in: moverIds,
-      },
-    },
-    select: {
-      personId: true,
-      name: true,
-      countryIso2: true,
-      countryName: true,
-    },
-  });
-
-  const leaderboardByPerson = new Map(leaderboardRows.map((row) => [row.personId, row]));
-  const hydratedRows = movingRows.map((row) => {
-    const leaderboardRow = leaderboardByPerson.get(row.personId);
-    return {
-      ...row,
-      name: leaderboardRow?.name ?? row.personId,
-      countryIso2: leaderboardRow?.countryIso2 ?? undefined,
-      countryName: leaderboardRow?.countryName ?? undefined,
-    };
-  });
-
-  return getBiggestMovers(hydratedRows, 5);
+  return { biggestMoversUp, biggestMoversDown };
 }
 
   /**
@@ -457,6 +483,8 @@ async function getGlobalWeeklyMovers(): Promise<{
     globalLeaderboardCache.clear();
     countryLeaderboardCache.clear();
     countriesListCache = null;
+    dailySnapshotDatePairCache = null;
+    weeklySnapshotDatePairCache = null;
   }
 
   /**
