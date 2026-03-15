@@ -1,4 +1,4 @@
-name: Update WCA export and recompute caches
+name: Validate WCA refresh pipeline
 
 on:
   schedule:
@@ -6,10 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  update:
+  validate-refresh:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout
@@ -32,14 +30,5 @@ jobs:
         working-directory: backend
         run: npm run update:data
 
-      - name: Commit changes if any
-        run: |
-          git config user.name "wps-bot"
-          git config user.email "wps-bot@users.noreply.github.com"
-          git add backend/cache
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "chore: update WCA export and caches"
-          git push
+      - name: Verify cache artifacts stay untracked
+        run: git status --short
