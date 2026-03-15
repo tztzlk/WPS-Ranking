@@ -4,6 +4,7 @@ import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { captureEvent } from '../lib/analytics';
 
 const ALL = 'ALL';
 
@@ -98,6 +99,16 @@ export function LeaderboardPage() {
   const subtitle = generatedAt
     ? `Updated: ${formatGeneratedAt(generatedAt)} · ${items.length} cubers`
     : `${items.length} cubers`;
+
+  useEffect(() => {
+    if (loading || error || !data) return;
+
+    captureEvent('leaderboard_viewed', {
+      country_filter: isFiltered ? selectedCountry : ALL,
+      country_name: isFiltered ? selectedCountryName : 'All countries',
+      cuber_count: items.length,
+    });
+  }, [data, error, isFiltered, items.length, loading, selectedCountry, selectedCountryName]);
 
   if (loading) {
     return (
@@ -212,6 +223,9 @@ export function LeaderboardPage() {
                       <td className="px-4 py-3">
                         <Link
                           to={`/profile/${row.personId}`}
+                          onClick={() =>
+                            captureEvent('cuber_profile_opened', { wca_id: row.personId, source: 'leaderboard' })
+                          }
                           className="text-sm font-medium text-green-400 hover:text-green-300"
                         >
                           {row.personId}

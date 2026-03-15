@@ -3,6 +3,7 @@ import { Calculator, Target, Award, TrendingUp, Users, Globe } from 'lucide-reac
 import { apiService } from '../services/api';
 import { AboutData, EVENT_NAMES } from '../types';
 import { FormulaBox } from '../components/FormulaBox';
+import { captureEvent } from '../lib/analytics';
 
 export function AboutPage() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
@@ -315,6 +316,7 @@ export function AboutPage() {
               href="https://ko-fi.com/tonyokoo"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => captureEvent('support_clicked', { source: 'about_page' })}
               className="inline-flex items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
             >
               Support on Ko-fi

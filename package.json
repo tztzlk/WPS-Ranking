@@ -24,5 +24,9 @@
   "devDependencies": {
     "@types/node": "^25.3.5",
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@posthog/react": "^1.8.2",
+    "posthog-js": "^1.360.2"
   }
 }

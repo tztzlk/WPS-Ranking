@@ -4,6 +4,7 @@ import { Search, User, MapPin, Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { captureEvent } from '../lib/analytics';
 
 const DEBOUNCE_MS = 400;
 const MIN_QUERY_LENGTH = 2;
@@ -18,7 +19,8 @@ export function SearchPage() {
   const abortRef = useRef<AbortController | null>(null);
 
   const executeSearch = useCallback(async (q: string) => {
-    if (q.trim().length < MIN_QUERY_LENGTH) return;
+    const normalizedQuery = q.trim();
+    if (normalizedQuery.length < MIN_QUERY_LENGTH) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -27,9 +29,10 @@ export function SearchPage() {
     setLoading(true);
     setError(null);
     setHasSearched(true);
+    captureEvent('search_cuber', { query: normalizedQuery });
 
     try {
-      const data = await apiService.searchCubers(q.trim(), 20, controller.signal);
+      const data = await apiService.searchCubers(normalizedQuery, 20, controller.signal);
       setResults(data);
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -169,6 +172,9 @@ export function SearchPage() {
                   <div className="mt-4 flex justify-end">
                     <Link
                       to={`/profile/${cuber.wcaId}`}
+                      onClick={() =>
+                        captureEvent('cuber_profile_opened', { wca_id: cuber.wcaId, source: 'search_results' })
+                      }
                       className="btn-primary"
                     >
                       View Profile
