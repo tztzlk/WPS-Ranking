@@ -21,7 +21,6 @@ backend/WCA_export*.zip
 backend/WCA_export*.tsv
 backend/WCA_export*/
 
-# Cache: ignore everything EXCEPT computed JSON caches we need for deploy
+# Cache: generated pipeline artifacts, never commit
 backend/cache/**
-!backend/cache/*.json
 !backend/cache/.gitkeep
