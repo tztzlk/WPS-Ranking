@@ -23,6 +23,7 @@ const WPS_RANK_INDEX_PATH = path.join(CACHE_DIR, 'wpsRank.index.json');
 const WPS_BREAKDOWN_NDJSON_PATH = path.join(CACHE_DIR, 'wps.breakdown.ndjson');
 
 const BATCH_SIZE = 2000;
+const BREAKDOWN_BATCH_SIZE = 25;
 const STREAM_HIGH_WATER_MARK = 64 * 1024;
 
 type CountriesIndex = {
@@ -63,6 +64,48 @@ type BreakdownRecord = {
   eventsParticipated: number;
   breakdown: BreakdownItem[];
 };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function createManyWithRetry<T>(
+  operation: () => Promise<T>,
+  label: string,
+  maxAttempts: number = 8,
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await prisma.$connect();
+      return await operation();
+    } catch (error: unknown) {
+      lastError = error;
+      const code =
+        error && typeof error === 'object' && 'code' in error ? String((error as { code?: string }).code) : null;
+      const message = error instanceof Error ? error.message : String(error);
+      const isRetryable =
+        code === 'P1017' ||
+        message.includes("Can't reach database server") ||
+        message.includes('Server has closed the connection') ||
+        message.includes('ConnectionReset');
+
+      if (!isRetryable || attempt === maxAttempts) {
+        throw error;
+      }
+
+      const waitMs = attempt * 3000;
+      console.warn(
+        `[importData] ${label} lost DB connection (attempt ${attempt}/${maxAttempts}). Retrying in ${waitMs}ms ...`,
+      );
+      await prisma.$disconnect().catch(() => {});
+      await sleep(waitMs);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`[importData] ${label} failed after retries.`);
+}
 
 function assertFileExists(filePath: string, label: string): void {
   if (!fs.existsSync(filePath)) {
@@ -281,15 +324,21 @@ async function importWpsBreakdowns(validPersonIds: Set<string>): Promise<number>
       breakdown: record.breakdown as Prisma.InputJsonValue,
     });
 
-    if (batch.length >= BATCH_SIZE) {
-      await prisma.wpsBreakdown.createMany({ data: batch, skipDuplicates: true });
+    if (batch.length >= BREAKDOWN_BATCH_SIZE) {
+      await createManyWithRetry(
+        () => prisma.wpsBreakdown.createMany({ data: batch, skipDuplicates: true }),
+        'WpsBreakdown batch insert',
+      );
       imported += batch.length;
       batch = [];
     }
   }
 
   if (batch.length > 0) {
-    await prisma.wpsBreakdown.createMany({ data: batch, skipDuplicates: true });
+    await createManyWithRetry(
+      () => prisma.wpsBreakdown.createMany({ data: batch, skipDuplicates: true }),
+      'WpsBreakdown final batch insert',
+    );
     imported += batch.length;
   }
 
