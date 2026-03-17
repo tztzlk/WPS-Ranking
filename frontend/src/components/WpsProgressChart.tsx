@@ -32,6 +32,30 @@ const formatDate = (dateStr: string) =>
     year: 'numeric',
   });
 
+function getWpsDomain(data: ProfileHistoryItem[]): [number, number] {
+  const values = data
+    .map((item) => item.wps)
+    .filter((value) => Number.isFinite(value));
+
+  if (values.length === 0) {
+    return [0, 1];
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+  const padding = Math.max(range * 0.2, 0.15);
+
+  const domainMin = Math.max(0, Math.floor((min - padding) * 10) / 10);
+  const domainMax = Math.ceil((max + padding) * 10) / 10;
+
+  if (domainMax <= domainMin) {
+    return [Math.max(0, domainMin - 0.2), domainMin + 0.2];
+  }
+
+  return [domainMin, domainMax];
+}
+
 function filterHistoryByRange(data: ProfileHistoryItem[], range: RangeMode): ProfileHistoryItem[] {
   const selectedRange = RANGE_OPTIONS.find((option) => option.value === range);
   if (!selectedRange || selectedRange.days == null || data.length === 0) {
@@ -83,6 +107,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   const filteredData = filterHistoryByRange(data, range);
   const yKey = mode === 'wps' ? 'wps' : 'globalRank';
   const yAxisReversed = mode === 'rank';
+  const wpsDomain = getWpsDomain(filteredData);
 
   if (loadError) {
     return (
@@ -181,7 +206,10 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
             />
             <YAxis
               dataKey={yKey}
+              domain={mode === 'wps' ? wpsDomain : ['auto', 'auto']}
               reversed={yAxisReversed}
+              allowDataOverflow={mode === 'wps'}
+              tickCount={mode === 'wps' ? 6 : undefined}
               tick={{ fill: '#9ca3af', fontSize: 11 }}
               tickFormatter={
                 mode === 'wps'
