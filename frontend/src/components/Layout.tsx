@@ -128,6 +128,7 @@ export function Layout() {
                 <li><Link to="/search" className="text-gray-400 hover:text-white">Search</Link></li>
                 <li><Link to="/compare" className="text-gray-400 hover:text-white">Compare</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white">About WPS</Link></li>
+                <li><Link to="/about#feedback" className="text-gray-400 hover:text-white">Feedback</Link></li>
               </ul>
             </div>
             <div>
@@ -143,6 +144,32 @@ export function Layout() {
                   World Cube Association
                 </a>
               </p>
+              <div className="mt-6 rounded-lg border border-gray-700 bg-gray-800/70 p-4">
+                <p className="font-semibold text-white">Have feedback?</p>
+                <p className="mt-2 text-sm text-gray-400">
+                  Report a bug, suggest a feature, or follow project improvements through GitHub Issues.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                  <a
+                    href="https://github.com/tztzlk/WPS-Ranking/issues/new"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => captureEvent('feedback_clicked', { type: 'footer_new_issue', source: 'footer' })}
+                    className="text-green-400 hover:text-green-300"
+                  >
+                    New issue
+                  </a>
+                  <a
+                    href="https://github.com/tztzlk/WPS-Ranking/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => captureEvent('feedback_clicked', { type: 'footer_view_issues', source: 'footer' })}
+                    className="text-gray-300 hover:text-white"
+                  >
+                    View issues
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
