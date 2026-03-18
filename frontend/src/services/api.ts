@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import {
   WPSProfile,
   SearchResult,
@@ -16,8 +16,9 @@ const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1500;
 const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
 
-interface RetryableConfig extends InternalAxiosRequestConfig {
+interface RetryableConfig extends AxiosRequestConfig {
   _retryCount?: number;
+  _disableRetry?: boolean;
 }
 
 const api = axios.create({
@@ -41,6 +42,7 @@ api.interceptors.response.use(
 
     const isRetryable =
       config &&
+      !config._disableRetry &&
       config.method === 'get' &&
       retryCount < MAX_RETRIES &&
       (error.code === 'ECONNABORTED' || error.response?.status === 503);
@@ -86,14 +88,22 @@ export const apiService = {
   async getLeaderboardTop100(limit = 100, country?: string): Promise<LeaderboardCacheResponse> {
     const params: { limit: number; country?: string } = { limit };
     if (country && country !== 'ALL') params.country = country;
-    const response = await api.get<LeaderboardCacheResponse>('/leaderboard', { params });
+    const config: RetryableConfig = {
+      params,
+      _disableRetry: true,
+    };
+    const response = await api.get<LeaderboardCacheResponse>('/leaderboard', config);
     return response.data;
   },
 
   async getLeaderboardPageData(limit = 100, country?: string): Promise<LeaderboardPageResponse> {
     const params: { limit: number; country?: string } = { limit };
     if (country && country !== 'ALL') params.country = country;
-    const response = await api.get<LeaderboardPageResponse>('/leaderboard/page', { params });
+    const config: RetryableConfig = {
+      params,
+      _disableRetry: true,
+    };
+    const response = await api.get<LeaderboardPageResponse>('/leaderboard/page', config);
 
     countriesCache = {
       value: response.data.countries,
