@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://wps-ranking.vercel.app/</loc>
+  </url>
+  <url>
+    <loc>https://wps-ranking.vercel.app/leaderboard</loc>
+  </url>
+  <url>
+    <loc>https://wps-ranking.vercel.app/search</loc>
+  </url>
+  <url>
+    <loc>https://wps-ranking.vercel.app/compare</loc>
+  </url>
+  <url>
+    <loc>https://wps-ranking.vercel.app/about</loc>
+  </url>
+</urlset>

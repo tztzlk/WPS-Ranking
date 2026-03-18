@@ -4,6 +4,7 @@ import { GitCompare, Trophy, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
 
@@ -121,6 +122,12 @@ export function ComparePage() {
       setShareCopied(false);
     }
   };
+
+  usePageMetadata({
+    title: 'Compare Cubers | WPS Ranking',
+    description: 'Compare two speedcubers side by side using WPS scores, global rank, and country rank.',
+    canonicalPath: '/compare',
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">

@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import { AboutData, EVENT_NAMES } from '../types';
 import { FormulaBox } from '../components/FormulaBox';
 import { captureEvent } from '../lib/analytics';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 export function AboutPage() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
@@ -31,6 +32,13 @@ export function AboutPage() {
   const formatWeight = (weight: number) => {
     return weight.toFixed(2).replace(/\.?0+$/, '');
   };
+
+  usePageMetadata({
+    title: 'About WPS Ranking | WPS Ranking',
+    description:
+      'Learn how the Weighted Performance Scale works, how event weights are applied, and what WPS measures for speedcubers.',
+    canonicalPath: '/about',
+  });
 
   if (loading) {
     return (

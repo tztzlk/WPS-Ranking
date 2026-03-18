@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { captureEvent } from '../lib/analytics';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const DEBOUNCE_MS = 400;
 const MIN_QUERY_LENGTH = 2;
@@ -68,6 +69,12 @@ export function SearchPage() {
 
   const isValidWCAId = (input: string) => /^\d{4}[A-Z]{4}\d{2}$/.test(input);
 
+  usePageMetadata({
+    title: 'Search Cubers | WPS Ranking',
+    description: 'Search speedcubers by name, WCA ID, or country and open their WPS ranking profiles.',
+    canonicalPath: '/search',
+  });
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">
@@ -81,8 +88,8 @@ export function SearchPage() {
 
       <div className="card">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="flex space-x-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
@@ -96,7 +103,7 @@ export function SearchPage() {
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed sm:self-stretch"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
@@ -144,7 +151,7 @@ export function SearchPage() {
                   key={cuber.wcaId}
                   className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:bg-gray-750 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center">
                         <User className="w-6 h-6 text-gray-300" />
@@ -162,7 +169,7 @@ export function SearchPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left lg:text-right">
                       <div className="text-2xl font-bold text-green-400">
                         {formatScore(cuber.wpsScore)}
                       </div>
