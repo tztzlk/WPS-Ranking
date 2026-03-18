@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { getCountriesList } from '../services/leaderboardCache';
 
 const router = Router();
+const COUNTRIES_CACHE_CONTROL = 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400';
 
 /**
  * GET /api/countries
@@ -27,6 +29,20 @@ router.get('/', async (req: Request, res: Response) => {
       count: list.length,
       durationMs,
     });
+
+    const etag = `"${crypto
+      .createHash('sha1')
+      .update(JSON.stringify(list))
+      .digest('hex')}"`;
+    res.setHeader('Cache-Control', COUNTRIES_CACHE_CONTROL);
+    res.setHeader('ETag', etag);
+    res.setHeader('Vary', 'Accept-Encoding');
+
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).end();
+      return;
+    }
+
     res.json(list);
   } catch (error) {
     const durationMs = Date.now() - startedAt;

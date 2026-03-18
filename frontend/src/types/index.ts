@@ -72,6 +72,18 @@ export interface LeaderboardCacheResponse {
   biggestMoversDown: LeaderboardCacheItem[];
 }
 
+export interface CountryListItem {
+  iso2: string;
+  name: string;
+}
+
+export interface LeaderboardPageResponse {
+  generatedAt: string;
+  totalRanked?: number;
+  countries: CountryListItem[];
+  leaderboard: LeaderboardCacheResponse;
+}
+
 /** WPS breakdown per event (GET /api/cuber/:id/wps-breakdown). */
 export interface WpsBreakdownEvent {
   eventId: string;

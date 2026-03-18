@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import ReactCountryFlag from 'react-country-flag';
 import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheItem } from '../types';
+import { CountryFlag } from '../components/CountryFlag';
 
 function WeeklyMoversList({
   title,
@@ -185,7 +185,7 @@ export function HomePage() {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           {cuber.countryIso2 ? (
-                            <ReactCountryFlag countryCode={cuber.countryIso2} svg className="!h-4 !w-5" />
+                            <CountryFlag iso2={cuber.countryIso2} name={cuber.countryName ?? cuber.countryId} />
                           ) : (
                             <span className="text-gray-500">--</span>
                           )}

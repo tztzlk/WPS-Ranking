@@ -1,10 +1,20 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { WPSProfile, SearchResult, AboutData, LeaderboardCacheResponse, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
+import {
+  WPSProfile,
+  SearchResult,
+  AboutData,
+  LeaderboardCacheResponse,
+  WpsBreakdownResponse,
+  ProfileHistoryItem,
+  LeaderboardPageResponse,
+  CountryListItem,
+} from '../types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1500;
+const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   _retryCount?: number;
@@ -14,6 +24,14 @@ const api = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
 });
+
+let countriesCache:
+  | {
+      value: CountryListItem[];
+      expiresAt: number;
+    }
+  | null = null;
+let countriesRequest: Promise<CountryListItem[]> | null = null;
 
 api.interceptors.response.use(
   (response) => response,
@@ -44,14 +62,44 @@ api.interceptors.response.use(
 
 export const apiService = {
   async getCountries(): Promise<{ iso2: string; name: string }[]> {
-    const response = await api.get<{ iso2: string; name: string }[]>('/countries');
-    return response.data;
+    if (countriesCache && countriesCache.expiresAt > Date.now()) {
+      return countriesCache.value;
+    }
+
+    if (!countriesRequest) {
+      countriesRequest = api.get<CountryListItem[]>('/countries').then((response) => {
+        countriesCache = {
+          value: response.data,
+          expiresAt: Date.now() + COUNTRIES_CACHE_TTL_MS,
+        };
+        countriesRequest = null;
+        return response.data;
+      }).catch((error) => {
+        countriesRequest = null;
+        throw error;
+      });
+    }
+
+    return countriesRequest;
   },
 
   async getLeaderboardTop100(limit = 100, country?: string): Promise<LeaderboardCacheResponse> {
     const params: { limit: number; country?: string } = { limit };
     if (country && country !== 'ALL') params.country = country;
     const response = await api.get<LeaderboardCacheResponse>('/leaderboard', { params });
+    return response.data;
+  },
+
+  async getLeaderboardPageData(limit = 100, country?: string): Promise<LeaderboardPageResponse> {
+    const params: { limit: number; country?: string } = { limit };
+    if (country && country !== 'ALL') params.country = country;
+    const response = await api.get<LeaderboardPageResponse>('/leaderboard/page', { params });
+
+    countriesCache = {
+      value: response.data.countries,
+      expiresAt: Date.now() + COUNTRIES_CACHE_TTL_MS,
+    };
+
     return response.data;
   },
 

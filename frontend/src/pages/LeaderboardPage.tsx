@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
+import { LeaderboardCacheResponse, LeaderboardCacheItem, CountryListItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { captureEvent } from '../lib/analytics';
 
@@ -43,8 +43,12 @@ export function LeaderboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const result = await apiService.getLeaderboardTop100(100, country === ALL ? undefined : country);
-      setData(result);
+      const result = await apiService.getLeaderboardPageData(100, country === ALL ? undefined : country);
+      setData(result.leaderboard);
+      setCountryOptions([
+        { countryIso2: ALL, countryName: 'All countries' },
+        ...result.countries.map((c: CountryListItem) => ({ countryIso2: c.iso2, countryName: c.name })),
+      ]);
     } catch (err: unknown) {
       const userMsg =
         err && typeof err === 'object' && 'userMessage' in err
@@ -67,14 +71,6 @@ export function LeaderboardPage() {
 
   useEffect(() => {
     loadData(selectedCountry);
-    apiService.getCountries().then(
-      (list) =>
-        setCountryOptions([
-          { countryIso2: ALL, countryName: 'All countries' },
-          ...list.map((c) => ({ countryIso2: c.iso2, countryName: c.name })),
-        ]),
-      () => {}
-    );
   }, [loadData, selectedCountry]);
 
   const handleCountryChange = (value: string) => {
