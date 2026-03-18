@@ -54,7 +54,8 @@ api.interceptors.response.use(
     }
 
     if (!error.response) {
-      (error as AxiosError & { userMessage?: string }).userMessage = 'Unable to reach server. Please try again.';
+      (error as AxiosError & { userMessage?: string }).userMessage =
+        "We couldn't load the latest data just now. Please try again.";
     } else if (error.response?.data && typeof (error.response.data as Record<string, unknown>).error === 'string') {
       (error as AxiosError & { userMessage?: string }).userMessage = (error.response.data as Record<string, unknown>).error as string;
     }
