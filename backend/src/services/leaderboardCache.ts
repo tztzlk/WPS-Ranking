@@ -19,6 +19,11 @@
   const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
   const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
   const WEEKLY_MOVERS_META_KEY = 'leaderboardWeeklyMovers';
+  const GLOBAL_LEADERBOARD_SNAPSHOT_META_KEY = 'leaderboardGlobalTopSnapshot';
+  const GLOBAL_LEADERBOARD_SNAPSHOT_READY_META_KEY = 'leaderboardGlobalTopSnapshotReady';
+  const WEEKLY_MOVERS_READY_META_KEY = 'leaderboardWeeklyMoversReady';
+  const REFRESH_LAST_SUCCESS_AT_META_KEY = 'refreshLastSuccessAt';
+  const GLOBAL_LEADERBOARD_SNAPSHOT_LIMIT = 120;
   const CACHE_DIR = process.env.CACHE_DIR ? path.resolve(process.env.CACHE_DIR) : path.join(process.cwd(), 'cache');
   const COUNTRIES_INDEX_PATH = path.join(CACHE_DIR, 'countries.index.json');
 
@@ -73,11 +78,24 @@ type StoredWeeklyMovers = {
   biggestMoversDown: GlobalLeaderboardItem[];
 };
 
+type StoredGlobalLeaderboardSnapshot = {
+  scope: 'global';
+  generatedAt: string;
+  totalRanked?: number;
+  count: number;
+  items: GlobalLeaderboardItem[];
+  biggestMoversUp: GlobalLeaderboardItem[];
+  biggestMoversDown: GlobalLeaderboardItem[];
+  source: string;
+  snapshotLimit: number;
+};
+
   let globalLeaderboardCache = new Map<number, CacheEntry<GlobalLeaderboardResponse>>();
   let countryLeaderboardCache = new Map<string, CacheEntry<CountryLeaderboardResponse>>();
   let dailySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
   let weeklySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
   let weeklyMoversCache: CacheEntry<StoredWeeklyMovers> | null = null;
+  let globalLeaderboardSnapshotCache: CacheEntry<StoredGlobalLeaderboardSnapshot> | null = null;
 
   function getCachedGlobalLeaderboard(limit: number): GlobalLeaderboardResponse | null {
     const entry = globalLeaderboardCache.get(limit);
@@ -523,6 +541,65 @@ function isStoredWeeklyMovers(value: unknown): value is StoredWeeklyMovers {
   );
 }
 
+function isStoredGlobalLeaderboardSnapshot(value: unknown): value is StoredGlobalLeaderboardSnapshot {
+  if (!value || typeof value !== 'object') return false;
+
+  const candidate = value as Partial<StoredGlobalLeaderboardSnapshot>;
+  return (
+    candidate.scope === 'global' &&
+    typeof candidate.generatedAt === 'string' &&
+    typeof candidate.count === 'number' &&
+    Array.isArray(candidate.items) &&
+    Array.isArray(candidate.biggestMoversUp) &&
+    Array.isArray(candidate.biggestMoversDown) &&
+    typeof candidate.snapshotLimit === 'number'
+  );
+}
+
+function toGlobalSnapshotResponse(
+  snapshot: StoredGlobalLeaderboardSnapshot,
+  limit: number,
+): GlobalLeaderboardResponse {
+  const slicedItems = snapshot.items.slice(0, limit);
+  return {
+    scope: 'global',
+    generatedAt: snapshot.generatedAt,
+    totalRanked: snapshot.totalRanked,
+    count: slicedItems.length,
+    items: slicedItems,
+    biggestMoversUp: snapshot.biggestMoversUp,
+    biggestMoversDown: snapshot.biggestMoversDown,
+    source: snapshot.source,
+  };
+}
+
+async function getStoredGlobalLeaderboardSnapshot(): Promise<StoredGlobalLeaderboardSnapshot | null> {
+  if (globalLeaderboardSnapshotCache && globalLeaderboardSnapshotCache.expiresAt > Date.now()) {
+    return globalLeaderboardSnapshotCache.value;
+  }
+
+  const stored = await getMetaValue(GLOBAL_LEADERBOARD_SNAPSHOT_META_KEY);
+  if (!stored) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as unknown;
+    if (!isStoredGlobalLeaderboardSnapshot(parsed)) {
+      return null;
+    }
+
+    globalLeaderboardSnapshotCache = {
+      value: parsed,
+      expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+    };
+    return parsed;
+  } catch (error) {
+    console.warn('[leaderboard-global-snapshot] failed to parse stored snapshot', { error });
+    return null;
+  }
+}
+
 async function getWeeklyMovers(): Promise<{
   biggestMoversUp: GlobalLeaderboardItem[];
   biggestMoversDown: GlobalLeaderboardItem[];
@@ -566,24 +643,70 @@ async function getWeeklyMovers(): Promise<{
 }
 
 export async function refreshLeaderboardDerivedMeta(): Promise<void> {
-  const generatedAt = (await getMetaValue('generatedAt')) ?? new Date().toISOString();
   const weeklyMovers = await computeGlobalWeeklyMovers();
-  const stored: StoredWeeklyMovers = {
+  const liveGlobalSnapshot = await queryLiveGlobalLeaderboard(
+    GLOBAL_LEADERBOARD_SNAPSHOT_LIMIT,
+    weeklyMovers,
+  );
+  const generatedAt = liveGlobalSnapshot?.generatedAt ?? (await getMetaValue('generatedAt')) ?? new Date().toISOString();
+  const weeklyMoversStored: StoredWeeklyMovers = {
     generatedAt,
     biggestMoversUp: weeklyMovers.biggestMoversUp,
     biggestMoversDown: weeklyMovers.biggestMoversDown,
   };
+  const snapshotStored: StoredGlobalLeaderboardSnapshot | null = liveGlobalSnapshot
+    ? {
+        ...liveGlobalSnapshot,
+        source: 'meta-snapshot',
+        snapshotLimit: GLOBAL_LEADERBOARD_SNAPSHOT_LIMIT,
+      }
+    : null;
 
-  await prisma.meta.upsert({
-    where: { key: WEEKLY_MOVERS_META_KEY },
-    create: { key: WEEKLY_MOVERS_META_KEY, value: JSON.stringify(stored) },
-    update: { value: JSON.stringify(stored) },
-  });
+  await prisma.$transaction([
+    prisma.meta.upsert({
+      where: { key: WEEKLY_MOVERS_META_KEY },
+      create: { key: WEEKLY_MOVERS_META_KEY, value: JSON.stringify(weeklyMoversStored) },
+      update: { value: JSON.stringify(weeklyMoversStored) },
+    }),
+    prisma.meta.upsert({
+      where: { key: WEEKLY_MOVERS_READY_META_KEY },
+      create: { key: WEEKLY_MOVERS_READY_META_KEY, value: weeklyMovers.biggestMoversUp.length || weeklyMovers.biggestMoversDown.length ? 'true' : 'false' },
+      update: { value: weeklyMovers.biggestMoversUp.length || weeklyMovers.biggestMoversDown.length ? 'true' : 'false' },
+    }),
+    prisma.meta.upsert({
+      where: { key: GLOBAL_LEADERBOARD_SNAPSHOT_META_KEY },
+      create: { key: GLOBAL_LEADERBOARD_SNAPSHOT_META_KEY, value: JSON.stringify(snapshotStored ?? null) },
+      update: { value: JSON.stringify(snapshotStored ?? null) },
+    }),
+    prisma.meta.upsert({
+      where: { key: GLOBAL_LEADERBOARD_SNAPSHOT_READY_META_KEY },
+      create: { key: GLOBAL_LEADERBOARD_SNAPSHOT_READY_META_KEY, value: snapshotStored ? 'true' : 'false' },
+      update: { value: snapshotStored ? 'true' : 'false' },
+    }),
+    prisma.meta.upsert({
+      where: { key: REFRESH_LAST_SUCCESS_AT_META_KEY },
+      create: { key: REFRESH_LAST_SUCCESS_AT_META_KEY, value: new Date().toISOString() },
+      update: { value: new Date().toISOString() },
+    }),
+  ]);
 
   weeklyMoversCache = {
-    value: stored,
+    value: weeklyMoversStored,
     expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
   };
+  globalLeaderboardSnapshotCache = snapshotStored
+    ? {
+        value: snapshotStored,
+        expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+      }
+    : null;
+
+  console.log('[refresh-derived-meta] completed', {
+    generatedAt,
+    weeklyMoversUp: weeklyMoversStored.biggestMoversUp.length,
+    weeklyMoversDown: weeklyMoversStored.biggestMoversDown.length,
+    globalSnapshotCount: snapshotStored?.count ?? 0,
+  });
 }
 
   /**
@@ -647,22 +770,14 @@ export async function refreshLeaderboardDerivedMeta(): Promise<void> {
     dailySnapshotDatePairCache = null;
     weeklySnapshotDatePairCache = null;
     weeklyMoversCache = null;
+    globalLeaderboardSnapshotCache = null;
   }
 
-  /**
-   * Returns global top-N, ordered by WPS score desc, rank asc, id asc.
-   */
-  export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalLeaderboardResponse | null> {
+  async function queryLiveGlobalLeaderboard(
+    limit: number,
+    weeklyMoversOverride?: { biggestMoversUp: GlobalLeaderboardItem[]; biggestMoversDown: GlobalLeaderboardItem[] },
+  ): Promise<GlobalLeaderboardResponse | null> {
     const effectiveLimit = Math.max(1, limit);
-    const cached = getCachedGlobalLeaderboard(effectiveLimit);
-    if (cached) {
-      console.log('[db-leaderboard-global] cache hit', {
-        limit: effectiveLimit,
-        count: cached.count,
-      });
-      return cached;
-    }
-
     const startedAt = Date.now();
     const [entries, metaRows, dailyDatePair, weeklyMovers] = await Promise.all([
       prisma.leaderboardEntry.findMany({
@@ -677,7 +792,7 @@ export async function refreshLeaderboardDerivedMeta(): Promise<void> {
         },
       }),
       getLatestAndDailyComparisonDates(),
-      getWeeklyMovers(),
+      weeklyMoversOverride ? Promise.resolve(weeklyMoversOverride) : getWeeklyMovers(),
     ]);
     const durationMs = Date.now() - startedAt;
 
@@ -706,7 +821,8 @@ export async function refreshLeaderboardDerivedMeta(): Promise<void> {
       wps: e.wps,
       rankChange: rankChangeByPerson.get(e.personId) ?? null,
     }));
-    const response: GlobalLeaderboardResponse = {
+
+    return {
       scope: 'global',
       generatedAt: metaMap.get('generatedAt') ?? new Date().toISOString(),
       totalRanked,
@@ -716,11 +832,44 @@ export async function refreshLeaderboardDerivedMeta(): Promise<void> {
       biggestMoversDown: weeklyMovers.biggestMoversDown,
       source: 'postgres',
     };
+  }
+
+  /**
+   * Returns global top-N, ordered by WPS score desc, rank asc, id asc.
+   */
+  export async function getGlobalLeaderboard(limit: number = 100): Promise<GlobalLeaderboardResponse | null> {
+    const effectiveLimit = Math.max(1, limit);
+    const cached = getCachedGlobalLeaderboard(effectiveLimit);
+    if (cached) {
+      console.log('[db-leaderboard-global] cache hit', {
+        limit: effectiveLimit,
+        count: cached.count,
+      });
+      return cached;
+    }
+
+    if (effectiveLimit <= GLOBAL_LEADERBOARD_SNAPSHOT_LIMIT) {
+      const snapshot = await getStoredGlobalLeaderboardSnapshot();
+      if (snapshot && snapshot.items.length >= effectiveLimit) {
+        const response = toGlobalSnapshotResponse(snapshot, effectiveLimit);
+        setCachedGlobalLeaderboard(effectiveLimit, response);
+        console.log('[db-leaderboard-global] served from snapshot', {
+          limit: effectiveLimit,
+          count: response.count,
+        });
+        return response;
+      }
+    }
+
+    const response = await queryLiveGlobalLeaderboard(effectiveLimit);
+    if (!response) {
+      return null;
+    }
 
     console.log('[db-leaderboard-global] query completed', {
       limit: effectiveLimit,
-      durationMs,
       count: response.count,
+      source: response.source,
     });
 
     setCachedGlobalLeaderboard(effectiveLimit, response);

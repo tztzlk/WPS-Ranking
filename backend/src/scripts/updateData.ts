@@ -59,7 +59,8 @@ async function downloadZip(): Promise<void> {
 
 /**
  * Extracts only the 4 required TSV files from the WCA v2 zip.
- * Uses unzip -l to find paths (handles nested zip structure), then extracts selectively.
+ * On Unix-like systems uses unzip for selective extraction.
+ * On Windows falls back to Expand-Archive because unzip is usually unavailable.
  */
 function extractTsvs(): void {
   fs.mkdirSync(WCA_EXPORT_DIR, { recursive: true });
@@ -68,12 +69,17 @@ function extractTsvs(): void {
   if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true });
   fs.mkdirSync(tmpDir, { recursive: true });
 
-  const v2Filenames = Object.keys(V2_TO_LEGACY_TSV_MAP);
-  const pathsInZip = getPathsInZip(v2Filenames);
+  if (process.platform === 'win32') {
+    console.log('Extracting required TSVs from WCA export with PowerShell Expand-Archive ...');
+    expandArchiveWithPowerShell(tmpDir);
+  } else {
+    const v2Filenames = Object.keys(V2_TO_LEGACY_TSV_MAP);
+    const pathsInZip = getPathsInZip(v2Filenames);
 
-  console.log('Extracting 4 required TSVs from WCA export (selective extraction) ...');
-  for (const p of pathsInZip) {
-    execSync(`unzip -o -j "${ZIP_PATH}" "${p}" -d "${tmpDir}"`, { stdio: 'pipe' });
+    console.log('Extracting 4 required TSVs from WCA export (selective extraction) ...');
+    for (const p of pathsInZip) {
+      execSync(`unzip -o -j "${ZIP_PATH}" "${p}" -d "${tmpDir}"`, { stdio: 'pipe' });
+    }
   }
 
   for (const [v2Filename, legacyFilename] of Object.entries(V2_TO_LEGACY_TSV_MAP)) {
@@ -92,6 +98,19 @@ function extractTsvs(): void {
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
   console.log('Extraction complete. 4 files ready for pipeline.');
+}
+
+function escapeForPowerShellLiteral(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+function expandArchiveWithPowerShell(destinationDir: string): void {
+  const zipPath = escapeForPowerShellLiteral(ZIP_PATH);
+  const outputDir = escapeForPowerShellLiteral(destinationDir);
+  execSync(
+    `powershell -NoProfile -Command "Expand-Archive -LiteralPath '${zipPath}' -DestinationPath '${outputDir}' -Force"`,
+    { stdio: 'pipe' },
+  );
 }
 
 /**

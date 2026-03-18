@@ -4,6 +4,7 @@ import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 function WeeklyMoversList({
   title,
@@ -81,6 +82,13 @@ export function HomePage() {
   };
 
   const formatScore = (score: number) => score.toFixed(2);
+
+  usePageMetadata({
+    title: 'WPS Ranking | Global Speedcubing Leaderboard',
+    description:
+      'Track the Weighted Performance Scale leaderboard for speedcubers worldwide, explore weekly movers, and search for your WCA ranking.',
+    canonicalPath: '/',
+  });
 
   return (
     <div className="space-y-8">

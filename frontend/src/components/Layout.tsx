@@ -24,7 +24,7 @@ export function Layout() {
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">WPS Ranking</span>
+              <span className="text-lg font-bold text-white sm:text-xl">WPS Ranking</span>
             </Link>
 
             <nav className="hidden md:flex space-x-8">
@@ -50,7 +50,7 @@ export function Layout() {
 
             <button
               type="button"
-              className="md:hidden text-gray-300 hover:text-white"
+              className="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white md:hidden"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label="Toggle menu"
             >
@@ -92,7 +92,7 @@ export function Layout() {
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <Outlet />
       </main>
 

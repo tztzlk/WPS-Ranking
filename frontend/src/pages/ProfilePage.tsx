@@ -6,6 +6,7 @@ import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
 import { captureEvent } from '../lib/analytics';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 function getApiBaseOrigin(): string | null {
   const rawBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
@@ -123,6 +124,14 @@ export function ProfilePage() {
     }
   };
 
+  usePageMetadata({
+    title: profile ? `${profile.name} | WPS Ranking` : 'Profile | WPS Ranking',
+    description: profile
+      ? `${profile.name} ${profile.countryName ? `from ${profile.countryName} ` : ''}has a WPS score of ${profile.wpsScore.toFixed(2)}. View current rank, history, and score breakdown.`
+      : 'View a speedcuber profile with WPS score, current rank, and ranking history.',
+    canonicalPath: profile ? `/profile/${encodeURIComponent(profile.wcaId)}` : wcaId ? `/profile/${encodeURIComponent(wcaId)}` : '/profile',
+  });
+
   if (loading) {
     return (
       <div className="py-12 text-center">
@@ -136,7 +145,7 @@ export function ProfilePage() {
     return (
       <div className="py-12 text-center">
         <p className="mb-4 text-red-400">{error || 'Profile not found'}</p>
-        <Link to="/" className="btn-primary">
+        <Link to="/leaderboard" className="btn-primary">
           Back to Leaderboard
         </Link>
       </div>
@@ -151,7 +160,7 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
+        <Link to="/leaderboard" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Leaderboard</span>
         </Link>
