@@ -34,7 +34,7 @@ function WeeklyMoversList({
             >
               <div className="min-w-0">
                 <div className={`font-mono ${isUp ? 'text-green-400' : 'text-red-400'}`}>
-                  {isUp ? '▲' : '▼'}
+                  {isUp ? '+' : '-'}
                   {Math.abs(item.rankChange ?? 0)}
                 </div>
                 <div className="truncate font-medium text-gray-200">{item.name}</div>
@@ -219,15 +219,15 @@ export function HomePage() {
 
             <div className="mt-8 border-t border-gray-700 pt-6">
               <div className="mb-4 flex items-center gap-2">
-                <span className="text-lg">🔥</span>
+                <TrendingUp className="h-5 w-5 text-green-400" />
                 <h3 className="text-xl font-semibold text-white">Biggest Movers This Week</h3>
               </div>
               <p className="mb-4 max-w-3xl text-sm text-gray-400">
                 These are the largest weekly rank changes based on historical snapshots. It helps surface momentum, not just the current order.
               </p>
               <div className="grid gap-4 md:grid-cols-2">
-                <WeeklyMoversList title="▲ Movers Up" items={biggestMoversUp} direction="up" />
-                <WeeklyMoversList title="▼ Movers Down" items={biggestMoversDown} direction="down" />
+                <WeeklyMoversList title="Movers Up" items={biggestMoversUp} direction="up" />
+                <WeeklyMoversList title="Movers Down" items={biggestMoversDown} direction="down" />
               </div>
             </div>
           </>

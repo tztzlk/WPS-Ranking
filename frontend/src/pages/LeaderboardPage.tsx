@@ -11,14 +11,14 @@ const ALL = 'ALL';
 
 function RankChange({ change }: { change: number | null }) {
   if (typeof change !== 'number' || Number.isNaN(change) || change === 0) {
-    return <span className="text-gray-500">&mdash;</span>;
+    return <span className="text-gray-500">-</span>;
   }
 
   if (change > 0) {
-    return <span className="text-green-400">в–І{change}</span>;
+    return <span className="text-green-400">+{change}</span>;
   }
 
-  return <span className="text-red-400">в–ј{Math.abs(change)}</span>;
+  return <span className="text-red-400">-{Math.abs(change)}</span>;
 }
 
 function formatGeneratedAt(iso: string): string {
@@ -56,7 +56,7 @@ export function LeaderboardPage() {
         (err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
             ((err as { response?: { status?: number } }).response?.status === 503
-              ? 'Leaderboard data unavailable. Run the data pipeline on the backend.'
+              ? 'Leaderboard data is temporarily unavailable. Please refresh after the next data update.'
               : 'Failed to load leaderboard')
           : 'Failed to load leaderboard');
       setError(message);
@@ -101,7 +101,7 @@ export function LeaderboardPage() {
     countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
   const pageTitle = isFiltered ? `WPS Leaderboard - ${selectedCountryName}` : 'Global WPS Leaderboard';
   const subtitle = generatedAt
-    ? `Updated: ${formatGeneratedAt(generatedAt)} · ${items.length} cubers`
+    ? `Updated: ${formatGeneratedAt(generatedAt)} - ${items.length} cubers`
     : `${items.length} cubers`;
 
   usePageMetadata({
@@ -187,7 +187,7 @@ export function LeaderboardPage() {
               <thead>
                 <tr className="border-b border-gray-700 bg-gray-800/50">
                   <th className="px-3 py-3 text-left font-medium text-gray-400 sm:px-4">Rank</th>
-                  <th className="hidden px-3 py-3 text-left font-medium text-gray-400 md:table-cell sm:px-4">Δ</th>
+                  <th className="hidden px-3 py-3 text-left font-medium text-gray-400 md:table-cell sm:px-4">Change</th>
                   <th className="px-3 py-3 text-left font-medium text-gray-400 sm:px-4">Name</th>
                   <th className="px-3 py-3 text-left font-medium text-gray-400 sm:px-4">Country</th>
                   <th className="px-3 py-3 text-left font-medium text-gray-400 sm:px-4">WPS</th>
@@ -231,7 +231,7 @@ export function LeaderboardPage() {
                       <td className="px-3 py-3 sm:px-4">
                         <span className="flex items-center gap-2">
                           <CountryFlag iso2={row.countryIso2} name={row.countryName ?? row.countryId} />
-                          <span className="truncate text-gray-300">{row.countryName ?? row.countryId ?? '—'}</span>
+                          <span className="truncate text-gray-300">{row.countryName ?? row.countryId ?? '-'}</span>
                         </span>
                       </td>
                       <td className="px-3 py-3 font-mono text-green-400 sm:px-4">{row.wps.toFixed(2)}</td>
