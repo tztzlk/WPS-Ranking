@@ -17,7 +17,7 @@ export function CountryFlag({ iso2, name, className = '' }: CountryFlagProps) {
   if (iso2 && iso2.length === 2) {
     return (
       <span className={`inline-flex items-center ${className}`.trim()} title={name ?? undefined}>
-        <ReactCountryFlag countryCode={iso2} svg className="!w-5 !h-4" />
+        <ReactCountryFlag countryCode={iso2} style={{ fontSize: '1rem', lineHeight: 1 }} />
       </span>
     );
   }

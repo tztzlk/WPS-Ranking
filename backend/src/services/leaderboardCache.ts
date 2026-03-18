@@ -1,3 +1,5 @@
+  import fs from 'fs';
+  import path from 'path';
   import { Prisma } from '@prisma/client';
   import { getMetaValue } from './personDb';
   import { prisma } from '../lib/prisma';
@@ -7,8 +9,18 @@
     name: string;
   }
 
+  export interface LeaderboardPageResponse {
+    generatedAt: string;
+    totalRanked?: number;
+    countries: CountryItem[];
+    leaderboard: LeaderboardResponse;
+  }
+
   const COUNTRIES_CACHE_TTL_MS = 10 * 60 * 1000;
   const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
+  const WEEKLY_MOVERS_META_KEY = 'leaderboardWeeklyMovers';
+  const CACHE_DIR = process.env.CACHE_DIR ? path.resolve(process.env.CACHE_DIR) : path.join(process.cwd(), 'cache');
+  const COUNTRIES_INDEX_PATH = path.join(CACHE_DIR, 'countries.index.json');
 
   let countriesListCache: CountryItem[] | null = null;
   let countriesCacheAt = 0;
@@ -38,10 +50,34 @@ type WeeklyMoverRow = {
   countryName: string | null;
 };
 
+type HistoryRankRow = {
+  personId: string;
+  snapshotDate: Date;
+  globalRank: number;
+};
+
+type CountriesIndexFile = {
+  generatedAt?: string;
+  countries?: Record<
+    string,
+    {
+      name?: string | null;
+      iso2?: string | null;
+    }
+  >;
+};
+
+type StoredWeeklyMovers = {
+  generatedAt: string;
+  biggestMoversUp: GlobalLeaderboardItem[];
+  biggestMoversDown: GlobalLeaderboardItem[];
+};
+
   let globalLeaderboardCache = new Map<number, CacheEntry<GlobalLeaderboardResponse>>();
   let countryLeaderboardCache = new Map<string, CacheEntry<CountryLeaderboardResponse>>();
   let dailySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
   let weeklySnapshotDatePairCache: SnapshotDatePairCacheEntry | null = null;
+  let weeklyMoversCache: CacheEntry<StoredWeeklyMovers> | null = null;
 
   function getCachedGlobalLeaderboard(limit: number): GlobalLeaderboardResponse | null {
     const entry = globalLeaderboardCache.get(limit);
@@ -83,10 +119,36 @@ type WeeklyMoverRow = {
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   }
 
-  /**
-   * Returns all distinct countries from cache, sorted by name.
-   */
-  export async function getCountriesList(): Promise<CountryItem[]> {
+  function getCountriesFromIndex(raw: CountriesIndexFile | null | undefined): CountryItem[] {
+    if (!raw?.countries) return [];
+
+    const seenIso2 = new Set<string>();
+    const list: CountryItem[] = [];
+
+    for (const entry of Object.values(raw.countries)) {
+      const iso2 = entry?.iso2?.trim().toUpperCase();
+      const name = entry?.name?.trim();
+      if (!iso2 || !name || seenIso2.has(iso2)) continue;
+      seenIso2.add(iso2);
+      list.push({ iso2, name });
+    }
+
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }
+
+  async function readCountriesIndexList(): Promise<CountryItem[] | null> {
+    if (!fs.existsSync(COUNTRIES_INDEX_PATH)) {
+      return null;
+    }
+
+    const raw = await fs.promises.readFile(COUNTRIES_INDEX_PATH, 'utf8');
+    const parsed = JSON.parse(raw) as CountriesIndexFile;
+    const list = getCountriesFromIndex(parsed);
+    return list.length > 0 ? list : null;
+  }
+
+  async function readCountriesListFromDb(): Promise<CountryItem[]> {
     if (countriesListCache && Date.now() - countriesCacheAt < COUNTRIES_CACHE_TTL_MS) {
       console.log('[db-countries] cache hit', {
         count: countriesListCache.length,
@@ -126,6 +188,37 @@ type WeeklyMoverRow = {
     countriesListCache = list;
     countriesCacheAt = Date.now();
     return countriesListCache;
+  }
+
+  /**
+   * Returns countries from the offline index when available, falling back to DB.
+   */
+  export async function getCountriesList(): Promise<CountryItem[]> {
+    if (countriesListCache && Date.now() - countriesCacheAt < COUNTRIES_CACHE_TTL_MS) {
+      console.log('[countries] cache hit', {
+        count: countriesListCache.length,
+        ageMs: Date.now() - countriesCacheAt,
+      });
+      return countriesListCache;
+    }
+
+    try {
+      const startedAt = Date.now();
+      const list = await readCountriesIndexList();
+      if (list && list.length > 0) {
+        console.log('[countries] index cache loaded', {
+          count: list.length,
+          durationMs: Date.now() - startedAt,
+        });
+        countriesListCache = list;
+        countriesCacheAt = Date.now();
+        return countriesListCache;
+      }
+    } catch (error) {
+      console.warn('[countries] failed to read countries.index.json, falling back to DB', { error });
+    }
+
+    return readCountriesListFromDb();
   }
 
 export interface CountryLeaderboardItem {
@@ -300,35 +393,29 @@ async function getRankChangeMapForDates(
     return rankChanges;
   }
 
-  const [currentRows, previousRows] = await Promise.all([
-    prisma.historySnapshot.findMany({
-      where: {
-        snapshotDate: datePair.latestSnapshotDate,
-        personId: {
-          in: personIds,
-        },
-      },
-      select: {
-        personId: true,
-        globalRank: true,
-      },
-    }),
-    prisma.historySnapshot.findMany({
-      where: {
-        snapshotDate: datePair.comparisonSnapshotDate,
-        personId: {
-          in: personIds,
-        },
-      },
-      select: {
-        personId: true,
-        globalRank: true,
-      },
-    }),
-  ]);
+  const latestDate = datePair.latestSnapshotDate.toISOString().slice(0, 10);
+  const comparisonDate = datePair.comparisonSnapshotDate.toISOString().slice(0, 10);
+  const rows = await prisma.$queryRaw<HistoryRankRow[]>(Prisma.sql`
+    SELECT
+      person_id AS "personId",
+      snapshot_date AS "snapshotDate",
+      global_rank AS "globalRank"
+    FROM history_snapshots
+    WHERE snapshot_date IN (${latestDate}::date, ${comparisonDate}::date)
+      AND person_id IN (${Prisma.join(personIds)})
+  `);
 
-  const currentRanks = new Map(currentRows.map((row) => [row.personId, row.globalRank]));
-  const previousRanks = new Map(previousRows.map((row) => [row.personId, row.globalRank]));
+  const currentRanks = new Map<string, number>();
+  const previousRanks = new Map<string, number>();
+
+  for (const row of rows) {
+    const rowDate = row.snapshotDate.toISOString().slice(0, 10);
+    if (rowDate === latestDate) {
+      currentRanks.set(row.personId, row.globalRank);
+    } else if (rowDate === comparisonDate) {
+      previousRanks.set(row.personId, row.globalRank);
+    }
+  }
 
   for (const personId of personIds) {
     const currentRank = currentRanks.get(personId);
@@ -342,7 +429,7 @@ async function getRankChangeMapForDates(
   return rankChanges;
 }
 
-async function getGlobalWeeklyMovers(): Promise<{
+async function computeGlobalWeeklyMovers(): Promise<{
   biggestMoversUp: GlobalLeaderboardItem[];
   biggestMoversDown: GlobalLeaderboardItem[];
 }> {
@@ -425,6 +512,80 @@ async function getGlobalWeeklyMovers(): Promise<{
   return { biggestMoversUp, biggestMoversDown };
 }
 
+function isStoredWeeklyMovers(value: unknown): value is StoredWeeklyMovers {
+  if (!value || typeof value !== 'object') return false;
+
+  const candidate = value as Partial<StoredWeeklyMovers>;
+  return (
+    typeof candidate.generatedAt === 'string' &&
+    Array.isArray(candidate.biggestMoversUp) &&
+    Array.isArray(candidate.biggestMoversDown)
+  );
+}
+
+async function getWeeklyMovers(): Promise<{
+  biggestMoversUp: GlobalLeaderboardItem[];
+  biggestMoversDown: GlobalLeaderboardItem[];
+}> {
+  if (weeklyMoversCache && weeklyMoversCache.expiresAt > Date.now()) {
+    return weeklyMoversCache.value;
+  }
+
+  const generatedAt = (await getMetaValue('generatedAt')) ?? new Date().toISOString();
+  const stored = await getMetaValue(WEEKLY_MOVERS_META_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as unknown;
+      if (isStoredWeeklyMovers(parsed)) {
+        const normalized: StoredWeeklyMovers = {
+          generatedAt: parsed.generatedAt,
+          biggestMoversUp: parsed.biggestMoversUp,
+          biggestMoversDown: parsed.biggestMoversDown,
+        };
+        weeklyMoversCache = {
+          value: normalized,
+          expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+        };
+        return normalized;
+      }
+    } catch (error) {
+      console.warn('[leaderboard-weekly-movers] failed to parse stored meta, recomputing', { error });
+    }
+  }
+
+  const computed = await computeGlobalWeeklyMovers();
+  const value: StoredWeeklyMovers = {
+    generatedAt,
+    ...computed,
+  };
+  weeklyMoversCache = {
+    value,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+  };
+  return value;
+}
+
+export async function refreshLeaderboardDerivedMeta(): Promise<void> {
+  const generatedAt = (await getMetaValue('generatedAt')) ?? new Date().toISOString();
+  const weeklyMovers = await computeGlobalWeeklyMovers();
+  const stored: StoredWeeklyMovers = {
+    generatedAt,
+    biggestMoversUp: weeklyMovers.biggestMoversUp,
+    biggestMoversDown: weeklyMovers.biggestMoversDown,
+  };
+
+  await prisma.meta.upsert({
+    where: { key: WEEKLY_MOVERS_META_KEY },
+    create: { key: WEEKLY_MOVERS_META_KEY, value: JSON.stringify(stored) },
+    update: { value: JSON.stringify(stored) },
+  });
+
+  weeklyMoversCache = {
+    value: stored,
+    expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+  };
+}
+
   /**
    * Rebuilds the leaderboard snapshot table using SQL window functions.
    * Heavy joins and ranking are moved out of the HTTP request path.
@@ -485,6 +646,7 @@ async function getGlobalWeeklyMovers(): Promise<{
     countriesListCache = null;
     dailySnapshotDatePairCache = null;
     weeklySnapshotDatePairCache = null;
+    weeklyMoversCache = null;
   }
 
   /**
@@ -502,15 +664,20 @@ async function getGlobalWeeklyMovers(): Promise<{
     }
 
     const startedAt = Date.now();
-    const [entries, totalRankedRaw, generatedAtMeta, dailyDatePair, weeklyMovers] = await Promise.all([
+    const [entries, metaRows, dailyDatePair, weeklyMovers] = await Promise.all([
       prisma.leaderboardEntry.findMany({
         orderBy: { globalRank: 'asc' },
         take: effectiveLimit,
       }),
-      getMetaValue('totalRanked'),
-      getMetaValue('generatedAt'),
+      prisma.meta.findMany({
+        where: {
+          key: {
+            in: ['generatedAt', 'totalRanked'],
+          },
+        },
+      }),
       getLatestAndDailyComparisonDates(),
-      getGlobalWeeklyMovers(),
+      getWeeklyMovers(),
     ]);
     const durationMs = Date.now() - startedAt;
 
@@ -522,7 +689,8 @@ async function getGlobalWeeklyMovers(): Promise<{
       return null;
     }
 
-    const totalRanked = parseTotalRanked(totalRankedRaw);
+    const metaMap = new Map(metaRows.map((row) => [row.key, row.value]));
+    const totalRanked = parseTotalRanked(metaMap.get('totalRanked') ?? null);
     const rankChangeByPerson = await getRankChangeMapForDates(
       entries.map((entry) => entry.personId),
       dailyDatePair,
@@ -540,7 +708,7 @@ async function getGlobalWeeklyMovers(): Promise<{
     }));
     const response: GlobalLeaderboardResponse = {
       scope: 'global',
-      generatedAt: generatedAtMeta ?? new Date().toISOString(),
+      generatedAt: metaMap.get('generatedAt') ?? new Date().toISOString(),
       totalRanked,
       count: items.length,
       items,
@@ -620,21 +788,27 @@ async function getGlobalWeeklyMovers(): Promise<{
     }
 
     const startedAt = Date.now();
-    const [entries, totalRankedRaw, generatedAtMeta, dailyDatePair] = await Promise.all([
+    const [entries, metaRows, dailyDatePair] = await Promise.all([
       prisma.leaderboardEntry.findMany({
         where: { countryIso2: iso2Upper },
         orderBy: { countryRank: 'asc' },
         take: effectiveLimit,
       }),
-      getMetaValue('totalRanked'),
-      getMetaValue('generatedAt'),
+      prisma.meta.findMany({
+        where: {
+          key: {
+            in: ['generatedAt', 'totalRanked'],
+          },
+        },
+      }),
       getLatestAndDailyComparisonDates(),
     ]);
     const durationMs = Date.now() - startedAt;
 
     if (!entries.length) return null;
 
-    const totalRanked = parseTotalRanked(totalRankedRaw);
+    const metaMap = new Map(metaRows.map((row) => [row.key, row.value]));
+    const totalRanked = parseTotalRanked(metaMap.get('totalRanked') ?? null);
     const rankChangeByPerson = await getRankChangeMapForDates(
       entries.map((entry) => entry.personId),
       dailyDatePair,
@@ -656,7 +830,7 @@ async function getGlobalWeeklyMovers(): Promise<{
       scope: 'country',
       countryIso2: iso2Upper,
       countryName,
-      generatedAt: generatedAtMeta ?? new Date().toISOString(),
+      generatedAt: metaMap.get('generatedAt') ?? new Date().toISOString(),
       totalRanked,
       count: items.length,
       items,
@@ -675,4 +849,25 @@ async function getGlobalWeeklyMovers(): Promise<{
     setCachedCountryLeaderboard(cacheKey, response);
 
     return response;
+  }
+
+  export async function getLeaderboardPageData(
+    countryIso2?: string,
+    limit: number = 100,
+  ): Promise<LeaderboardPageResponse | null> {
+    const [countries, leaderboard] = await Promise.all([
+      getCountriesList(),
+      countryIso2 ? getCountryLeaderboard(countryIso2, limit) : getGlobalLeaderboard(limit),
+    ]);
+
+    if (!leaderboard) {
+      return null;
+    }
+
+    return {
+      generatedAt: leaderboard.generatedAt,
+      totalRanked: leaderboard.totalRanked,
+      countries,
+      leaderboard,
+    };
   }

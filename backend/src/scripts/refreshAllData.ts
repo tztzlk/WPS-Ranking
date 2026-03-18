@@ -1,7 +1,7 @@
 import { runUpdateRawData } from './updateData';
 import { runImport } from './importData';
 import { prisma } from '../lib/prisma';
-import { rebuildLeaderboardSnapshot } from '../services/leaderboardCache';
+import { rebuildLeaderboardSnapshot, refreshLeaderboardDerivedMeta } from '../services/leaderboardCache';
 import { saveHistorySnapshotForToday } from '../services/historySnapshot';
 
 async function ensureLeaderboardSnapshotReady(): Promise<void> {
@@ -45,6 +45,9 @@ async function main(): Promise<void> {
 
   console.log('[refresh] Step 4: Saving history snapshot for today (UTC date)');
   await saveHistorySnapshotForToday();
+
+  console.log('[refresh] Step 5: Refreshing derived leaderboard meta');
+  await refreshLeaderboardDerivedMeta();
 
   console.log(
     '[refresh] Data refresh pipeline completed successfully in %d ms.',
