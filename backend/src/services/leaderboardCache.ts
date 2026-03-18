@@ -553,10 +553,10 @@ async function getWeeklyMovers(): Promise<{
     }
   }
 
-  const computed = await computeGlobalWeeklyMovers();
   const value: StoredWeeklyMovers = {
     generatedAt,
-    ...computed,
+    biggestMoversUp: [],
+    biggestMoversDown: [],
   };
   weeklyMoversCache = {
     value,
