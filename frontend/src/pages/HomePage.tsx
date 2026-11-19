@@ -54,6 +54,8 @@ export function HomePage() {
   const [biggestMoversDown, setBiggestMoversDown] = useState<LeaderboardCacheItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalRanked, setTotalRanked] = useState<number | null>(null);
+  const [totalCountries, setTotalCountries] = useState<number | null>(null);
 
   useEffect(() => {
     loadLeaderboard();
@@ -66,6 +68,8 @@ export function HomePage() {
       setLeaderboard(result.items);
       setBiggestMoversUp(result.biggestMoversUp ?? []);
       setBiggestMoversDown(result.biggestMoversDown ?? []);
+      setTotalRanked(result.totalRanked ?? null);
+      setTotalCountries(result.totalCountries ?? null);
     } catch (err: unknown) {
       const userMsg =
         err && typeof err === 'object' && 'userMessage' in err
@@ -82,6 +86,7 @@ export function HomePage() {
   };
 
   const formatScore = (score: number) => score.toFixed(2);
+  const formatCount = (n: number | null) => (n ? n.toLocaleString('en-US') : '—');
 
   usePageMetadata({
     title: 'WPS Ranking | Global Speedcubing Leaderboard',
@@ -114,7 +119,7 @@ export function HomePage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
         <div className="card text-center">
           <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">1000+</h3>
+          <h3 className="text-2xl font-bold text-white">{formatCount(totalRanked)}</h3>
           <p className="text-gray-400">Ranked Cubers</p>
         </div>
         <div className="card text-center">
@@ -124,7 +129,7 @@ export function HomePage() {
         </div>
         <div className="card text-center">
           <Users className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">100+</h3>
+          <h3 className="text-2xl font-bold text-white">{formatCount(totalCountries)}</h3>
           <p className="text-gray-400">Countries</p>
         </div>
       </div>

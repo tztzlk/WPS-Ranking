@@ -64,6 +64,8 @@ export interface LeaderboardCacheResponse {
   generatedAt: string;
   count: number;
   totalRanked?: number;
+  /** Global scope only. */
+  totalCountries?: number;
   countryIso2?: string;
   countryName?: string;
   source?: string;

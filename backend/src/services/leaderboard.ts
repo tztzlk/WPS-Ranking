@@ -40,6 +40,7 @@ export interface GlobalLeaderboardResponse {
   scope: 'global';
   generatedAt: string;
   totalRanked?: number;
+  totalCountries: number;
   count: number;
   items: GlobalLeaderboardItem[];
   biggestMoversUp: GlobalLeaderboardItem[];
@@ -114,13 +115,14 @@ async function getWeeklyMovers(): Promise<{
 }
 
 export async function getGlobalLeaderboard(limit = 100): Promise<GlobalLeaderboardResponse | null> {
-  const [entries, meta, movers] = await Promise.all([
+  const [entries, meta, movers, totalCountries] = await Promise.all([
     prisma.leaderboardEntry.findMany({
       orderBy: [{ globalRank: 'asc' }, { personId: 'asc' }],
       take: Math.max(1, limit),
     }),
     getHeaderMeta(),
     getWeeklyMovers(),
+    prisma.country.count(),
   ]);
   if (!entries.length) return null;
 
@@ -128,6 +130,7 @@ export async function getGlobalLeaderboard(limit = 100): Promise<GlobalLeaderboa
     scope: 'global',
     generatedAt: meta.generatedAt,
     totalRanked: meta.totalRanked,
+    totalCountries,
     count: entries.length,
     items: entries.map((e) => toGlobalItem(e)),
     ...movers,
