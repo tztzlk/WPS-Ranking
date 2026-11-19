@@ -7,7 +7,7 @@
  * failed run changes nothing.
  */
 import type { Client } from 'pg';
-import { MAX_WPS_SCORE, WPS_TOP_EVENTS } from '../types';
+import { MAX_WPS_SCORE } from '../types';
 
 /** rank_distribution older than this is deleted. The profile chart shows 180 days. */
 const DISTRIBUTION_RETENTION_DAYS = 200;
@@ -85,30 +85,18 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
     GROUP BY event_id;
   `);
 
-  // Formula: see WPS v2 in types/index.ts (eventScore / WPS_TOP_EVENTS / MAX_WPS_SCORE).
-  await client.query(
-    `
+  // Formula: see WPS v2 in types/index.ts (eventScore / MAX_WPS_SCORE).
+  await client.query(`
     CREATE TEMP TABLE stg_scores AS
-    WITH scored AS (
-      SELECT r.person_id, r.event_id, r.world_rank,
-             greatest(0, w.weight * (1 - ln(r.world_rank) / ln(n.participants + 1))) AS score
-      FROM stg_ranks r
-      JOIN stg_weights w USING (event_id)
-      JOIN stg_event_n n USING (event_id)
-      WHERE EXISTS (SELECT 1 FROM stg_people p WHERE p.id = r.person_id)
-    ),
-    ordered AS (
-      SELECT *, row_number() OVER (PARTITION BY person_id ORDER BY score DESC, event_id) AS pos
-      FROM scored
-    )
-    SELECT person_id,
-           coalesce(sum(score) FILTER (WHERE pos <= $1), 0) AS total,
-           jsonb_object_agg(event_id, world_rank)            AS event_ranks
-    FROM ordered
-    GROUP BY person_id
-    `,
-    [WPS_TOP_EVENTS],
-  );
+    SELECT r.person_id,
+           sum(greatest(0, w.weight * (1 - ln(r.world_rank) / ln(n.participants + 1)))) AS total,
+           jsonb_object_agg(r.event_id, r.world_rank)                                    AS event_ranks
+    FROM stg_ranks r
+    JOIN stg_weights w USING (event_id)
+    JOIN stg_event_n n USING (event_id)
+    WHERE EXISTS (SELECT 1 FROM stg_people p WHERE p.id = r.person_id)
+    GROUP BY r.person_id
+  `);
 
   await client.query(
     `

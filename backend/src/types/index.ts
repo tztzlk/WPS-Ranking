@@ -68,17 +68,12 @@ export const EVENT_NAMES: Record<string, string> = {
  *     R_e = world rank by average, N_e = people with an average in e.
  *     Rank 1 -> w_e, last place -> ~0: a rank counts relative to the size of the field,
  *     and merely having a result is worth nothing.
- *   WPS = 100 * (sum of the WPS_TOP_EVENTS best event scores) / MAX_WPS_SCORE
- *     Only the best events count, so WPS measures overall strength
- *     instead of the number of events someone has done.
+ *   WPS = 100 * (sum of all event scores) / MAX_WPS_SCORE
+ *     An all-around score: every event adds to it, but only by how well you rank in it.
  */
-export const WPS_TOP_EVENTS = 5;
 
-/** Rank 1 in the WPS_TOP_EVENTS highest-weighted events. Fixed, so scores stay comparable over time. */
-export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS)
-  .sort((a, b) => b - a)
-  .slice(0, WPS_TOP_EVENTS)
-  .reduce((sum, w) => sum + w, 0);
+/** World rank 1 in every event. Fixed, so scores stay comparable over time. */
+export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce((sum, w) => sum + w, 0);
 
 export function eventScore(weight: number, worldRank: number, participants: number): number {
   if (participants < 1 || worldRank < 1) return 0;

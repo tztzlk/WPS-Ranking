@@ -35,9 +35,9 @@ const howItWorksSteps = [
     icon: Target,
   },
   {
-    title: 'Best 5 events, scaled by field size',
+    title: 'All-around, scaled by field size',
     description:
-      'Each event is scored by your rank relative to everyone who competes in it, and your 5 best events count. One event is not enough, and extra events do not add points by themselves.',
+      'Each event is scored by your rank relative to everyone who competes in it, and all events add up. Ranking high across many events is what moves WPS; a result near the bottom of an event adds almost nothing.',
     icon: Award,
   },
   {
@@ -194,13 +194,13 @@ export function AboutPage() {
               <h3 className="mb-3 text-lg font-semibold text-white">What the score means</h3>
               <div className="space-y-3 text-sm leading-relaxed text-gray-300">
                 <p>
-                  Higher WPS means stronger results in your best events. 100 would be world #1 in the five highest-weighted events.
+                  Higher WPS means ranking higher across more events. 100 would be world #1 in every event.
                 </p>
                 <p>
                   World #1 in an event earns its full weight and last place earns nothing. The logarithm makes climbing near the top worth more than climbing at the bottom, and the same rank is worth more in a bigger event.
                 </p>
                 <p>
-                  WPS is not a GOAT metric. It is a current-form ranking of overall strength across several events.
+                  WPS is not a GOAT metric. It is a current-form ranking of all-around strength.
                 </p>
               </div>
             </div>
@@ -221,7 +221,7 @@ export function AboutPage() {
           <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
             <h3 className="mb-3 text-lg font-semibold text-green-400">WPS measures</h3>
             <ul className="space-y-2 text-sm text-gray-300">
-              <li>Current competitive strength across your 5 best WCA events.</li>
+              <li>Current all-around strength across the WCA events.</li>
               <li>How high you rank relative to the size of each event.</li>
               <li>Repeatable performance using official average rankings.</li>
             </ul>
@@ -232,7 +232,7 @@ export function AboutPage() {
               <li>Historical legacy or greatest-of-all-time status.</li>
               <li>Past world records or lifetime peak accomplishments.</li>
               <li>Single-result explosiveness without broad event strength.</li>
-              <li>How many events you have entered.</li>
+              <li>Simply entering events: a result near the bottom is worth almost nothing.</li>
             </ul>
           </div>
         </div>

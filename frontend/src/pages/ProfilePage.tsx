@@ -236,7 +236,7 @@ export function ProfilePage() {
               <h3 className="text-lg font-semibold text-white">WPS Calculation Breakdown</h3>
               <p className="text-sm text-gray-300">
                 Each event is scored by the cuber&apos;s world rank relative to everyone with an average in it, times the
-                event weight. The {breakdown.topEvents} best events count toward WPS; the rest are shown for reference.
+                event weight. The contributions of all events add up to WPS.
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
@@ -251,26 +251,21 @@ export function ProfilePage() {
                   </thead>
                   <tbody>
                     {breakdown.events.map((row) => (
-                      <tr
-                        key={row.eventId}
-                        className={`border-b border-gray-700/50 ${row.counted ? '' : 'opacity-50'}`}
-                      >
+                      <tr key={row.eventId} className="border-b border-gray-700/50">
                         <td className="py-2 pr-4 text-white">{row.eventName}</td>
                         <td className="py-2 pr-4 text-gray-300">#{row.worldRank.toLocaleString()}</td>
                         <td className="py-2 pr-4 text-gray-400">
                           {row.participants ? row.participants.toLocaleString() : '—'}
                         </td>
                         <td className="py-2 pr-4 text-gray-300">{row.weight.toFixed(2)}</td>
-                        <td className={`py-2 ${row.counted ? 'text-green-400' : 'text-gray-500'}`}>
-                          {row.counted ? row.eventScore.toFixed(2) : `(${row.eventScore.toFixed(2)})`}
-                        </td>
+                        <td className="py-2 text-green-400">{row.eventScore.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-gray-600">
                       <td className="py-3 pr-4 font-medium text-white" colSpan={4}>
-                        Total WPS (best {breakdown.topEvents} events)
+                        Total WPS
                       </td>
                       <td className="py-3 font-semibold text-green-400">{breakdown.wps.toFixed(2)}</td>
                     </tr>
@@ -285,7 +280,7 @@ export function ProfilePage() {
                 <span>
                   <span className="text-gray-500">Best world rank used:</span>{' '}
                   <span className="text-white">
-                    #{Math.min(...breakdown.events.filter((event) => event.counted).map((event) => event.worldRank)).toLocaleString()}
+                    #{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}
                   </span>
                 </span>
                 <span>
@@ -304,7 +299,7 @@ export function ProfilePage() {
         <h3 className="mb-4 text-lg font-semibold text-white">About WPS Score</h3>
         <p className="mb-4 text-gray-300">
           The Weighted Performance Scale (WPS) scores each event by your world rank relative to everyone who competes in it,
-          weighted by how popular the event is, and adds up your 5 best events.
+          weighted by how popular the event is, and adds up all events.
         </p>
         <Link to="/about" className="text-green-400 hover:text-green-300">
           Learn more about the WPS formula →

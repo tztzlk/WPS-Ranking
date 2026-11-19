@@ -39,17 +39,17 @@ Global/country rank on any past day = `above[position of that day's WPS] + 1`. T
 
 ```
 Event score = weight × (1 − ln(world_rank) / ln(participants + 1))
-WPS         = Σ of the 5 best event scores / max possible × 100   (max = world #1 in the 5 highest-weighted events = 3.85)
+WPS         = Σ event scores / max possible × 100   (max = world #1 in every event = Σ weights = 7.52)
 ```
 
 - `world_rank` is the world rank by average, `participants` the number of people with an average in that event.
 - World #1 earns the full weight and last place earns ~0, so a rank counts relative to the size of the field and merely having a result is worth nothing.
-- Only the 5 best events count: WPS measures overall strength, not how many events someone has entered.
+- All events add up, so WPS is an all-around score; a result near the bottom of an event adds almost nothing.
 - Weights follow event popularity (number of participants); they are not a difficulty score.
 
 The same formula lives in `backend/src/types/index.ts` (API breakdown) and `backend/src/pipeline/publish.ts` (SQL). Ranks use `RANK()` over WPS rounded to 0.01, so equal WPS means equal rank.
 
-v1 (`weight × 10 / ln(rank + 1)`, summed over all events) rewarded entering events: last place in all 16 events ranked in the top ~2.5%. Switching to v2 reset the history (migration `20261119000200_wps_v2`).
+v1 (`weight × 10 / ln(rank + 1)`) rewarded merely entering events: last place in all 16 events ranked in the top ~2.5%. Switching to v2 reset the history (migration `20261119000200_wps_v2`).
 
 | Event | ID | Weight |
 |-------|----|--------|

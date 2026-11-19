@@ -4,7 +4,7 @@
  * formula as the pipeline (see WPS v2 in types/index.ts).
  */
 import { prisma } from '../lib/prisma';
-import { EVENT_NAMES, EVENT_WEIGHTS, MAX_WPS_SCORE, WPS_TOP_EVENTS, eventScore } from '../types';
+import { EVENT_NAMES, EVENT_WEIGHTS, MAX_WPS_SCORE, eventScore } from '../types';
 import { getMetaValue } from './personDb';
 
 export interface WpsBreakdownEventItem {
@@ -14,17 +14,14 @@ export interface WpsBreakdownEventItem {
   worldRank: number;
   /** People with an average in this event. */
   participants: number;
-  /** Contribution to WPS in points (counted events sum to `wps`). */
+  /** Contribution to WPS in points (all events sum to `wps`). */
   eventScore: number;
-  /** Whether the event is among the person's WPS_TOP_EVENTS best. */
-  counted: boolean;
 }
 
 export interface WpsBreakdownResponse {
   personId: string;
   events: WpsBreakdownEventItem[];
   wps: number;
-  topEvents: number;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -61,24 +58,21 @@ export async function getWpsBreakdown(personId: string): Promise<WpsBreakdownRes
         score: eventScore(EVENT_WEIGHTS[eventId], worldRank, n),
       };
     })
-    // Same order as the pipeline: score desc, then event id.
-    .sort((a, b) => b.score - a.score || (a.eventId < b.eventId ? -1 : 1));
+    .sort((a, b) => b.score - a.score);
   if (items.length === 0) return null;
 
-  const total = items.slice(0, WPS_TOP_EVENTS).reduce((acc, i) => acc + i.score, 0);
+  const total = items.reduce((acc, i) => acc + i.score, 0);
 
   return {
     personId: normalized,
     wps: round2((total / MAX_WPS_SCORE) * 100),
-    topEvents: WPS_TOP_EVENTS,
-    events: items.map((i, idx) => ({
+    events: items.map((i) => ({
       eventId: i.eventId,
       eventName: EVENT_NAMES[i.eventId] ?? i.eventId,
       weight: round2(i.weight),
       worldRank: i.worldRank,
       participants: i.participants,
       eventScore: round2((i.score / MAX_WPS_SCORE) * 100),
-      counted: idx < WPS_TOP_EVENTS,
     })),
   };
 }

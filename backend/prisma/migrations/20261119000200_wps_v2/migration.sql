@@ -1,5 +1,5 @@
--- WPS v2: rank is scored relative to the size of the event's field, and only
--- a person's 5 best events count. v1 values are not comparable with v2, so the
+-- WPS v2: rank is scored relative to the size of the event's field (last place
+-- is worth ~0). v1 values are not comparable with v2, so the
 -- history starts over (it held a single day when the formula changed).
 TRUNCATE "wps_history", "rank_distribution";
 
