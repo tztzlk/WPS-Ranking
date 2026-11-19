@@ -7,7 +7,7 @@
  * failed run changes nothing.
  */
 import type { Client } from 'pg';
-import { MAX_WPS_SCORE } from '../types';
+import { MAX_WPS_SCORE, WPS_TOP_EVENTS } from '../types';
 
 /** rank_distribution older than this is deleted. The profile chart shows 180 days. */
 const DISTRIBUTION_RETENTION_DAYS = 200;
@@ -66,7 +66,7 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
 
   // 1. Compute into TEMP tables ------------------------------------------------
   await client.query(`
-    DROP TABLE IF EXISTS stg_people, stg_scores, stg_lb;
+    DROP TABLE IF EXISTS stg_people, stg_event_n, stg_scores, stg_lb;
 
     CREATE TEMP TABLE stg_people AS
     SELECT p.id,
@@ -78,16 +78,37 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
     FROM stg_persons p
     LEFT JOIN stg_countries c ON c.id = p.country_id;
 
-    -- Event score = weight * 10 / ln(world_rank + 1)
-    CREATE TEMP TABLE stg_scores AS
-    SELECT r.person_id,
-           sum(w.weight * 10 / ln(r.world_rank + 1))  AS total,
-           jsonb_object_agg(r.event_id, r.world_rank) AS event_ranks
-    FROM stg_ranks r
-    JOIN stg_weights w USING (event_id)
-    WHERE EXISTS (SELECT 1 FROM stg_people p WHERE p.id = r.person_id)
-    GROUP BY r.person_id;
+    -- N_e: everyone with an average in the event (the size of the field).
+    CREATE TEMP TABLE stg_event_n AS
+    SELECT event_id, count(*)::int AS participants
+    FROM stg_ranks
+    GROUP BY event_id;
   `);
+
+  // Formula: see WPS v2 in types/index.ts (eventScore / WPS_TOP_EVENTS / MAX_WPS_SCORE).
+  await client.query(
+    `
+    CREATE TEMP TABLE stg_scores AS
+    WITH scored AS (
+      SELECT r.person_id, r.event_id, r.world_rank,
+             greatest(0, w.weight * (1 - ln(r.world_rank) / ln(n.participants + 1))) AS score
+      FROM stg_ranks r
+      JOIN stg_weights w USING (event_id)
+      JOIN stg_event_n n USING (event_id)
+      WHERE EXISTS (SELECT 1 FROM stg_people p WHERE p.id = r.person_id)
+    ),
+    ordered AS (
+      SELECT *, row_number() OVER (PARTITION BY person_id ORDER BY score DESC, event_id) AS pos
+      FROM scored
+    )
+    SELECT person_id,
+           coalesce(sum(score) FILTER (WHERE pos <= $1), 0) AS total,
+           jsonb_object_agg(event_id, world_rank)            AS event_ranks
+    FROM ordered
+    GROUP BY person_id
+    `,
+    [WPS_TOP_EVENTS],
+  );
 
   await client.query(
     `
@@ -110,6 +131,11 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
     [MAX_WPS_SCORE],
   );
   await client.query('ANALYZE stg_people; ANALYZE stg_scores; ANALYZE stg_lb;');
+
+  const { rows: fieldRows } = await client.query<{ event_id: string; participants: number }>(
+    'SELECT event_id, participants FROM stg_event_n ORDER BY event_id',
+  );
+  const eventParticipants = JSON.stringify(Object.fromEntries(fieldRows.map((r) => [r.event_id, r.participants])));
 
   const ranked = await count(client, 'SELECT count(*) AS n FROM stg_lb');
   const persons = await count(client, 'SELECT count(*) AS n FROM stg_people');
@@ -210,8 +236,8 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
       `,
       [
-        ['generatedAt', 'totalRanked', 'wcaExportDate', 'refreshLastSuccessAt'],
-        [exportDateIso, String(ranked), exportDateIso, new Date().toISOString()],
+        ['generatedAt', 'totalRanked', 'wcaExportDate', 'refreshLastSuccessAt', 'eventParticipants', 'wpsFormulaVersion'],
+        [exportDateIso, String(ranked), exportDateIso, new Date().toISOString(), eventParticipants, '2'],
       ],
     );
 

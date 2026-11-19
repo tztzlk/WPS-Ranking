@@ -61,13 +61,26 @@ export const EVENT_NAMES: Record<string, string> = {
   '333mbf': '3x3 Multi-Blind',
 };
 
-/** MAX = sum(w_e * (1/ln(2)) * 10). Matches EventScore when R_e = 1 for all events. */
-export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
-  (sum, w) => sum + w * (1 / Math.log(2)) * 10,
-  0,
-);
+/**
+ * WPS v2. The pipeline computes the same formula in SQL (pipeline/publish.ts).
+ *
+ *   eventScore(e) = w_e * (1 - ln(R_e) / ln(N_e + 1))
+ *     R_e = world rank by average, N_e = people with an average in e.
+ *     Rank 1 -> w_e, last place -> ~0: a rank counts relative to the size of the field,
+ *     and merely having a result is worth nothing.
+ *   WPS = 100 * (sum of the WPS_TOP_EVENTS best event scores) / MAX_WPS_SCORE
+ *     Only the best events count, so WPS measures overall strength
+ *     instead of the number of events someone has done.
+ */
+export const WPS_TOP_EVENTS = 5;
 
-/** Event score = weight * 10 / ln(world_rank + 1). The pipeline uses the same formula in SQL. */
-export function eventScore(weight: number, worldRank: number): number {
-  return weight * (1 / Math.log(worldRank + 1)) * 10;
+/** Rank 1 in the WPS_TOP_EVENTS highest-weighted events. Fixed, so scores stay comparable over time. */
+export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS)
+  .sort((a, b) => b - a)
+  .slice(0, WPS_TOP_EVENTS)
+  .reduce((sum, w) => sum + w, 0);
+
+export function eventScore(weight: number, worldRank: number, participants: number): number {
+  if (participants < 1 || worldRank < 1) return 0;
+  return Math.max(0, weight * (1 - Math.log(worldRank) / Math.log(participants + 1)));
 }

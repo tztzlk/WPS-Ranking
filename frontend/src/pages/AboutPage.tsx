@@ -35,9 +35,9 @@ const howItWorksSteps = [
     icon: Target,
   },
   {
-    title: 'Weighted all-around performance',
+    title: 'Best 5 events, scaled by field size',
     description:
-      'Each event has a weight. Strong results across multiple events add up, so WPS rewards depth and breadth at the same time.',
+      'Each event is scored by your rank relative to everyone who competes in it, and your 5 best events count. One event is not enough, and extra events do not add points by themselves.',
     icon: Award,
   },
   {
@@ -186,7 +186,7 @@ export function AboutPage() {
           <div className="rounded-xl border border-gray-700 bg-gray-800/40 p-6">
             <h3 className="mb-3 text-lg font-semibold text-white">Mathematical Definition</h3>
             <FormulaBox />
-            <p className="mt-3 text-center text-sm text-gray-400">ln denotes the natural logarithm.</p>
+            <p className="mt-3 text-center text-sm text-gray-400">R<sub>e</sub> is your world rank by average, N<sub>e</sub> the number of people with an average in the event, w<sub>e</sub> the event weight; ln is the natural logarithm.</p>
           </div>
 
           <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-800/40 p-6">
@@ -194,13 +194,13 @@ export function AboutPage() {
               <h3 className="mb-3 text-lg font-semibold text-white">What the score means</h3>
               <div className="space-y-3 text-sm leading-relaxed text-gray-300">
                 <p>
-                  Higher WPS means stronger weighted performance across the included WCA events at the current moment.
+                  Higher WPS means stronger results in your best events. 100 would be world #1 in the five highest-weighted events.
                 </p>
                 <p>
-                  The logarithmic curve makes top-end improvements matter more, which helps separate elite all-around competitors.
+                  World #1 in an event earns its full weight and last place earns nothing. The logarithm makes climbing near the top worth more than climbing at the bottom, and the same rank is worth more in a bigger event.
                 </p>
                 <p>
-                  WPS is not a GOAT metric. It is a current-form ranking built around breadth and consistency.
+                  WPS is not a GOAT metric. It is a current-form ranking of overall strength across several events.
                 </p>
               </div>
             </div>
@@ -221,8 +221,8 @@ export function AboutPage() {
           <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
             <h3 className="mb-3 text-lg font-semibold text-green-400">WPS measures</h3>
             <ul className="space-y-2 text-sm text-gray-300">
-              <li>Current competitive breadth across multiple WCA events.</li>
-              <li>Weighted all-around strength instead of one-event dominance.</li>
+              <li>Current competitive strength across your 5 best WCA events.</li>
+              <li>How high you rank relative to the size of each event.</li>
               <li>Repeatable performance using official average rankings.</li>
             </ul>
           </div>
@@ -232,6 +232,7 @@ export function AboutPage() {
               <li>Historical legacy or greatest-of-all-time status.</li>
               <li>Past world records or lifetime peak accomplishments.</li>
               <li>Single-result explosiveness without broad event strength.</li>
+              <li>How many events you have entered.</li>
             </ul>
           </div>
         </div>
@@ -240,7 +241,7 @@ export function AboutPage() {
       <section className="card">
         <h2 className="mb-6 text-2xl font-bold text-white">Event Weights</h2>
         <p className="mb-6 max-w-3xl text-gray-300">
-          Each WCA event is assigned a weight based on the model used by WPS. More influential events contribute more to the final score.
+          Weights follow how many people compete in each event: the more popular the event, the higher its weight.
         </p>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

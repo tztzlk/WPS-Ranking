@@ -85,13 +85,19 @@ export interface WpsBreakdownEvent {
   eventName: string;
   weight: number;
   worldRank: number;
+  /** People with an average in this event. */
+  participants: number;
+  /** Contribution to WPS in points; counted events sum to `wps`. */
   eventScore: number;
+  /** Among the person's best `topEvents` events. */
+  counted: boolean;
 }
 
 export interface WpsBreakdownResponse {
   personId: string;
   events: WpsBreakdownEvent[];
   wps: number;
+  topEvents: number;
 }
 
 /** Profile history for WPS progress chart (GET /api/profile/:wcaId/history). */
