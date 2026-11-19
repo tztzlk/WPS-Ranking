@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import React from 'react';
-import { getProfileByPersonId } from '../services/profileFromCache';
+import { getProfileByPersonId } from '../services/ogProfile';
 
 const router = Router();
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;

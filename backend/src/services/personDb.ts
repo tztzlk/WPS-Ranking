@@ -1,5 +1,5 @@
 import type { SearchResultItem, ProfileResponse } from '../types';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 export interface PersonWithScoreRank {
@@ -10,6 +10,7 @@ export interface PersonWithScoreRank {
   countryIso2: string | null;
   score: number;
   rank: number | null;
+  countryRank: number | null;
 }
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
@@ -24,108 +25,88 @@ export async function findPersonById(personId: string): Promise<PersonWithScoreR
 
   const row = await prisma.person.findUnique({
     where: { id: normalized },
-    include: {
-      wpsScore: true,
-      wpsRank: true,
-    },
+    include: { ranking: true },
   });
-
   if (!row) return null;
 
   return {
     id: row.id,
     name: row.name,
-    countryId: row.countryId ?? null,
-    countryName: row.countryName ?? null,
-    countryIso2: row.countryIso2 ?? null,
-    score: row.wpsScore?.score ?? 0,
-    rank: row.wpsRank?.rank ?? null,
+    countryId: row.countryId,
+    countryName: row.countryName,
+    countryIso2: row.countryIso2,
+    score: row.ranking?.wps ?? 0,
+    rank: row.ranking?.globalRank ?? null,
+    countryRank: row.ranking?.countryRank ?? null,
   };
 }
 
 const SEARCH_LIMIT = 50;
 
-type PersonWithRelations = Prisma.PersonGetPayload<{
-  include: { wpsScore: true; wpsRank: true };
-}>;
+type SearchRow = {
+  wcaId: string;
+  name: string;
+  countryIso2: string | null;
+  wpsScore: number | null;
+  wpsRank: number | null;
+};
 
-export async function searchPersons(
-  query: string,
-  limit: number = SEARCH_LIMIT,
-): Promise<SearchResultItem[]> {
+/**
+ * Exact WCA ID, otherwise name prefix (and ISO2 country for 2-letter queries).
+ * Ranked people first, by WPS.
+ */
+export async function searchPersons(query: string, limit: number = SEARCH_LIMIT): Promise<SearchResultItem[]> {
   const q = query.trim();
   if (!q) return [];
-
-  const queryLower = q.toLowerCase();
-  const queryUpper = q.toUpperCase();
-  const wcaIdExact = isValidWCAId(q) ? queryUpper : null;
-
   const take = Math.min(Math.max(1, limit), SEARCH_LIMIT);
 
-  const results: SearchResultItem[] = [];
-
-  // Prefer exact WCA ID match first, if applicable.
-  const seenIds = new Set<string>();
-
-  if (wcaIdExact) {
-    const person = await findPersonById(wcaIdExact);
+  if (isValidWCAId(q)) {
+    const person = await findPersonById(q);
     if (person) {
-      results.push({
-        wcaId: person.id,
-        name: person.name,
-        countryIso2: person.countryIso2,
-        wpsScore: person.score,
-        wpsRank: person.rank,
-      });
-      seenIds.add(person.id);
+      return [
+        {
+          wcaId: person.id,
+          name: person.name,
+          countryIso2: person.countryIso2,
+          wpsScore: person.score,
+          wpsRank: person.rank,
+        },
+      ];
     }
-    // Fast path: exact WCA ID lookup only; do not run heavy text search.
-    if (results.length > 0) return results;
-    // Optional: for invalid/non-existent WCA ID, fall through to text search.
   }
 
-  // Text search: fast paths using indexed fields (nameLower startsWith, countryIso2 equals).
-  const namePrefixWhere: Prisma.PersonWhereInput = {
-    nameLower: { startsWith: queryLower },
-  };
-  const isTwoLetter = q.length === 2;
-  const textWhere: Prisma.PersonWhereInput = isTwoLetter
-    ? { OR: [namePrefixWhere, { countryIso2: { equals: queryUpper } }] }
-    : namePrefixWhere;
+  // Escape LIKE wildcards in user input; the prefix index uses text_pattern_ops.
+  const prefix = q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`) + '%';
+  const countryFilter =
+    q.length === 2 ? Prisma.sql`OR p.country_iso2 = ${q.toUpperCase()}` : Prisma.empty;
 
-  const persons = (await prisma.person.findMany({
-    where: textWhere,
-    include: {
-      wpsScore: true,
-      wpsRank: true,
-    },
-    orderBy: [
-      { wpsScore: { score: 'desc' } },
-      { wpsRank: { rank: 'asc' } },
-      { id: 'asc' },
-    ],
-    take,
-  })) as PersonWithRelations[];
+  const rows = await prisma.$queryRaw<SearchRow[]>(Prisma.sql`
+    SELECT p.id AS "wcaId", p.name, p.country_iso2 AS "countryIso2",
+           l.wps AS "wpsScore", l.global_rank AS "wpsRank"
+    FROM persons p
+    LEFT JOIN leaderboard_entries l ON l.person_id = p.id
+    WHERE p.name_lower LIKE ${prefix} ${countryFilter}
+    ORDER BY l.wps DESC NULLS LAST, p.id
+    LIMIT ${take}
+  `);
 
-  for (const p of persons) {
-    if (seenIds.has(p.id)) continue;
-    results.push({
-      wcaId: p.id,
-      name: p.name,
-      countryIso2: p.countryIso2 ?? null,
-      wpsScore: p.wpsScore?.score ?? 0,
-      wpsRank: p.wpsRank?.rank ?? null,
-    });
-  }
-
-  return results.slice(0, take);
+  return rows.map((r) => ({
+    wcaId: r.wcaId,
+    name: r.name,
+    countryIso2: r.countryIso2,
+    wpsScore: r.wpsScore ?? 0,
+    wpsRank: r.wpsRank,
+  }));
 }
 
 export async function getMetaValue(key: string): Promise<string | null> {
-  const meta = await prisma.meta.findUnique({
-    where: { key },
-  });
+  const meta = await prisma.meta.findUnique({ where: { key } });
   return meta?.value ?? null;
+}
+
+export async function getMetaValues(keys: string[]): Promise<Record<string, string | undefined>> {
+  const rows = await prisma.meta.findMany({ where: { key: { in: keys } } });
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
 }
 
 export function toProfileResponse(

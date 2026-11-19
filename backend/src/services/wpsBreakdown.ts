@@ -1,9 +1,9 @@
 /**
- * Serves WPS breakdown per event for a cuber from PostgreSQL.
- * Runtime intentionally avoids loading large repo-local cache files into memory.
+ * WPS breakdown per event. The DB stores only per-event world ranks;
+ * weights and scores come from EVENT_WEIGHTS (same formula as the pipeline).
  */
 import { prisma } from '../lib/prisma';
-import { EVENT_NAMES } from '../types';
+import { EVENT_NAMES, EVENT_WEIGHTS, MAX_WPS_SCORE, eventScore } from '../types';
 
 export interface WpsBreakdownEventItem {
   eventId: string;
@@ -19,52 +19,38 @@ export interface WpsBreakdownResponse {
   wps: number;
 }
 
-interface BreakdownRow {
-  eventId: string;
-  worldRank: number;
-  weight: number;
-  eventScore: number;
-}
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export async function getWpsBreakdown(personId: string): Promise<WpsBreakdownResponse | null> {
   const normalized = personId.trim().toUpperCase();
   if (!normalized) return null;
 
-  const row = await prisma.wpsBreakdown.findUnique({
-    where: { personId: normalized },
-    select: {
-      sumEventScores: true,
-      maxPossible: true,
-      breakdown: true,
-    },
-  });
+  const row = await prisma.wpsBreakdown.findUnique({ where: { personId: normalized } });
+  if (!row || !row.eventRanks || typeof row.eventRanks !== 'object') return null;
 
-  if (!row || !Array.isArray(row.breakdown) || row.breakdown.length === 0) {
-    return null;
-  }
-
-  const breakdown = row.breakdown as unknown as BreakdownRow[];
-  const maxPossible = row.maxPossible > 0 ? row.maxPossible : 1;
-  const wps = Math.round((row.sumEventScores / maxPossible) * 100 * 100) / 100;
-
-  const events: WpsBreakdownEventItem[] = [...breakdown]
-    .filter((item) => item && typeof item.eventId === 'string')
-    .sort((a, b) => b.eventScore - a.eventScore)
-    .map((item) => ({
-      eventId: item.eventId,
-      eventName: EVENT_NAMES[item.eventId] ?? item.eventId,
-      weight: Math.round(item.weight * 100) / 100,
-      worldRank: item.worldRank,
-      eventScore: Math.round(item.eventScore * 100) / 100,
+  const items = Object.entries(row.eventRanks as Record<string, number>)
+    .filter(([eventId, rank]) => eventId in EVENT_WEIGHTS && Number.isInteger(rank) && rank >= 1)
+    .map(([eventId, worldRank]) => ({
+      eventId,
+      weight: EVENT_WEIGHTS[eventId],
+      worldRank,
+      score: eventScore(EVENT_WEIGHTS[eventId], worldRank),
     }));
+  if (items.length === 0) return null;
 
-  if (events.length === 0) {
-    return null;
-  }
+  const sum = items.reduce((acc, i) => acc + i.score, 0);
 
   return {
     personId: normalized,
-    events,
-    wps,
+    wps: round2((sum / MAX_WPS_SCORE) * 100),
+    events: items
+      .sort((a, b) => b.score - a.score)
+      .map((i) => ({
+        eventId: i.eventId,
+        eventName: EVENT_NAMES[i.eventId] ?? i.eventId,
+        weight: round2(i.weight),
+        worldRank: i.worldRank,
+        eventScore: round2(i.score),
+      })),
   };
 }

@@ -4,7 +4,6 @@ import { Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
-import { captureEvent } from '../lib/analytics';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const ALL = 'ALL';
@@ -111,16 +110,6 @@ export function LeaderboardPage() {
       : 'Browse the global WPS leaderboard for speedcubers, including ranks, countries, WCA IDs, and weighted performance scores.',
     canonicalPath: isFiltered ? `/leaderboard?country=${encodeURIComponent(selectedCountry)}` : '/leaderboard',
   });
-
-  useEffect(() => {
-    if (loading || error || !data) return;
-
-    captureEvent('leaderboard_viewed', {
-      country_filter: isFiltered ? selectedCountry : ALL,
-      country_name: isFiltered ? selectedCountryName : 'All countries',
-      cuber_count: items.length,
-    });
-  }, [data, error, isFiltered, items.length, loading, selectedCountry, selectedCountryName]);
 
   if (loading) {
     return (
@@ -238,9 +227,6 @@ export function LeaderboardPage() {
                       <td className="hidden px-3 py-3 lg:table-cell sm:px-4">
                         <Link
                           to={`/profile/${row.personId}`}
-                          onClick={() =>
-                            captureEvent('cuber_profile_opened', { wca_id: row.personId, source: 'leaderboard' })
-                          }
                           className="text-sm font-medium text-green-400 hover:text-green-300"
                         >
                           {row.personId}

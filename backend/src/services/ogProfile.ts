@@ -1,6 +1,6 @@
 import { findPersonById, getMetaValue } from './personDb';
 
-/** Profile result for OG/ogMeta (includes totalRanked for rank text). */
+/** Profile data for share previews: OG image (routes/og) and OG meta HTML (routes/ogMeta). */
 export interface ProfileForOg {
   id: string;
   name: string;

@@ -1,26 +1,11 @@
-# Dependencies
 node_modules/
-
-# Env
+dist/
 .env
-backend/.env
-frontend/.env
+.env.*
+!.env.example
 
-# Builds
-frontend/dist/
-backend/dist/
-frontend/build/
-backend/build/
-
-# WCA export raw files (never commit)
+# WCA export files (the pipeline downloads them to a temp dir)
 *.tsv
-backend/cache/wca_export/**
-backend/cache/wca_export.zip
-backend/cache/export.sha256
-backend/WCA_export*.zip
-backend/WCA_export*.tsv
-backend/WCA_export*/
+*.zip
 
-# Cache: generated pipeline artifacts, never commit
-backend/cache/**
-!backend/cache/.gitkeep
+.DS_Store

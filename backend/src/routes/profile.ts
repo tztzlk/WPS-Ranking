@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { findPersonById, toProfileResponse, isValidWCAId, getMetaValue } from '../services/personDb';
-import { getCountryRank } from '../services/leaderboardCache';
-import { getProfileHistory } from '../services/historySnapshot';
+import { prisma } from '../lib/prisma';
+import { findPersonById, toProfileResponse, isValidWCAId, getMetaValues } from '../services/personDb';
+import { getProfileHistory } from '../services/history';
 import type { ProfileResponse } from '../types';
 
 const router = Router();
@@ -52,21 +52,20 @@ export async function getProfileByWcaId(wcaId: string): Promise<ProfileResponse 
   const person = await findPersonById(wcaId);
   if (!person) return null;
 
-  const [totalRankedRaw, generatedAt, countryRankData] = await Promise.all([
-    getMetaValue('totalRanked'),
-    getMetaValue('generatedAt'),
-    person.countryIso2
-      ? getCountryRank(person.id, person.countryIso2)
+  const [meta, country] = await Promise.all([
+    getMetaValues(['totalRanked', 'generatedAt']),
+    person.countryIso2 && person.countryRank != null
+      ? prisma.country.findUnique({ where: { iso2: person.countryIso2 } })
       : Promise.resolve(null),
   ]);
 
-  const totalRanked = totalRankedRaw != null ? Math.max(0, Math.floor(Number(totalRankedRaw)) || 0) : 0;
+  const totalRanked = Math.max(0, Math.floor(Number(meta.totalRanked)) || 0);
 
   return toProfileResponse(person, {
     totalRanked,
-    countryRank: countryRankData?.countryRank ?? null,
-    countryTotal: countryRankData?.countryTotal ?? null,
-    lastUpdated: generatedAt ?? new Date().toISOString(),
+    countryRank: country ? person.countryRank : null,
+    countryTotal: country?.rankedCount ?? null,
+    lastUpdated: meta.generatedAt ?? new Date().toISOString(),
   });
 }
 

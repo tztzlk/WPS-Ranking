@@ -7,47 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Person {
-  id          String    @id @db.VarChar(10)
-  name        String
-  nameLower   String    @map("name_lower")
-  countryId   String?   @map("country_id")
-  countryName String?   @map("country_name")
-  countryIso2 String?   @map("country_iso2") @db.VarChar(2)
-  wpsRank     WpsRank?
-  wpsScore    WpsScore?
+// All tables below except wps_history / rank_distribution / meta are fully
+// rewritten by the daily pipeline (src/pipeline). The API only reads them.
 
+model Person {
+  id          String            @id @db.VarChar(10)
+  name        String
+  nameLower   String            @map("name_lower")
+  countryId   String?           @map("country_id")
+  countryName String?           @map("country_name")
+  countryIso2 String?           @map("country_iso2") @db.VarChar(2)
+  ranking     LeaderboardEntry?
+  breakdown   WpsBreakdown?
+
+  // The migration creates this index with text_pattern_ops so that
+  // `LIKE 'prefix%'` (Prisma startsWith) can use it under any collation.
   @@index([nameLower], map: "idx_person_name_lower")
   @@index([countryIso2], map: "idx_person_country_iso2")
   @@map("persons")
 }
 
-model WpsScore {
-  personId String @id @map("person_id") @db.VarChar(10)
-  score    Float
-  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+/// Current ranking: one row per ranked person.
+model LeaderboardEntry {
+  personId     String   @id @map("person_id") @db.VarChar(10)
+  name         String
+  countryIso2  String?  @map("country_iso2") @db.VarChar(2)
+  countryName  String?  @map("country_name")
+  wps          Float
+  /// RANK() over WPS rounded to 0.01: equal WPS -> equal rank.
+  globalRank   Int      @map("global_rank")
+  countryRank  Int?     @map("country_rank")
+  /// Global rank change vs the previous export (positive = moved up).
+  rankChange1d Int?     @map("rank_change_1d")
+  /// Global rank change vs the export ~7 days earlier.
+  rankChange7d Int?     @map("rank_change_7d")
+  generatedAt  DateTime @map("generated_at")
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
 
-  @@index([score], map: "idx_wps_score")
-  @@map("wps_scores")
+  @@index([globalRank], map: "idx_leaderboard_global_rank")
+  @@index([countryIso2, countryRank], map: "idx_leaderboard_country_rank")
+  @@map("leaderboard_entries")
 }
 
-model WpsRank {
-  personId String @id @map("person_id") @db.VarChar(10)
-  rank     Int
-  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
-
-  @@index([rank], map: "idx_wps_rank")
-  @@map("wps_ranks")
-}
-
+/// Per-event world ranks used for the WPS breakdown: {"333": 1234, "222": 567, ...}.
+/// Weights and event scores are derived from EVENT_WEIGHTS at read time.
 model WpsBreakdown {
-  personId            String @id @map("person_id") @db.VarChar(10)
-  sumEventScores      Float  @map("sum_event_scores")
-  maxPossible         Float  @map("max_possible")
-  eventsParticipated  Int    @map("events_participated")
-  breakdown           Json
+  personId   String @id @map("person_id") @db.VarChar(10)
+  eventRanks Json   @map("event_ranks")
+  person     Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@map("wps_breakdowns")
+}
+
+model Country {
+  iso2        String @id @db.VarChar(2)
+  name        String
+  rankedCount Int    @map("ranked_count")
+
+  @@map("countries")
 }
 
 model Meta {
@@ -57,30 +74,30 @@ model Meta {
   @@map("meta")
 }
 
-model LeaderboardEntry {
-  personId     String   @id @map("person_id") @db.VarChar(10)
-  name         String
-  countryIso2  String?  @map("country_iso2") @db.VarChar(2)
-  countryName  String?  @map("country_name")
-  wps          Float
-  globalRank   Int      @map("global_rank")
-  countryRank  Int?     @map("country_rank")
-  generatedAt  DateTime @map("generated_at")
+/// WPS history stored as changes only: a row is written when a person's
+/// rounded WPS differs from their previous row. WPS on day D is the row with
+/// the latest valid_from <= D.
+model WpsHistory {
+  personId  String   @map("person_id") @db.VarChar(10)
+  validFrom DateTime @map("valid_from") @db.Date
+  /// WPS * 100, rounded (WPS has two decimals everywhere in the product).
+  wpsCenti  Int      @map("wps_centi")
 
-  @@index([globalRank], map: "idx_leaderboard_global_rank")
-  @@index([countryIso2, countryRank], map: "idx_leaderboard_country_rank")
-  @@map("leaderboard_entries")
+  @@id([personId, validFrom])
+  @@map("wps_history")
 }
 
-model HistorySnapshot {
-  personId     String   @map("person_id") @db.VarChar(10)
+/// For every export date and scope ('*' = world, otherwise country ISO2):
+/// distinct WPS values (desc) and how many people were strictly above each.
+/// rank(D, scope, w) = above[array_position(wps_centi, w)] + 1.
+/// This lets us reconstruct global/country rank on any past date without
+/// storing a 275k-row snapshot per day.
+model RankDistribution {
   snapshotDate DateTime @map("snapshot_date") @db.Date
-  wps          Float
-  globalRank   Int      @map("global_rank")
-  countryRank  Int?     @map("country_rank")
+  scope        String   @db.VarChar(2)
+  wpsCenti     Int[]    @map("wps_centi")
+  above        Int[]
 
-  @@id([personId, snapshotDate])
-  @@index([snapshotDate], map: "idx_history_snapshot_date")
-  @@index([snapshotDate, globalRank], map: "idx_history_snapshot_date_global_rank")
-  @@map("history_snapshots")
+  @@id([snapshotDate, scope])
+  @@map("rank_distribution")
 }

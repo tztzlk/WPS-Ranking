@@ -1,43 +1,41 @@
 {
   "name": "wps-ranking-backend",
   "version": "1.0.0",
-  "description": "Backend API for WPS Ranking platform",
+  "description": "WPS Ranking API (Express on Vercel) and daily WCA data pipeline",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
-    "leaderboard:update": "tsx src/scripts/updateLeaderboard.ts",
-    "update:data": "tsx src/scripts/updateData.cli.ts",
-    "import:data": "tsx src/scripts/importData.cli.ts",
-    "debug:person": "tsx src/scripts/debugFindPerson.ts",
-    "refresh:data": "tsx src/scripts/refreshAllData.ts"
+    "postinstall": "prisma generate",
+    "refresh": "tsx src/pipeline/refresh.ts",
+    "migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
     "@vercel/og": "^0.9.0",
-    "axios": "^1.6.2",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
+    "pg": "^8.23.1",
+    "pg-copy-streams": "^7.0.0",
     "prisma": "^6.19.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react": "^19.2.4"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.25",
     "@types/node": "^20.19.35",
+    "@types/pg": "^8.23.1",
+    "@types/pg-copy-streams": "^1.2.5",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "tsx": "^4.6.0",
     "typescript": "^5.3.2"
   }
-  
 }

@@ -4,7 +4,6 @@ import { Search, User, MapPin, Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
-import { captureEvent } from '../lib/analytics';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const DEBOUNCE_MS = 400;
@@ -30,8 +29,6 @@ export function SearchPage() {
     setLoading(true);
     setError(null);
     setHasSearched(true);
-    captureEvent('search_cuber', { query: normalizedQuery });
-
     try {
       const data = await apiService.searchCubers(normalizedQuery, 20, controller.signal);
       setResults(data);
@@ -179,9 +176,6 @@ export function SearchPage() {
                   <div className="mt-4 flex justify-end">
                     <Link
                       to={`/profile/${cuber.wcaId}`}
-                      onClick={() =>
-                        captureEvent('cuber_profile_opened', { wca_id: cuber.wcaId, source: 'search_results' })
-                      }
                       className="btn-primary"
                     >
                       View Profile

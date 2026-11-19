@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from 'express';
 import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
-import path from 'path';
 import dotenv from 'dotenv';
 import { leaderboardRoutes } from './routes/leaderboard';
 import { countriesRoutes } from './routes/countries';
@@ -79,21 +78,17 @@ app.get('/api/health', (_req, res) => {
 app.use(ogMetaRoutes);
 app.options('*', cors());
 
-const publicPath = process.env.PUBLIC_PATH;
-if (publicPath) {
-  const absolutePath = path.isAbsolute(publicPath) ? publicPath : path.resolve(process.cwd(), publicPath);
-  app.use(express.static(absolutePath));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(absolutePath, 'index.html'));
-  });
-} else {
-  app.use('*', (_req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-  });
-}
+app.use('*', (_req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 app.use(errorHandler);
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`WPS Ranking API running on port ${PORT}`);
-});
+// On Vercel the exported app is wrapped into a serverless function; locally we listen.
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`WPS Ranking API running on port ${PORT}`);
+  });
+}
+
+export default app;

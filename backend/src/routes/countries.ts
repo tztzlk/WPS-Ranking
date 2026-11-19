@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
-import { getCountriesList } from '../services/leaderboardCache';
+import { getCountriesList } from '../services/leaderboard';
 
 const router = Router();
 const COUNTRIES_CACHE_CONTROL = 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400';

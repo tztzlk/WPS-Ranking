@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Search, Trophy, Info, Home, GitCompare } from 'lucide-react';
-import { captureEvent } from '../lib/analytics';
 
 export function Layout() {
   const location = useLocation();
@@ -113,7 +112,6 @@ export function Layout() {
                   href="https://ko-fi.com/tonyokoo"
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => captureEvent('support_clicked', { source: 'footer' })}
                   className="inline-block rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
                 >
                   Support on Ko-fi
@@ -154,7 +152,6 @@ export function Layout() {
                     href="https://github.com/tztzlk/WPS-Ranking/issues/new"
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => captureEvent('feedback_clicked', { type: 'footer_new_issue', source: 'footer' })}
                     className="text-green-400 hover:text-green-300"
                   >
                     New issue
@@ -163,7 +160,6 @@ export function Layout() {
                     href="https://github.com/tztzlk/WPS-Ranking/issues"
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => captureEvent('feedback_clicked', { type: 'footer_view_issues', source: 'footer' })}
                     className="text-gray-300 hover:text-white"
                   >
                     View issues

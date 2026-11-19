@@ -66,3 +66,8 @@ export const MAX_WPS_SCORE = Object.values(EVENT_WEIGHTS).reduce(
   (sum, w) => sum + w * (1 / Math.log(2)) * 10,
   0,
 );
+
+/** Event score = weight * 10 / ln(world_rank + 1). The pipeline uses the same formula in SQL. */
+export function eventScore(weight: number, worldRank: number): number {
+  return weight * (1 / Math.log(worldRank + 1)) * 10;
+}

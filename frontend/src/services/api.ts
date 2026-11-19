@@ -6,7 +6,6 @@ import {
   LeaderboardCacheResponse,
   WpsBreakdownResponse,
   ProfileHistoryItem,
-  LeaderboardPageResponse,
   CountryListItem,
 } from '../types';
 
@@ -97,23 +96,6 @@ export const apiService = {
     return response.data;
   },
 
-  async getLeaderboardPageData(limit = 100, country?: string): Promise<LeaderboardPageResponse> {
-    const params: { limit: number; country?: string } = { limit };
-    if (country && country !== 'ALL') params.country = country;
-    const config: RetryableConfig = {
-      params,
-      _disableRetry: true,
-    };
-    const response = await api.get<LeaderboardPageResponse>('/leaderboard/page', config);
-
-    countriesCache = {
-      value: response.data.countries,
-      expiresAt: Date.now() + COUNTRIES_CACHE_TTL_MS,
-    };
-
-    return response.data;
-  },
-
   async getProfile(wcaId: string): Promise<WPSProfile> {
     const response = await api.get<WPSProfile>(`/profile/${wcaId}`);
     return response.data;
@@ -150,9 +132,4 @@ export const apiService = {
     const response = await api.get<{ history: ProfileHistoryItem[] }>(`/profile/${encodeURIComponent(wcaId)}/history`);
     return response.data.history;
   },
-
-  async getHealth(): Promise<{ ok: boolean; env: string }> {
-    const response = await api.get<{ ok: boolean; env: string }>('/health');
-    return response.data;
-  }
 };

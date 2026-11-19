@@ -4,14 +4,9 @@
   "description": "WPS Ranking - Global speedcubing leaderboard platform",
   "private": true,
   "scripts": {
-    "install:all": "cd backend && npm ci && cd ../frontend && npm ci",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build:backend": "cd backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:backend && npm run build:frontend",
-    "start": "cd backend && npm start"
+    "install:all": "npm ci && cd backend && npm ci && cd ../frontend && npm ci",
+    "dev": "concurrently -n api,web \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend"
   },
   "keywords": [
     "speedcubing",
@@ -19,14 +14,9 @@
     "wca",
     "leaderboard"
   ],
-  "author": "WPS Ranking Team",
+  "author": "WPS Ranking",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^25.3.5",
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "@posthog/react": "^1.8.2",
-    "posthog-js": "^1.360.2"
   }
 }

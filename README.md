@@ -1,186 +1,140 @@
 # WPS Ranking
 
-A global ranking platform for speedcubers using the Weighted Performance Scale (WPS) system.
-
-## Overview
-
-WPS Ranking provides a fair, balanced scoring system for speedcubers worldwide. Unlike traditional rankings that favor single events, WPS promotes versatility by weighting performance across all WCA events.
+A global ranking for speedcubers using the Weighted Performance Scale (WPS): one score that rewards strong results across many WCA events, not just one.
 
 ## Architecture
 
-- **Frontend:** React SPA (Vite + TypeScript), deployed on Vercel.
-- **Backend:** Node.js + Express + TypeScript + Prisma, deployed on Render (or similar).
-- **Database:** PostgreSQL (Supabase). All API data is served from Postgres at runtime.
-- **Data pipeline (offline):** WCA TSV export files are processed into JSON indexes (`backend/cache/`), then imported into Postgres via batch scripts. The pipeline is **not** part of the HTTP server; it runs as one-off or scheduled jobs.
-
 ```
-Runtime:   Frontend --> Express API --> Prisma Client --> PostgreSQL
-Pipeline:  WCA TSV --> leaderboardTop100 (JSON) --> importData --> PostgreSQL
+                 daily, GitHub Actions
+WCA export ──► src/pipeline ──COPY──► Supabase Postgres ◄── Express API (Vercel Function) ◄── React SPA (Vercel)
 ```
 
-## WPS Formula
+| Part | Where | Notes |
+|------|-------|-------|
+| Frontend | `frontend/`, Vercel project | Vite + React + TS |
+| API | `backend/`, Vercel project | Express, zero-config Vercel Function (`src/index.ts` exports the app). Read-only. |
+| Database | Supabase Postgres (free tier) | Prisma schema + migrations in `backend/prisma` |
+| Data pipeline | `backend/src/pipeline`, `.github/workflows/refresh-data.yml` | Daily at 02:00 UTC. Never runs inside the API. |
+
+### Daily pipeline
+
+1. Ask the WCA API for the current export date; stop if it is already published.
+2. Download the TSV export, extract `persons`, `countries`, `ranks_average`.
+3. Stream them into TEMP staging tables with `COPY`.
+4. Compute WPS, world and country ranks in SQL.
+5. In **one short transaction**: replace `persons`, `leaderboard_entries`, `wps_breakdowns`, `countries`; append history; update `meta`. Readers see old or new data, never a half-import; a failed run changes nothing.
+
+Takes ~30 s and ~120 MB RAM for ~300k persons.
+
+### History without daily full copies
+
+Storing a full ranking snapshot per day costs ~30 MB/day (it filled the 500 MB free tier in about two weeks). Instead:
+
+- `wps_history` stores a row only when a person's WPS changes (a few percent of people per week).
+- `rank_distribution` stores, per day and per scope (world `*` or country ISO2), the distinct WPS values and how many people were strictly above each.
+
+Global/country rank on any past day = `above[position of that day's WPS] + 1`. This reproduces the stored ranks exactly and costs ~0.3 MB/day. The profile chart, daily rank change and weekly movers all come from these two tables.
+
+## WPS formula
 
 ```
-Event Score = weight * (1 / log(world_rank + 1)) * 10
-WPS Score   = (sum of event scores / max possible score) * 100
+Event score = weight × 10 / ln(world_rank + 1)      (world rank by average)
+WPS         = Σ event scores / max possible × 100   (max = every event at world rank 1)
 ```
 
-### Event Weights
+Ranks use `RANK()` over WPS rounded to 0.01, so equal WPS means equal rank.
 
-| Event | Weight |
-|-------|--------|
-| 3x3x3 Cube | 1.0 (baseline) |
-| 2x2x2 Cube | 0.8 |
-| 4x4x4 Cube | 0.9 |
-| 5x5x5 Cube | 0.9 |
-| 6x6x6 Cube | 0.7 |
-| 7x7x7 Cube | 0.7 |
-| 3x3x3 Blindfolded | 0.6 |
-| 3x3x3 Fewest Moves | 0.5 |
-| 3x3x3 One-Handed | 0.8 |
-| Clock | 0.6 |
-| Megaminx | 0.7 |
-| Pyraminx | 0.7 |
-| Skewb | 0.7 |
-| Square-1 | 0.6 |
-| 4x4x4 Blindfolded | 0.4 |
-| 5x5x5 Blindfolded | 0.3 |
-| 3x3x3 Multi-Blind | 0.3 |
+| Event | ID | Weight |
+|-------|----|--------|
+| 3x3 Cube | `333` | 1.0 |
+| 2x2 Cube | `222` | 0.85 |
+| 4x4 Cube | `444` | 0.6 |
+| 5x5 Cube | `555` | 0.5 |
+| 6x6 Cube | `666` | 0.35 |
+| 7x7 Cube | `777` | 0.3 |
+| 3x3 Blindfolded | `333bf` | 0.2 |
+| 3x3 Fewest Moves | `333fm` | 0.2 |
+| 3x3 One-Handed | `333oh` | 0.6 |
+| Clock | `clock` | 0.45 |
+| Megaminx | `minx` | 0.45 |
+| Pyraminx | `pyram` | 0.75 |
+| Skewb | `skewb` | 0.65 |
+| Square-1 | `sq1` | 0.4 |
+| 4x4 Blindfolded | `444bf` | 0.12 |
+| 5x5 Blindfolded | `555bf` | 0.1 |
+
+Weights live in `backend/src/types/index.ts` (`EVENT_WEIGHTS`) and are used by both the pipeline and the API.
 
 ## Development
 
 ```bash
-# Backend dev (TS watch, port 5000)
-cd backend && npm run dev
+# Postgres for local dev
+docker run -d --name wps-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=wps -p 5432:5432 postgres:17
 
-# Frontend dev (Vite, proxies /api to localhost:5000)
-cd frontend && npm run dev
+cd backend
+cp .env.example .env          # DATABASE_URL=postgresql://postgres:postgres@localhost:5432/wps
+npm ci
+npx prisma migrate deploy
+npm run refresh               # downloads the WCA export (~390 MB) and loads it
+npm run dev                   # API on :5000
 
-# Frontend pointing at remote API
-cd frontend && VITE_API_BASE_URL=https://your-backend.example.com/api npm run dev
-
-# Backend build + start
-cd backend && npm run build && npm start
+cd ../frontend && npm ci && npm run dev   # :3000, proxies /api to :5000
 ```
 
-### Backend API routes
+`npm run refresh -- --dir <path>` uses an already extracted export; `--force` re-publishes the same export.
+
+### API
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
 | GET | `/api/leaderboard` | Global or country leaderboard (`?country=XX&limit=100`) |
-| GET | `/api/countries` | List of countries |
-| GET | `/api/profile/:wcaId` | Profile by WCA ID |
-| GET | `/api/search` | Search cubers (`?q=...&limit=20`) |
-| GET | `/api/compare` | Compare two cubers (`?left=...&right=...`) |
-| GET | `/api/about` | Formula and philosophy data |
-| GET | `/api/og/profile/:personId` | OG image (PNG, 1200x630) |
-
-### Data pipeline scripts (offline only)
-
-These scripts are **never** called by the running server. Run them manually or via cron.
-
-```bash
-cd backend
-
-# 1. Download WCA export, extract TSVs, generate JSON indexes
-npm run update:data
-
-# 2. (Re)generate leaderboard JSON from existing TSVs
-npm run leaderboard:update
-
-# 3. Import JSON indexes + Persons.tsv into PostgreSQL
-npm run import:data
-```
+| GET | `/api/countries` | Countries with ranked cubers |
+| GET | `/api/profile/:wcaId` | Profile |
+| GET | `/api/profile/:wcaId/history` | Last 180 days: WPS, global and country rank |
+| GET | `/api/cuber/:wcaId/wps-breakdown` | Per-event contribution |
+| GET | `/api/search` | `?q=` name prefix, WCA ID or ISO2 country |
+| GET | `/api/compare` | `?left=...&right=...` |
+| GET | `/api/about` | Formula data |
+| GET | `/api/og/profile/:wcaId` | OG image (PNG 1200×630) |
+| GET | `/profile/:wcaId` | OG meta HTML for crawlers, redirect for people |
 
 ## Deployment
 
-### Environment variables
+### Database (Supabase)
 
-#### Backend (required at runtime)
+Connection strings: Project → Connect.
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string (pooler URL, e.g. Supabase port 6543 with `?pgbouncer=true`) |
-| `NODE_ENV` | `production` |
-| `PORT` | Server port (default `5000`; platform may provide this) |
-| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://wps-ranking.vercel.app`) |
+- **Transaction pooler** (port 6543) → API on Vercel. Append `?pgbouncer=true&connection_limit=1`.
+- **Session pooler** (port 5432) → pipeline and migrations (GitHub runners have no IPv6, so not the direct host).
 
-#### Backend (required at build / CLI time)
+Migrations are applied by the refresh workflow (`prisma migrate deploy`) before each run. They are idempotent, so they also apply cleanly to the database originally created with `prisma db push`; `20261119000000_history_rework` converts the old `history_snapshots` into the new history tables and drops it.
 
-| Variable | Description |
-|----------|-------------|
-| `DIRECT_DATABASE_URL` | Direct PostgreSQL URL (e.g. Supabase port 5432 with `?sslmode=require`). Used by `prisma generate`, `prisma migrate`, `prisma db push`, and `import:data`. |
-| `DATABASE_URL` | Also needed at build time because `postinstall` runs `prisma generate`. |
+### GitHub Actions
 
-#### Backend (optional)
+Repository secret `PIPELINE_DATABASE_URL` = session pooler URL. Run **Refresh WCA data** once manually (Actions → Run workflow) after setting it.
 
-| Variable | Description |
-|----------|-------------|
-| `PUBLIC_PATH` | Path to frontend build for same-origin serving |
-| `SITE_URL` | Public base URL for OG meta tags |
-| `CACHE_DIR` | Override cache directory for pipeline scripts (default: `./cache`) |
-| `WCA_EXPORT_URL` | Override WCA export download URL |
+### API (Vercel)
 
-#### Frontend
+New Vercel project from this repo, **Root Directory** `backend`, framework preset Express (detected). Env:
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_BASE_URL` | Backend API base (e.g. `https://your-backend.com/api`). Default: `/api` |
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | transaction pooler URL |
+| `CORS_ORIGINS` | frontend origin, e.g. `https://wps-ranking.vercel.app` |
+| `SITE_URL` | this API's URL (share/OG links) |
+| `FRONTEND_URL` | frontend URL |
 
-### Deploy backend (Render)
+Check: `curl https://<api>/api/health`.
 
-1. Create a new Web Service, connect repo.
-2. **Root directory:** `backend`
-3. **Build command:** `npm ci && npm run build`
-4. **Start command:** `npm start`
-5. **Node version:** 20
-6. Set environment variables: `DATABASE_URL`, `DIRECT_DATABASE_URL`, `NODE_ENV=production`, `CORS_ORIGINS`.
-7. Verify: `curl https://<backend>/api/health` should return `{"ok":true,"env":"production"}`.
+### Frontend (Vercel)
 
-### Render Cron Job (data refresh)
+Root Directory `frontend`; `VITE_API_BASE_URL=https://<api>/api`.
 
-Create a Cron Job on Render to run the data refresh pipeline daily. Use the same repo and environment variables as the Web Service.
+## Data source
 
-| Setting | Value |
-|--------|-------|
-| **Root Directory** | `backend` |
-| **Build Command** | `npm ci && npm run build` |
-| **Schedule** | `0 3 * * *` (daily at 03:00 UTC) |
-| **Command** | `npm run refresh:data` |
-
-> If Root Directory is already `backend`, do **not** prepend `cd backend &&` to the command.
-
-### Deploy frontend (Vercel)
-
-1. Import repo, set **Root directory** to `frontend`.
-2. Set `VITE_API_BASE_URL` to `https://<backend>/api`.
-3. Deploy. `frontend/vercel.json` configures build and output.
-
-### Database setup
-
-1. Create a PostgreSQL database (e.g. Supabase).
-2. Apply schema: `cd backend && npx prisma db push` (or `npx prisma migrate deploy` if migrations exist).
-3. Populate data: run the pipeline (`update:data` then `import:data`).
-
-### Go-live checklist
-
-- [ ] Backend deployed; `GET /api/health` returns `{ ok: true, env: "production" }`.
-- [ ] Database populated (run pipeline scripts).
-- [ ] Frontend deployed with `VITE_API_BASE_URL` pointing to backend.
-- [ ] CORS: `CORS_ORIGINS` includes frontend origin.
-- [ ] Smoke test: Home, Leaderboard, Profile, Search, Compare, About all work.
-
-## Open Graph
-
-Profile links get rich previews in Telegram, Discord, etc. The backend intercepts crawler User-Agents at `/profile/:personId` and serves OG meta HTML. OG images are generated at `/api/og/profile/:personId` and cached in memory (max 500, 1h TTL).
-
-For same-origin setup, set `PUBLIC_PATH` and `SITE_URL`. For split deployment, the frontend host must proxy crawler requests to the backend.
-
-## Data Source
-
-All rankings use official data from the [World Cube Association](https://www.worldcubeassociation.org).
+All rankings use official data from the [World Cube Association](https://www.worldcubeassociation.org/export/results). This site is not affiliated with the WCA.
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT

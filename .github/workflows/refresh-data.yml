@@ -1,0 +1,57 @@
+name: Refresh WCA data
+
+# Daily: apply pending DB migrations, then publish the latest WCA export if it changed.
+# WCA generates the export around 00:30 UTC.
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-publish even if the export did not change"
+        type: boolean
+        default: false
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write # keepalive step below
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Supabase *session* pooler (port 5432) — TEMP tables need a session-level connection.
+      DATABASE_URL: ${{ secrets.PIPELINE_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Refresh data
+        run: npm run refresh -- ${{ inputs.force && '--force' || '' }}
+
+      # GitHub disables scheduled workflows after 60 days without repository activity.
+      # Re-enabling via the API resets that timer.
+      - name: Keep schedule alive
+        if: github.event_name == 'schedule'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/refresh-data.yml/enable"

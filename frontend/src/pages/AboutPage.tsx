@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { FormulaBox } from '../components/FormulaBox';
 import { usePageMetadata } from '../hooks/usePageMetadata';
-import { captureEvent } from '../lib/analytics';
 import { apiService } from '../services/api';
 import { AboutData, EVENT_NAMES } from '../types';
 
@@ -123,7 +122,6 @@ export function AboutPage() {
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => captureEvent('about_repo_clicked', { source: 'about_page_hero' })}
               className="btn-secondary inline-flex items-center justify-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
@@ -363,7 +361,6 @@ export function AboutPage() {
               href="https://ko-fi.com/tonyokoo"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => captureEvent('support_clicked', { source: 'about_page' })}
               className="inline-flex items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
             >
               Support on Ko-fi
@@ -390,7 +387,6 @@ export function AboutPage() {
             href={GITHUB_NEW_ISSUE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => captureEvent('feedback_clicked', { type: 'bug', source: 'about_page' })}
             className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-red-500/40 hover:bg-gray-800"
           >
             <MessageSquare className="mb-3 h-6 w-6 text-red-400" />
@@ -404,7 +400,6 @@ export function AboutPage() {
             href={GITHUB_NEW_ISSUE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => captureEvent('feedback_clicked', { type: 'feature', source: 'about_page' })}
             className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-green-500/40 hover:bg-gray-800"
           >
             <Lightbulb className="mb-3 h-6 w-6 text-green-400" />
@@ -418,7 +413,6 @@ export function AboutPage() {
             href={GITHUB_ISSUES_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => captureEvent('feedback_clicked', { type: 'issues', source: 'about_page' })}
             className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-sky-500/40 hover:bg-gray-800"
           >
             <ExternalLink className="mb-3 h-6 w-6 text-sky-400" />
