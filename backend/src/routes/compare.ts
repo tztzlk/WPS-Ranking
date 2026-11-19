@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { getProfileByWcaId } from './profile';
 import { isValidWCAId } from '../services/personDb';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', asyncRoute(async (req: Request, res: Response) => {
   const left = ((req.query.left ?? req.query.id1) as string)?.trim();
   const right = ((req.query.right ?? req.query.id2) as string)?.trim();
 
@@ -36,6 +37,6 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   res.json({ left: leftProfile, right: rightProfile });
-});
+}));
 
 export { router as compareRoutes };

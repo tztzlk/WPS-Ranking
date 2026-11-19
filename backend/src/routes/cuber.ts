@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { isValidWCAId } from '../services/personDb';
 import { getWpsBreakdown } from '../services/wpsBreakdown';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 
-router.get('/:id/wps-breakdown', async (req, res) => {
+router.get('/:id/wps-breakdown', asyncRoute(async (req, res) => {
   const id = req.params.id?.trim();
   if (!id || !isValidWCAId(id)) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
@@ -18,6 +19,6 @@ router.get('/:id/wps-breakdown', async (req, res) => {
   }
 
   res.json(breakdown);
-});
+}));
 
 export { router as cuberRoutes };

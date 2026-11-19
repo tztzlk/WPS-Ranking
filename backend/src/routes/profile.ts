@@ -3,10 +3,11 @@ import { prisma } from '../lib/prisma';
 import { findPersonById, toProfileResponse, isValidWCAId, getMetaValues } from '../services/personDb';
 import { getProfileHistory } from '../services/history';
 import type { ProfileResponse } from '../types';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 
-router.get('/:id/history', async (req, res) => {
+router.get('/:id/history', asyncRoute(async (req, res) => {
   const id = (req.params.id ?? '').trim().toUpperCase();
   if (!id || !isValidWCAId(id)) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
@@ -14,9 +15,9 @@ router.get('/:id/history', async (req, res) => {
   }
   const history = await getProfileHistory(id);
   res.json({ history });
-});
+}));
 
-router.get('/', async (req, res) => {
+router.get('/', asyncRoute(async (req, res) => {
   const personId = (req.query.personId as string)?.trim();
   if (!personId) {
     res.status(400).json({ error: 'personId query parameter is required' });
@@ -32,9 +33,9 @@ router.get('/', async (req, res) => {
     return;
   }
   res.json(response);
-});
+}));
 
-router.get('/:wcaId', async (req, res) => {
+router.get('/:wcaId', asyncRoute(async (req, res) => {
   const wcaId = req.params.wcaId?.trim();
   if (!wcaId || !isValidWCAId(wcaId)) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
@@ -46,7 +47,7 @@ router.get('/:wcaId', async (req, res) => {
     return;
   }
   res.json(response);
-});
+}));
 
 export async function getProfileByWcaId(wcaId: string): Promise<ProfileResponse | null> {
   const person = await findPersonById(wcaId);

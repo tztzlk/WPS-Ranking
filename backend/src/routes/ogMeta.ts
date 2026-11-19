@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { getProfileByPersonId } from '../services/ogProfile';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
@@ -55,7 +56,7 @@ function getFrontendBaseUrl(): string {
   return corsOrigins?.[0] ?? DEFAULT_FRONTEND_URL;
 }
 
-router.get('/profile/:personId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/profile/:personId', asyncRoute(async (req: Request, res: Response, next: NextFunction) => {
   const personId = (req.params.personId ?? '').trim();
   if (!personId || !isValidWCAId(personId)) {
     next();
@@ -110,7 +111,7 @@ router.get('/profile/:personId', async (req: Request, res: Response, next: NextF
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
-});
+}));
 
 function escapeHtml(s: string): string {
   return s

@@ -12,9 +12,13 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   const statusCode = error.statusCode || 500;
-  const message = error.message || 'Internal Server Error';
+  // Internal errors (e.g. Prisma) can include connection details: log them, don't return them.
+  const message =
+    statusCode >= 500 && process.env.NODE_ENV === 'production'
+      ? 'Internal Server Error'
+      : error.message || 'Internal Server Error';
 
-  console.error(`Error ${statusCode}: ${message}`, {
+  console.error(`Error ${statusCode}: ${error.message}`, {
     url: req.url,
     method: req.method,
     timestamp: new Date().toISOString(),
