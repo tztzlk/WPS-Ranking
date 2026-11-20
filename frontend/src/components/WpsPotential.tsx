@@ -48,7 +48,7 @@ export function WpsPotential({
         how much WPS each event adds at that level.
       </p>
       <div className="text-sm">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-gray-700 pb-2 text-xs font-medium uppercase tracking-wide text-gray-500 sm:grid-cols-[minmax(0,1fr)_8rem_8rem_8rem]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-gray-700 pb-2 text-xs font-medium uppercase tracking-wide text-gray-400 sm:grid-cols-[minmax(0,1fr)_8rem_8rem_8rem]">
           <span>Event</span>
           <span className="hidden text-right sm:block">Now</span>
           <span className="hidden text-right sm:block">Target</span>
@@ -62,7 +62,7 @@ export function WpsPotential({
             <span className="min-w-0">
               <span className="text-white">{item.eventName}</span>
               {item.rankType === 'single' && <SingleTag />}
-              <span className="block text-xs text-gray-500 sm:hidden">
+              <span className="block text-xs text-gray-400 sm:hidden">
                 {item.worldRank ? `#${item.worldRank.toLocaleString('en-US')}` : 'No result'} to #
                 {item.targetRank.toLocaleString('en-US')}
               </span>
@@ -85,7 +85,7 @@ export function WpsPotential({
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-gray-500">
+      <p className="mt-3 text-xs text-gray-400">
         Target is the world rank at the {topShareLabel(typicalShare)} of the event&apos;s ranking. Gains are in WPS
         points.
       </p>

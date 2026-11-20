@@ -230,7 +230,7 @@ export function ProfilePage() {
             <div className="text-sm text-gray-400">
               WPS
               {profile.lastUpdated && (
-                <span className="text-gray-500"> · {new Date(profile.lastUpdated).toLocaleDateString()}</span>
+                <span className="text-gray-400"> · {new Date(profile.lastUpdated).toLocaleDateString()}</span>
               )}
             </div>
           </div>
@@ -243,7 +243,7 @@ export function ProfilePage() {
             <Icon className="mx-auto mb-2 h-5 w-5 text-green-400 sm:h-7 sm:w-7" aria-hidden="true" />
             <div className="text-xl font-bold tabular-nums text-white sm:text-3xl">{value}</div>
             <div className="text-xs font-medium text-gray-300 sm:text-sm">{label}</div>
-            <div className="mt-1 text-[11px] leading-tight text-gray-500 sm:text-xs">{detail}</div>
+            <div className="mt-1 text-[11px] leading-tight text-gray-400 sm:text-xs">{detail}</div>
           </div>
         ))}
       </div>
@@ -272,7 +272,7 @@ export function ProfilePage() {
                 Each event scores the cuber&apos;s world rank against the number of people in that event&apos;s ranking,
                 times the event weight. Events marked single use the ranking by single, the others the ranking by
                 average. The contributions of all events add up to WPS.{' '}
-                <Link to="/about" className="text-green-400 hover:text-green-300">
+                <Link to="/about" className="text-green-400 underline underline-offset-2 hover:text-green-300">
                   How WPS works
                 </Link>
               </p>
@@ -280,10 +280,10 @@ export function ProfilePage() {
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-gray-600">
-                      <th className="py-2 pr-4 font-medium text-gray-400">Event</th>
-                      <th className="whitespace-nowrap py-2 pr-4 font-medium text-gray-400">World rank</th>
-                      <th className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">Weight</th>
-                      <th className="py-2 text-right font-medium text-gray-400 sm:text-left">
+                      <th scope="col" className="py-2 pr-4 font-medium text-gray-400">Event</th>
+                      <th scope="col" className="whitespace-nowrap py-2 pr-4 font-medium text-gray-400">World rank</th>
+                      <th scope="col" className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">Weight</th>
+                      <th scope="col" className="py-2 text-right font-medium text-gray-400 sm:text-left">
                         <span className="sm:hidden">WPS</span>
                         <span className="hidden sm:inline">Contribution</span>
                       </th>
@@ -299,7 +299,7 @@ export function ProfilePage() {
                         <td className="py-2 pr-4 text-gray-300">
                           <span className="tabular-nums">#{row.worldRank.toLocaleString('en-US')}</span>
                           {row.participants > 0 && (
-                            <span className="block whitespace-nowrap text-xs text-gray-500 sm:ml-1 sm:inline">
+                            <span className="block whitespace-nowrap text-xs text-gray-400 sm:ml-1 sm:inline">
                               of {row.participants.toLocaleString('en-US')}
                             </span>
                           )}
@@ -321,12 +321,12 @@ export function ProfilePage() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-gray-600">
-                      <td className="py-3 pr-4 font-medium text-white sm:hidden" colSpan={2}>
+                      <th scope="row" className="py-3 pr-4 text-left font-medium text-white sm:hidden" colSpan={2}>
                         Total WPS
-                      </td>
-                      <td className="hidden py-3 pr-4 font-medium text-white sm:table-cell" colSpan={3}>
+                      </th>
+                      <th scope="row" className="hidden py-3 pr-4 text-left font-medium text-white sm:table-cell" colSpan={3}>
                         Total WPS
-                      </td>
+                      </th>
                       <td className="py-3 text-right font-semibold tabular-nums text-green-400 sm:pl-[6.75rem] sm:text-left">{breakdown.wps.toFixed(2)}</td>
                     </tr>
                   </tfoot>
@@ -334,11 +334,11 @@ export function ProfilePage() {
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 text-sm text-gray-400">
                 <span>
-                  <span className="text-gray-500">Most valuable event:</span>{' '}
+                  <span className="text-gray-400">Most valuable event:</span>{' '}
                   <span className="text-white">{breakdown.events[0]?.eventName ?? '—'}</span>
                 </span>
                 <span>
-                  <span className="text-gray-500">Best world rank:</span>{' '}
+                  <span className="text-gray-400">Best world rank:</span>{' '}
                   <span className="text-white">
                     #{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}
                   </span>

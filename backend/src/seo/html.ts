@@ -79,12 +79,14 @@ export async function renderPage(meta: PageMeta): Promise<string> {
   html = stripTags(html, /\s*<meta\s+(?:property|name)="(?:og|twitter):[^"]*"[^>]*>/gi);
   html = stripTags(html, /\s*<link\s+rel="canonical"[^>]*>/gi);
 
-  const image = meta.imageUrl
+  // Pages without their own picture use the site's default preview image.
+  const imageUrl = meta.imageUrl ?? `${getFrontendBaseUrl()}/og-image.png`;
+  const image = imageUrl
     ? `
-    <meta property="og:image" content="${escapeHtml(meta.imageUrl)}" />
+    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta name="twitter:image" content="${escapeHtml(meta.imageUrl)}" />`
+    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />`
     : '';
   // "<" is escaped so a name can never close the script tag.
   const jsonLd = meta.jsonLd
@@ -100,7 +102,7 @@ export async function renderPage(meta: PageMeta): Promise<string> {
     <meta property="og:title" content="${escapeHtml(meta.title)}" />
     <meta property="og:description" content="${escapeHtml(meta.description)}" />
     <meta property="og:url" content="${escapeHtml(url)}" />
-    <meta name="twitter:card" content="${meta.imageUrl ? 'summary_large_image' : 'summary'}" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(meta.title)}" />
     <meta name="twitter:description" content="${escapeHtml(meta.description)}" />${image}${jsonLd}
   </head>`;

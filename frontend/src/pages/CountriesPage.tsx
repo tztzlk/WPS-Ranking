@@ -54,7 +54,7 @@ export function CountriesPage() {
           </p>
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="continent-filter" className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <label htmlFor="continent-filter" className="text-xs font-medium uppercase tracking-wide text-gray-400">
             Continent
           </label>
           <select
@@ -88,70 +88,72 @@ export function CountriesPage() {
             ))}
           </div>
         ) : (
-          <div role="table" aria-label="Country ranking" className="text-sm md:text-base">
+          <div className="text-sm md:text-base">
             <div
-              role="row"
-              className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500`}
+              aria-hidden="true"
+              className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-400`}
             >
-              <span role="columnheader">Rank</span>
-              <span role="columnheader">Country</span>
-              <span role="columnheader" className="hidden md:block">
+              <span>Rank</span>
+              <span>Country</span>
+              <span className="hidden md:block">
                 Best cuber
               </span>
-              <span role="columnheader" className="hidden text-right md:block">
+              <span className="hidden text-right md:block">
                 Ranked cubers
               </span>
-              <span role="columnheader" className="text-right">
+              <span className="text-right">
                 Score
               </span>
             </div>
-            {items.map((c) => (
-              <Link
-                key={c.iso2}
-                to={`/leaderboard?country=${c.iso2}`}
-                role="row"
-                className={`${GRID} group border-b border-gray-700/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-700/40 focus-visible:bg-gray-700/40 focus-visible:outline-none`}
-              >
-                <span role="cell">
-                  <RankBadge rank={c.shownRank} />
-                </span>
-                <span role="cell" className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <CountryFlag iso2={c.iso2} name={c.name} />
-                    <span className="truncate font-medium text-white group-hover:text-green-300">{c.name}</span>
-                  </span>
-                  <span className="block text-xs text-gray-500 md:hidden">
-                    {c.rankedCount.toLocaleString('en-US')} ranked
-                    {c.best ? ` · best: ${c.best.name}` : ''}
-                  </span>
-                </span>
-                <span role="cell" className="hidden min-w-0 items-center gap-3 text-gray-300 md:flex">
-                  {c.best ? (
-                    <>
-                      <Avatar name={c.best.name} url={c.best.avatarUrl} />
-                      <span className="min-w-0">
-                        <span className="block truncate">{c.best.name}</span>
-                        <span className="block text-xs tabular-nums text-gray-500">{c.best.wps.toFixed(2)} WPS</span>
+            <ol aria-label="Country ranking">
+              {items.map((c) => (
+                <li key={c.iso2} className="border-b border-gray-700/60 last:border-b-0">
+                  <Link
+                    to={`/leaderboard?country=${c.iso2}`}
+                    className={`${GRID} group px-4 py-3 transition-colors hover:bg-gray-700/40 focus-visible:bg-gray-700/40 focus-visible:outline-none`}
+                  >
+                    <span>
+                      <RankBadge rank={c.shownRank} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        <CountryFlag iso2={c.iso2} name={c.name} />
+                        <span className="truncate font-medium text-white group-hover:text-green-300">{c.name}</span>
                       </span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </span>
-                <span role="cell" className="hidden text-right tabular-nums text-gray-400 md:block">
-                  {c.rankedCount.toLocaleString('en-US')}
-                </span>
-                <span role="cell" className="flex items-center justify-end gap-1">
-                  <span className="font-semibold tabular-nums text-green-400">{c.teamScore.toFixed(2)}</span>
-                  <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
-                </span>
-              </Link>
-            ))}
+                      <span className="block text-xs text-gray-400 md:hidden">
+                        {c.rankedCount.toLocaleString('en-US')} ranked
+                        {c.best ? ` · best: ${c.best.name}` : ''}
+                      </span>
+                    </span>
+                    <span className="hidden min-w-0 items-center gap-3 text-gray-300 md:flex">
+                      {c.best ? (
+                        <>
+                          <Avatar name={c.best.name} url={c.best.avatarUrl} />
+                          <span className="min-w-0">
+                            <span className="block truncate">{c.best.name}</span>
+                            <span className="block text-xs tabular-nums text-gray-400">{c.best.wps.toFixed(2)} WPS</span>
+                          </span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                    <span className="hidden text-right tabular-nums text-gray-400 md:block">
+                      {c.rankedCount.toLocaleString('en-US')}
+                    </span>
+                    <span className="flex items-center justify-end gap-1">
+                      <span className="font-semibold tabular-nums text-green-400">{c.teamScore.toFixed(2)}</span>
+                      <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
       </div>
       {data && (
-        <p className="text-center text-sm text-gray-500">Select a country to open its leaderboard.</p>
+        <p className="text-center text-sm text-gray-400">Select a country to open its leaderboard.</p>
       )}
     </div>
   );

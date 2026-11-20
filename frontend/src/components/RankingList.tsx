@@ -50,56 +50,58 @@ export function RankingList({
 }) {
   const GRID = gridClass(showChange);
   return (
-    <div role="table" aria-label="Ranking" className="text-sm md:text-base">
+    <div className="text-sm md:text-base">
       <div
-        role="row"
-        className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500`}
+        aria-hidden="true"
+        className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-400`}
       >
-        <span role="columnheader">Rank</span>
-        <span role="columnheader">Cuber</span>
-        <span role="columnheader" className="hidden md:block">
+        <span>Rank</span>
+        <span>Cuber</span>
+        <span className="hidden md:block">
           Country
         </span>
-        <span role="columnheader" className={showChange ? 'hidden md:block' : 'hidden'}>
+        <span className={showChange ? 'hidden md:block' : 'hidden'}>
           Change
         </span>
-        <span role="columnheader" className="text-right">
+        <span className="text-right">
           WPS
         </span>
       </div>
-      {items.map((item, index) => (
-        <Link
-          key={item.personId}
-          to={`/profile/${item.personId}`}
-          role="row"
-          className={`${GRID} group border-b border-gray-700/60 px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-700/40 focus-visible:bg-gray-700/40 focus-visible:outline-none`}
-        >
-          <span role="cell">
-            <RankBadge rank={rankOf(item, index)} />
-          </span>
-          <span role="cell" className="flex min-w-0 items-center gap-3">
-            <Avatar name={item.name} url={item.avatarUrl} />
-            <span className="min-w-0">
-              <span className="flex items-center gap-2">
-                <CountryFlag iso2={item.countryIso2} name={item.countryName} className="md:hidden" />
-                <span className="truncate font-medium text-white group-hover:text-green-300">{item.name}</span>
+      <ol aria-label="Ranking">
+        {items.map((item, index) => (
+          <li key={item.personId} className="border-b border-gray-700/60 last:border-b-0">
+            <Link
+              to={`/profile/${item.personId}`}
+              className={`${GRID} group px-4 py-3 transition-colors hover:bg-gray-700/40 focus-visible:bg-gray-700/40 focus-visible:outline-none`}
+            >
+              <span>
+                <RankBadge rank={rankOf(item, index)} />
               </span>
-              <span className="block font-mono text-xs text-gray-500">{item.personId}</span>
-            </span>
-          </span>
-          <span role="cell" className="hidden min-w-0 items-center gap-2 text-gray-300 md:flex">
-            <CountryFlag iso2={item.countryIso2} name={item.countryName} />
-            <span className="truncate">{item.countryName ?? item.countryId ?? '—'}</span>
-          </span>
-          <span role="cell" className={showChange ? 'hidden text-sm md:block' : 'hidden'}>
-            <RankChange change={item.rankChange} />
-          </span>
-          <span role="cell" className="flex items-center justify-end gap-1">
-            <span className="font-semibold tabular-nums text-green-400">{item.wps.toFixed(2)}</span>
-            <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
-          </span>
-        </Link>
-      ))}
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar name={item.name} url={item.avatarUrl} />
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2">
+                    <CountryFlag iso2={item.countryIso2} name={item.countryName} className="md:hidden" />
+                    <span className="truncate font-medium text-white group-hover:text-green-300">{item.name}</span>
+                  </span>
+                  <span className="block font-mono text-xs text-gray-400">{item.personId}</span>
+                </span>
+              </span>
+              <span className="hidden min-w-0 items-center gap-2 text-gray-300 md:flex">
+                <CountryFlag iso2={item.countryIso2} name={item.countryName} />
+                <span className="truncate">{item.countryName ?? item.countryId ?? '—'}</span>
+              </span>
+              <span className={showChange ? 'hidden text-sm md:block' : 'hidden'}>
+                <RankChange change={item.rankChange} />
+              </span>
+              <span className="flex items-center justify-end gap-1">
+                <span className="font-semibold tabular-nums text-green-400">{item.wps.toFixed(2)}</span>
+                <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

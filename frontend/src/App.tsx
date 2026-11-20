@@ -21,6 +21,7 @@ const router = createBrowserRouter([
           { path: 'profile/:wcaId', lazy: () => import('./pages/ProfilePage').then((m) => ({ Component: m.ProfilePage })) },
           { path: 'compare', lazy: () => import('./pages/ComparePage').then((m) => ({ Component: m.ComparePage })) },
           { path: 'about', lazy: () => import('./pages/AboutPage').then((m) => ({ Component: m.AboutPage })) },
+          { path: 'legal', lazy: () => import('./pages/LegalPage').then((m) => ({ Component: m.LegalPage })) },
           { path: 'search', lazy: () => import('./pages/SearchPage').then((m) => ({ Component: m.SearchPage })) },
           {
             path: '*',

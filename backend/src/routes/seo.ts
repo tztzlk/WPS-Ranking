@@ -125,7 +125,8 @@ router.get(
       description,
       path,
       ogType: 'profile',
-      imageUrl: `${getApiPublicUrl()}/api/og/profile/${id}`,
+      // TODO: use `${getApiPublicUrl()}/api/og/profile/${id}` again once the
+      // generator stops failing on Vercel. Until then the default image is used.
       jsonLd: {
         '@context': 'https://schema.org',
         '@type': 'ProfilePage',
@@ -259,6 +260,7 @@ router.get(
         '/about',
         '/search',
         '/compare',
+        '/legal',
         ...CONTINENTS_LIST.map((c) => `/leaderboard?continent=${c.code}`),
         ...countries.map((c) => `/leaderboard?country=${c.iso2}`),
       ];

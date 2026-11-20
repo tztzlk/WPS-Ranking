@@ -58,7 +58,7 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
         {right.name} in {rightWins}.
       </p>
 
-      <div className="mb-2 grid grid-cols-2 gap-4 text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="mb-2 grid grid-cols-2 gap-4 text-xs font-medium uppercase tracking-wide text-gray-400">
         <span className="truncate">{leftLabel}</span>
         <span className="truncate text-right">{rightLabel}</span>
       </div>
@@ -90,7 +90,7 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
               {bar(row.left, row.left > row.right, 'left')}
               {bar(row.right, row.right > row.left, 'right')}
             </div>
-            <div className="mt-0.5 flex justify-between text-[11px] tabular-nums text-gray-500">
+            <div className="mt-0.5 flex justify-between text-[11px] tabular-nums text-gray-400">
               <span>{rank(row.leftRank)}</span>
               <span>{rank(row.rightRank)}</span>
             </div>

@@ -21,5 +21,5 @@ export function CountryFlag({ iso2, name, className = '' }: CountryFlagProps) {
       </span>
     );
   }
-  return <span className={`text-gray-500 ${className}`.trim()}>—</span>;
+  return <span className={`text-gray-400 ${className}`.trim()}>—</span>;
 }

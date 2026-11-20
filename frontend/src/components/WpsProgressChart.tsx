@@ -148,7 +148,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
         ]}
         value={mode}
         onChange={setMode}
-        activeClassName="bg-green-600 text-white"
+        activeClassName="bg-green-700 text-white"
       />
     </div>
   );

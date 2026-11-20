@@ -180,7 +180,7 @@ export function AboutPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-700 text-left text-xs uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-gray-700 text-left text-xs uppercase tracking-wide text-gray-400">
                 <th className="py-2 pr-3 font-medium">Event</th>
                 <th className="py-2 pr-3 font-medium">Competitors</th>
                 <th className="py-2 text-right font-medium">Weight</th>
@@ -220,7 +220,7 @@ export function AboutPage() {
               href="https://www.worldcubeassociation.org/export/results"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-green-400 hover:text-green-300"
+              className="text-green-400 underline underline-offset-2 hover:text-green-300"
             >
               WCA results export
             </a>
@@ -239,10 +239,10 @@ export function AboutPage() {
             This information is based on competition results owned and maintained by the World Cube Association,
             published at{' '}
             <a
-              href="https://worldcubeassociation.org/results"
+              href="https://www.worldcubeassociation.org/results/rankings/333/single"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-green-400 hover:text-green-300"
+              className="text-green-400 underline underline-offset-2 hover:text-green-300"
             >
               worldcubeassociation.org/results
             </a>
@@ -253,7 +253,7 @@ export function AboutPage() {
           </p>
           <p className="text-sm text-gray-400">
             The idea of a weighted all-around ranking comes from STUCUBE&apos;s video{' '}
-            <a href={STUCUBE_VIDEO_URL} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300">
+            <a href={STUCUBE_VIDEO_URL} target="_blank" rel="noopener noreferrer" className="text-green-400 underline underline-offset-2 hover:text-green-300">
               When You&apos;re The Best In The World But No One Cares
             </a>
             . The formula on this site is a modified version.
@@ -292,7 +292,7 @@ export function AboutPage() {
             href="https://ko-fi.com/tonyokoo"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#13719F] px-4 py-2 font-semibold text-white transition hover:bg-[#0E6A96]"
           >
             Support on Ko-fi
           </a>

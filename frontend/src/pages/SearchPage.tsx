@@ -112,7 +112,7 @@ export function SearchPage() {
             <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-green-400" />
           )}
         </div>
-        {tooShort && <p className="mt-2 text-sm text-gray-500">Type at least {MIN_QUERY_LENGTH} characters.</p>}
+        {tooShort && <p className="mt-2 text-sm text-gray-400">Type at least {MIN_QUERY_LENGTH} characters.</p>}
       </form>
 
       {error ? (
@@ -124,13 +124,13 @@ export function SearchPage() {
         </div>
       ) : searchedFor !== null && results.length === 0 && !loading ? (
         <div className="card py-10 text-center">
-          <User className="mx-auto mb-3 h-12 w-12 text-gray-500" />
+          <User className="mx-auto mb-3 h-12 w-12 text-gray-400" />
           <h2 className="mb-1 text-lg font-medium text-white">No cubers found for “{searchedFor}”</h2>
           <p className="text-gray-400">Check the spelling, or try a surname or a WCA ID.</p>
         </div>
       ) : results.length > 0 ? (
         <div className={`card overflow-hidden p-0 transition-opacity ${loading ? 'opacity-60' : ''}`}>
-          <p className="border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          <p className="border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-400">
             {results.length === 20 ? 'Top 20 matches by WPS' : `${results.length} match${results.length === 1 ? '' : 'es'}`}
           </p>
           <ul>
@@ -149,13 +149,13 @@ export function SearchPage() {
                       <CountryFlag iso2={cuber.countryIso2} />
                       <span className="truncate font-medium text-white group-hover:text-green-300">{cuber.name}</span>
                     </span>
-                    <span className="block font-mono text-xs text-gray-500">{cuber.wcaId}</span>
+                    <span className="block font-mono text-xs text-gray-400">{cuber.wcaId}</span>
                   </span>
                   <span className="shrink-0 text-right">
                     <span className="block font-semibold tabular-nums text-green-400">
                       {cuber.wpsRank ? cuber.wpsScore.toFixed(2) : '—'}
                     </span>
-                    <span className="block text-xs text-gray-500">WPS</span>
+                    <span className="block text-xs text-gray-400">WPS</span>
                   </span>
                   <ChevronRight className="hidden h-4 w-4 shrink-0 text-gray-600 group-hover:text-gray-400 sm:block" />
                 </Link>

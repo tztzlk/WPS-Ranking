@@ -23,7 +23,7 @@ function WeeklyMoversList({
         {title}
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500">Nobody moved this way in the last 7 days.</p>
+        <p className="text-sm text-gray-400">Nobody moved this way in the last 7 days.</p>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
@@ -39,7 +39,7 @@ function WeeklyMoversList({
                 </div>
                 <div className="truncate font-medium text-gray-200">{item.name}</div>
               </div>
-              <div className="shrink-0 text-xs text-gray-500">{item.personId}</div>
+              <div className="shrink-0 text-xs text-gray-400">{item.personId}</div>
             </Link>
           ))}
         </div>

@@ -158,7 +158,7 @@ export function LeaderboardPage() {
           {subtitle && <p className="mt-1 text-sm text-gray-400">{subtitle}</p>}
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="region-filter" className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <label htmlFor="region-filter" className="text-xs font-medium uppercase tracking-wide text-gray-400">
             Region
           </label>
           <select
