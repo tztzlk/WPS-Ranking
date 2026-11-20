@@ -124,6 +124,37 @@ export function AboutPage() {
         </div>
       </Section>
 
+      <Section title="WPS, Kinch ranks and Sum of Ranks">
+        <p className="mb-4 text-gray-300">
+          Kinch ranks and Sum of Ranks are two other all-around rankings that cubers use. Each one answers a different
+          question.
+        </p>
+        <dl className="space-y-4 text-sm text-gray-300">
+          <div>
+            <dt className="mb-1 font-semibold text-white">Sum of Ranks</dt>
+            <dd>
+              Adds up your world ranks in every event. An event without a result counts as last place. Lower is better.
+              Rank #500 in 3x3 counts the same as #500 in 5x5 Blindfolded, although 3x3 has about 250 times as many
+              ranked people.
+            </dd>
+          </div>
+          <div>
+            <dt className="mb-1 font-semibold text-white">Kinch ranks</dt>
+            <dd>
+              Compares your personal record with the world record in each event and averages the scores over all
+              events. A missing event counts as 0. The score depends on how fast the current record holder is.
+            </dd>
+          </div>
+          <div>
+            <dt className="mb-1 font-semibold text-white">WPS</dt>
+            <dd>
+              Uses world ranks, like Sum of Ranks. Each rank is compared with the number of people in the event, and
+              events with more competitors have a higher weight. A missing event adds 0, like in Kinch ranks.
+            </dd>
+          </div>
+        </dl>
+      </Section>
+
       <Section title="Average or single">
         <p className="text-gray-300">
           Most events use the WCA ranking by average. 3x3, 4x4 and 5x5 Blindfolded, Multi-Blind and Fewest Moves use the

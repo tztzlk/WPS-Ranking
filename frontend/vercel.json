@@ -5,6 +5,51 @@
   "installCommand": "npm ci",
   "rewrites": [
     {
+      "source": "/robots.txt",
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/sitemap.xml"
+    },
+    {
+      "source": "/sitemaps/:file",
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/sitemaps/:file"
+    },
+    {
+      "source": "/profile/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|Google-InspectionTool|GoogleOther|bingbot|BingPreview|YandexBot|YandexRenderResourcesBot|DuckDuckBot|Baiduspider|Applebot|TelegramBot|Discordbot|Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|WhatsApp|redditbot).*"
+        }
+      ],
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/profile/:id"
+    },
+    {
+      "source": "/leaderboard",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|Google-InspectionTool|GoogleOther|bingbot|BingPreview|YandexBot|YandexRenderResourcesBot|DuckDuckBot|Baiduspider|Applebot|TelegramBot|Discordbot|Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|WhatsApp|redditbot).*"
+        }
+      ],
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/leaderboard"
+    },
+    {
+      "source": "/countries",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|Google-InspectionTool|GoogleOther|bingbot|BingPreview|YandexBot|YandexRenderResourcesBot|DuckDuckBot|Baiduspider|Applebot|TelegramBot|Discordbot|Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|WhatsApp|redditbot).*"
+        }
+      ],
+      "destination": "https://wps-ranking-2aqr.vercel.app/seo/countries"
+    },
+    {
       "source": "/leaderboard",
       "destination": "/index.html"
     },
@@ -26,6 +71,10 @@
     },
     {
       "source": "/countries",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],

@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { getProfileByPersonId } from '../services/ogProfile';
 import { asyncRoute } from '../lib/asyncRoute';
+import { getFrontendBaseUrl } from '../lib/siteUrl';
 
 const router = Router();
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
-const DEFAULT_FRONTEND_URL = 'https://wps-ranking.vercel.app';
 
 const CRAWLER_AGENTS = [
   'TelegramBot',
@@ -42,18 +42,6 @@ function getBackendBaseUrl(req: Request): string {
   }
 
   return `http://localhost:${process.env.PORT || 5000}`;
-}
-
-function getFrontendBaseUrl(): string {
-  const configured = process.env.FRONTEND_URL?.trim();
-  if (configured) return configured.replace(/\/$/, '');
-
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
-    .map((origin) => origin.trim().replace(/\/+$/, ''))
-    .filter(Boolean)
-    .filter((origin) => !origin.includes('localhost'));
-
-  return corsOrigins?.[0] ?? DEFAULT_FRONTEND_URL;
 }
 
 router.get('/profile/:personId', asyncRoute(async (req: Request, res: Response, next: NextFunction) => {

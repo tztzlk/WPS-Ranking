@@ -22,18 +22,6 @@ function topPercent(rank: number, total: number): string {
   return `top ${Math.round(pct)}%`;
 }
 
-function getApiBaseOrigin(): string | null {
-  const rawBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (!rawBase) return null;
-
-  try {
-    const parsed = new URL(rawBase, window.location.origin);
-    return `${parsed.protocol}//${parsed.host}`;
-  } catch {
-    return null;
-  }
-}
-
 export function ProfilePage() {
   const { wcaId } = useParams<{ wcaId: string }>();
   const [profile, setProfile] = useState<WPSProfile | null>(null);
@@ -111,7 +99,8 @@ export function ProfilePage() {
   const handleShareProfile = async () => {
     if (!profile) return;
 
-    const shareUrl = `${getApiBaseOrigin() ?? window.location.origin}/profile/${encodeURIComponent(profile.wcaId)}`;
+    // Link previews (Telegram, Discord) get a server-rendered page for this URL; see vercel.json.
+    const shareUrl = `${window.location.origin}/profile/${encodeURIComponent(profile.wcaId)}`;
 
     try {
       if (navigator.share) {

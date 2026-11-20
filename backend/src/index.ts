@@ -12,6 +12,7 @@ import { compareRoutes } from './routes/compare';
 import { cuberRoutes } from './routes/cuber';
 import { ogRoutes } from './routes/og';
 import { ogMetaRoutes } from './routes/ogMeta';
+import { seoRoutes } from './routes/seo';
 import { errorHandler } from './middleware/errorHandler';
 import { DATA_CACHE_CONTROL } from './lib/cache';
 
@@ -36,8 +37,12 @@ const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean)
   : ['http://localhost:3000', 'https://wps-ranking.vercel.app', 'http://localhost:5173'];
 
-app.use(helmet());
 app.use(compression());
+// Crawler pages are the frontend's own HTML served through a proxy, so they must
+// not get the API's security headers (helmet's CSP would block the app's JS and API calls).
+app.use('/seo', seoRoutes);
+
+app.use(helmet());
 app.use(cors({ origin: corsOrigins, credentials: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://wps-ranking.vercel.app/sitemap.xml
