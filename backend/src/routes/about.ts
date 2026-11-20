@@ -1,58 +1,32 @@
 import { Router } from 'express';
 import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
+import { getMetaValues } from '../services/personDb';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 
 /**
  * GET /api/about
- * Get information about WPS formula and philosophy
+ * Formula constants for the About page. The copy itself lives in the frontend.
  */
-router.get('/', (req, res) => {
-  const aboutData = {
-    title: 'About WPS Ranking',
-    description: 'Weighted Performance Scale - A fair ranking system for speedcubers',
-    formula: {
-      description: 'WPS measures all-around competitive strength using official WCA world rankings.',
-      calculation: 'Each event score = weight × (1 − ln(worldRank) / ln(participants + 1))',
-      normalization: 'WPS = sum of event scores / maximum possible × 100',
-      intro: 'WPS measures all-around competitive strength using official WCA world rankings.',
-      steps: [
-        'Each event is scored by how high you rank relative to everyone who has an average in it: world #1 gets the full event weight, last place gets nothing.',
-        'Scores from all events add up, so strong results across many events matter, while a weak result adds almost nothing.',
-        'The result is scaled to 0–100, where 100 means world #1 in every event.'
-      ],
-      formulaBlock: 'eventScore = weight × (1 − ln(worldRank) / ln(participants + 1))\n\nWPS = (sum of event scores / maxPossibleScore) × 100',
-      variables: [
-        { label: 'worldRank', meaning: 'Your official WCA world rank by average in that event' },
-        { label: 'participants', meaning: 'How many people have an official average in that event' },
-        { label: 'weight', meaning: 'Event weight, ordered by how many people compete in the event' },
-        { label: 'maxPossibleScore', meaning: 'Sum of all event weights (world #1 in every event)' }
-      ],
-      credits: 'The idea for a weighted all-around ranking was inspired by the YouTuber STUCUBE. We thank him for the original concept. The formula used on this site has been further modified and adapted for our ranking system.'
-    },
-    philosophy: {
-      fairness: 'Ranks are compared within each event and scaled by the size of its field',
-      versatility: 'Rewards cubers who rank high across many events',
-      transparency: 'Open formula with clear event weights'
-    },
-    eventWeights: EVENT_WEIGHTS,
-    maxScore: MAX_WPS_SCORE,
-    features: [
-      'Global and country leaderboards for every ranked speedcuber',
-      'Event weights based on how many people compete in each event',
-      'Daily updates from the official WCA export',
-      'Search by name, WCA ID, or country',
-      'Detailed profile views with per-event breakdowns'
-    ],
-    benefits: [
-      'Recognizes all-rounders who rank high across many events',
-      'Compares ranks fairly between big and small events',
-      'A result near the bottom of an event adds almost nothing',
-      'Creates new competitive opportunities and recognition'
-    ]
-  };
+router.get(
+  '/',
+  asyncRoute(async (_req, res) => {
+    const meta = await getMetaValues(['eventParticipants', 'generatedAt']);
+    let eventParticipants: Record<string, number> = {};
+    try {
+      eventParticipants = meta.eventParticipants ? JSON.parse(meta.eventParticipants) : {};
+    } catch {
+      eventParticipants = {};
+    }
 
-  res.json(aboutData);
-});
+    res.json({
+      eventWeights: EVENT_WEIGHTS,
+      eventParticipants,
+      maxScore: Math.round(MAX_WPS_SCORE * 100) / 100,
+      generatedAt: meta.generatedAt ?? null,
+    });
+  }),
+);
 
 export { router as aboutRoutes };

@@ -1,17 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  Award,
-  Calculator,
-  ExternalLink,
-  Globe,
-  HeartHandshake,
-  Lightbulb,
-  MessageSquare,
-  RefreshCw,
-  Target,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+import { ExternalLink, MessageSquare } from 'lucide-react';
 import { FormulaBox } from '../components/FormulaBox';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { apiService } from '../services/api';
@@ -20,427 +8,235 @@ import { AboutData, EVENT_NAMES } from '../types';
 const GITHUB_REPO_URL = 'https://github.com/tztzlk/WPS-Ranking';
 const GITHUB_ISSUES_URL = `${GITHUB_REPO_URL}/issues`;
 const GITHUB_NEW_ISSUE_URL = `${GITHUB_REPO_URL}/issues/new`;
+const STUCUBE_VIDEO_URL = 'https://www.youtube.com/watch?v=D9RRDypgBOI';
 
-const howItWorksSteps = [
-  {
-    title: 'Official WCA data only',
-    description:
-      'WPS Ranking uses official WCA results as its source, so the site stays grounded in the same public competition data cubers already trust.',
-    icon: Globe,
-  },
-  {
-    title: 'Average rankings, not singles',
-    description:
-      'The score uses current world average rankings for included events. That keeps the focus on repeatable competitive strength instead of one standout solve.',
-    icon: Target,
-  },
-  {
-    title: 'All-around, scaled by field size',
-    description:
-      'Each event is scored by your rank relative to everyone who competes in it, and all events add up. Ranking high across many events is what moves WPS; a result near the bottom of an event adds almost nothing.',
-    icon: Award,
-  },
-  {
-    title: 'Regular refreshes',
-    description:
-      'The site refreshes from the WCA export pipeline, rebuilds leaderboard data, and updates historical snapshots so rankings and movers stay current.',
-    icon: RefreshCw,
-  },
-];
+const formatWeight = (weight: number) => weight.toFixed(2).replace(/\.?0+$/, '');
+
+function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="card scroll-mt-24">
+      <h2 className="mb-4 text-xl font-bold text-white sm:text-2xl">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
 export function AboutPage() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    void loadAboutData();
+    apiService.getAbout().then(setAboutData, () => setError(true));
   }, []);
 
   usePageMetadata({
-    title: 'About WPS Ranking | WPS Ranking',
+    title: 'How WPS works | WPS Ranking',
     description:
-      'Learn how the Weighted Performance Scale works, where WPS data comes from, how often rankings update, and how to share feedback about the project.',
+      'How the WPS score is calculated from official WCA world ranks by average in 16 events, how event weights are chosen, and where the data comes from.',
     canonicalPath: '/about',
   });
 
-  async function loadAboutData() {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await apiService.getAbout();
-      setAboutData(data);
-    } catch (err) {
-      setError('We could not load the About page data right now.');
-      console.error('Error loading about data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function formatWeight(weight: number) {
-    return weight.toFixed(2).replace(/\.?0+$/, '');
-  }
-
-  if (loading) {
-    return (
-      <div className="py-12 text-center">
-        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-green-400" />
-        <p className="mt-4 text-gray-400">Loading the WPS explainer...</p>
-      </div>
-    );
-  }
-
-  if (error || !aboutData) {
-    return (
-      <div className="py-12 text-center">
-        <p className="text-red-400">{error || 'Failed to load data.'}</p>
-        <button type="button" onClick={() => void loadAboutData()} className="btn-primary mt-4">
-          Try Again
-        </button>
-      </div>
-    );
-  }
+  const maxScore = aboutData ? formatWeight(aboutData.maxScore) : '7.52';
+  // By weight, then by field size, so equal weights still read top-down by popularity.
+  const weights = aboutData
+    ? Object.entries(aboutData.eventWeights).sort(
+        ([ea, a], [eb, b]) =>
+          b - a || (aboutData.eventParticipants?.[eb] ?? 0) - (aboutData.eventParticipants?.[ea] ?? 0),
+      )
+    : [];
+  const maxParticipants = Math.max(1, ...Object.values(aboutData?.eventParticipants ?? {}));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <section className="rounded-2xl border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-8 md:p-10">
-        <div className="max-w-3xl">
-          <div className="mb-3 inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-green-300">
-            How WPS Works
-          </div>
-          <h1 className="mb-4 text-4xl font-bold text-white md:text-5xl">
-            About <span className="text-green-400">WPS Ranking</span>
-          </h1>
-          <p className="text-lg leading-relaxed text-gray-300">{aboutData.description}</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a href="#feedback" className="btn-primary inline-flex items-center justify-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              <span>Share Feedback</span>
-            </a>
-            <a
-              href={GITHUB_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary inline-flex items-center justify-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span>Project Repository</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2 className="mb-6 text-2xl font-bold text-white">Our Philosophy</h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="text-center">
-            <Target className="mx-auto mb-4 h-12 w-12 text-green-400" />
-            <h3 className="mb-2 text-lg font-semibold text-white">Fairness</h3>
-            <p className="text-gray-300">{aboutData.philosophy.fairness}</p>
-          </div>
-          <div className="text-center">
-            <Award className="mx-auto mb-4 h-12 w-12 text-green-400" />
-            <h3 className="mb-2 text-lg font-semibold text-white">Versatility</h3>
-            <p className="text-gray-300">{aboutData.philosophy.versatility}</p>
-          </div>
-          <div className="text-center">
-            <Calculator className="mx-auto mb-4 h-12 w-12 text-green-400" />
-            <h3 className="mb-2 text-lg font-semibold text-white">Transparency</h3>
-            <p className="text-gray-300">{aboutData.philosophy.transparency}</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">How WPS Is Calculated</h2>
-            <p className="mt-2 max-w-3xl text-gray-400">
-              WPS is designed to reflect current all-around competitive strength, not just one-event specialization.
-            </p>
-          </div>
-          <div className="rounded-full border border-gray-700 bg-gray-800/80 px-4 py-2 text-sm text-gray-300">
-            Uses official WCA average rankings
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {howItWorksSteps.map((step) => {
-            const Icon = step.icon;
-            return (
-              <div key={step.title} className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="rounded-lg bg-green-500/10 p-2">
-                    <Icon className="h-5 w-5 text-green-400" />
-                  </div>
-                  <h3 className="font-semibold text-white">{step.title}</h3>
-                </div>
-                <p className="text-sm leading-relaxed text-gray-400">{step.description}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border border-gray-700 bg-gray-800/40 p-6">
-            <h3 className="mb-3 text-lg font-semibold text-white">Mathematical Definition</h3>
-            <FormulaBox />
-            <p className="mt-3 text-center text-sm text-gray-400">R<sub>e</sub> is your world rank by average, N<sub>e</sub> the number of people with an average in the event, w<sub>e</sub> the event weight; ln is the natural logarithm.</p>
-          </div>
-
-          <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-800/40 p-6">
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-white">What the score means</h3>
-              <div className="space-y-3 text-sm leading-relaxed text-gray-300">
-                <p>
-                  Higher WPS means ranking higher across more events. 100 would be world #1 in every event.
-                </p>
-                <p>
-                  World #1 in an event earns its full weight and last place earns nothing. The logarithm makes climbing near the top worth more than climbing at the bottom, and the same rank is worth more in a bigger event.
-                </p>
-                <p>
-                  WPS is not a GOAT metric. It is a current-form ranking of all-around strength.
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
-              <h4 className="font-semibold text-white">Update rhythm</h4>
-              <p className="mt-2 text-sm text-gray-400">
-                Rankings refresh from the WCA export pipeline and rebuild leaderboard snapshots so the site stays fast and reasonably current.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2 className="mb-6 text-2xl font-bold text-white">What WPS Measures</h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
-            <h3 className="mb-3 text-lg font-semibold text-green-400">WPS measures</h3>
-            <ul className="space-y-2 text-sm text-gray-300">
-              <li>Current all-around strength across the WCA events.</li>
-              <li>How high you rank relative to the size of each event.</li>
-              <li>Repeatable performance using official average rankings.</li>
-            </ul>
-          </div>
-          <div className="rounded-xl border border-gray-700 bg-gray-800/50 p-5">
-            <h3 className="mb-3 text-lg font-semibold text-amber-400">WPS does not measure</h3>
-            <ul className="space-y-2 text-sm text-gray-300">
-              <li>Historical legacy or greatest-of-all-time status.</li>
-              <li>Past world records or lifetime peak accomplishments.</li>
-              <li>Single-result explosiveness without broad event strength.</li>
-              <li>Simply entering events: a result near the bottom is worth almost nothing.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2 className="mb-6 text-2xl font-bold text-white">Event Weights</h2>
-        <p className="mb-6 max-w-3xl text-gray-300">
-          Weights follow how many people compete in each event: the more popular the event, the higher its weight.
+    <div className="mx-auto max-w-4xl space-y-6">
+      <section className="rounded-2xl border border-gray-700 bg-gradient-to-br from-gray-800 to-gray-900 p-6 sm:p-10">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-green-300">About</p>
+        <h1 className="mb-4 text-3xl font-bold text-white sm:text-5xl">
+          How <span className="text-green-400">WPS</span> works
+        </h1>
+        <p className="max-w-2xl text-lg leading-relaxed text-gray-300">
+          WPS gives every cuber one score from 0 to 100. It is based on their official WCA world ranks by average in 16
+          events. A high rank in a big event counts more than the same rank in a small one.
         </p>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {Object.entries(aboutData.eventWeights)
-            .sort(([, a], [, b]) => b - a)
-            .map(([eventId, weight]) => (
-              <div key={eventId} className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{EVENT_NAMES[eventId] || eventId}</h3>
-                    <p className="text-sm text-gray-400">Event ID: {eventId}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-green-400">{formatWeight(weight)}</div>
-                    <div className="text-sm text-gray-400">Weight</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <a href="#feedback" className="btn-primary inline-flex items-center justify-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Send feedback
+          </a>
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary inline-flex items-center justify-center gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Source code
+          </a>
         </div>
       </section>
 
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div className="card">
-          <h2 className="mb-6 text-2xl font-bold text-white">Platform Features</h2>
-          <div className="space-y-4">
-            {aboutData.features.map((feature) => (
-              <div key={feature} className="flex items-start gap-3">
-                <TrendingUp className="mt-1 h-5 w-5 shrink-0 text-green-400" />
-                <span className="text-gray-300">{feature}</span>
-              </div>
+      <Section title="The formula">
+        <ol className="mb-6 space-y-3 text-gray-300">
+          {[
+            'For each event, your world rank by average is compared with the number of people who have an average in that event. World #1 gets the full event weight. Last place gets 0.',
+            'The scores of all your events are added up.',
+            `The total is divided by the maximum possible score, ${maxScore}, and multiplied by 100. A WPS of 100 would mean world #1 in every event.`,
+          ].map((step, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-sm font-semibold text-green-300">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <FormulaBox />
+        <p className="mt-3 text-sm text-gray-400">
+          R<sub>e</sub> is your world rank by average in event e, N<sub>e</sub> is the number of people with an average
+          in it, and w<sub>e</sub> is the event weight. ln is the natural logarithm.
+        </p>
+        <p className="mt-4 text-sm leading-relaxed text-gray-300">
+          The logarithm makes a climb near the top worth more than the same climb near the bottom. In 3x3, going from #20
+          to #10 adds 0.73 WPS. Going from #20,010 to #20,000 adds less than 0.01 WPS.
+        </p>
+      </Section>
+
+      <Section title="What WPS measures">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-5">
+            <h3 className="mb-3 font-semibold text-green-300">It measures</h3>
+            <ul className="list-disc space-y-2 pl-5 text-sm text-gray-300">
+              <li>How high you rank across all the events you compete in.</li>
+              <li>Consistency. Ranks are by average, so one lucky single does not count.</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+            <h3 className="mb-3 font-semibold text-amber-300">It does not measure</h3>
+            <ul className="list-disc space-y-2 pl-5 text-sm text-gray-300">
+              <li>Records or career peaks. WPS uses current ranks.</li>
+              <li>
+                Strength in one event alone. The world #1 in 3x3 ranks below many all-rounders because they compete in
+                fewer events.
+              </li>
+              <li>Entering events. A result near the bottom of an event adds almost nothing.</li>
+            </ul>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Event weights">
+        <p className="mb-4 text-gray-300">
+          A weight follows how many people compete in the event. 3x3 has the most competitors and weight 1. 5x5
+          Blindfolded has the fewest and weight 0.1.
+        </p>
+        {error ? (
+          <p className="text-sm text-red-400">The weights could not be loaded. Refresh the page to try again.</p>
+        ) : !aboutData ? (
+          <div className="space-y-2" aria-busy="true">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="h-8 animate-pulse rounded bg-gray-700/50" />
             ))}
           </div>
-        </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-700 text-left text-xs uppercase tracking-wide text-gray-500">
+                <th className="py-2 pr-3 font-medium">Event</th>
+                <th className="py-2 pr-3 font-medium">Competitors</th>
+                <th className="py-2 text-right font-medium">Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weights.map(([eventId, weight]) => {
+                const n = aboutData.eventParticipants?.[eventId] ?? 0;
+                return (
+                  <tr key={eventId} className="border-b border-gray-700/50 last:border-b-0">
+                    <td className="py-2 pr-3 text-white">{EVENT_NAMES[eventId] || eventId}</td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-3">
+                        <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-gray-700 sm:block" aria-hidden="true">
+                          <div className="h-full rounded-full bg-gray-400" style={{ width: `${(n / maxParticipants) * 100}%` }} />
+                        </div>
+                        <span className="tabular-nums text-gray-400">{n ? n.toLocaleString('en-US') : '—'}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 text-right font-semibold tabular-nums text-green-400">{formatWeight(weight)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </Section>
 
-        <div className="card">
-          <h2 className="mb-6 text-2xl font-bold text-white">Why WPS?</h2>
-          <div className="space-y-4">
-            {aboutData.benefits.map((benefit) => (
-              <div key={benefit} className="flex items-start gap-3">
-                <Users className="mt-1 h-5 w-5 shrink-0 text-green-400" />
-                <span className="text-gray-300">{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="card bg-gray-800/50">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="flex items-start gap-4">
-            <Globe className="mt-1 h-8 w-8 shrink-0 text-green-400" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Data Source</h3>
-              <p className="mt-2 text-gray-300">
-                All rankings are calculated from official{' '}
-                <a
-                  href="https://www.worldcubeassociation.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-400 hover:text-green-300"
-                >
-                  World Cube Association
-                </a>{' '}
-                data. WPS Ranking is an independent project and is not an official WCA product.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4">
-            <HeartHandshake className="mt-1 h-8 w-8 shrink-0 text-green-400" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Why I built it</h3>
-              <p className="mt-2 text-gray-300">
-                WPS Ranking exists to make all-around cubing performance easier to explore, compare, and share in a way that feels transparent and fun.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="card bg-gray-800/50">
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Support WPS Ranking</h2>
-            <p className="mt-2 text-gray-300">
-              WPS Ranking is an independent project. Donations help keep hosting, the database, and refresh jobs running smoothly.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-              <h3 className="font-semibold text-white">Infrastructure</h3>
-              <p className="mt-2 text-sm text-gray-400">
-                Hosting, database costs, refresh jobs, and faster infrastructure for more reliable leaderboard loads.
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-              <h3 className="font-semibold text-white">Product quality</h3>
-              <p className="mt-2 text-sm text-gray-400">
-                Donations give the project room for polish, mobile improvements, and better ranking history over time.
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-              <h3 className="font-semibold text-white">Public and free</h3>
-              <p className="mt-2 text-sm text-gray-400">
-                Support helps keep the core experience open and accessible without putting the ranking behind a paywall.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-lg border border-green-500/20 bg-green-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-semibold text-white">Help keep WPS Ranking online and improving.</p>
-              <p className="text-sm text-gray-400">Support hosting, database costs, and continued development on Ko-fi.</p>
-            </div>
+      <Section title="Data and updates">
+        <div className="space-y-3 text-gray-300">
+          <p>
+            Rankings come from the official{' '}
             <a
-              href="https://ko-fi.com/tonyokoo"
+              href="https://www.worldcubeassociation.org/export/results"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
+              className="text-green-400 hover:text-green-300"
             >
-              Support on Ko-fi
+              WCA results export
             </a>
-          </div>
+            . Every day at 02:00 UTC a job checks for a new export and recalculates all rankings.
+            {aboutData?.generatedAt && (
+              <>
+                {' '}
+                The current data is from{' '}
+                {new Date(aboutData.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}.
+              </>
+            )}
+          </p>
+          <p>WPS Ranking is an independent project and is not affiliated with the WCA.</p>
+          <p className="text-sm text-gray-400">
+            The idea of a weighted all-around ranking comes from STUCUBE&apos;s video{' '}
+            <a href={STUCUBE_VIDEO_URL} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300">
+              When You&apos;re The Best In The World But No One Cares
+            </a>
+            . The formula on this site is a modified version.
+          </p>
         </div>
-      </section>
+      </Section>
 
-      <section id="feedback" className="card">
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Feedback and Community</h2>
-            <p className="mt-2 max-w-3xl text-gray-400">
-              If something looks wrong, feels confusing, or you have an idea that would make the site better, I want to hear it.
-            </p>
-          </div>
-          <div className="rounded-full border border-gray-700 bg-gray-800/80 px-4 py-2 text-sm text-gray-300">
-            GitHub Issues is the main feedback channel
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
+      <Section id="feedback" title="Feedback">
+        <p className="mb-4 text-gray-300">Found wrong data or a bug, or have an idea? Open an issue on GitHub.</p>
+        <div className="flex flex-col gap-3 sm:flex-row">
           <a
             href={GITHUB_NEW_ISSUE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-red-500/40 hover:bg-gray-800"
+            className="btn-primary inline-flex items-center justify-center gap-2"
           >
-            <MessageSquare className="mb-3 h-6 w-6 text-red-400" />
-            <h3 className="font-semibold text-white">Report a bug</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Broken page, wrong data, unstable loading, layout issue, or anything that feels off.
-            </p>
+            <MessageSquare className="h-4 w-4" />
+            Open an issue
           </a>
-
-          <a
-            href={GITHUB_NEW_ISSUE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-green-500/40 hover:bg-gray-800"
-          >
-            <Lightbulb className="mb-3 h-6 w-6 text-green-400" />
-            <h3 className="font-semibold text-white">Suggest a feature</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Ideas for profiles, comparison tools, insights, mobile UX, data trust, or anything else that would help cubers.
-            </p>
-          </a>
-
           <a
             href={GITHUB_ISSUES_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-xl border border-gray-700 bg-gray-800/60 p-5 transition hover:border-sky-500/40 hover:bg-gray-800"
+            className="btn-secondary inline-flex items-center justify-center gap-2"
           >
-            <ExternalLink className="mb-3 h-6 w-6 text-sky-400" />
-            <h3 className="font-semibold text-white">View open issues</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Check what is already reported, what is being improved, and where the project is heading next.
-            </p>
+            <ExternalLink className="h-4 w-4" />
+            See open issues
           </a>
         </div>
-      </section>
+      </Section>
 
-      <section className="card">
-        <h2 className="mb-6 text-2xl font-bold text-white">Recent Updates</h2>
-        <div className="space-y-4">
-          {[
-            'Added daily rank change indicators to the leaderboard.',
-            'Added weekly movers highlights on the homepage.',
-            'Added profile history charts with 7D, 30D, 90D, and All ranges.',
-            'Improved refresh reliability so history snapshots continue even when the export hash is unchanged.',
-          ].map((item) => (
-            <div key={item} className="flex items-start gap-3">
-              <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-green-400" />
-              <p className="text-gray-300">{item}</p>
-            </div>
-          ))}
+      <Section title="Support the project">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-gray-300">The site runs on free hosting. Donations on Ko-fi pay for development time.</p>
+          <a
+            href="https://ko-fi.com/tonyokoo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#29ABE0] px-4 py-2 font-semibold text-white transition hover:bg-[#1f93c4]"
+          >
+            Support on Ko-fi
+          </a>
         </div>
-      </section>
+      </Section>
     </div>
   );
 }

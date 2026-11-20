@@ -12,7 +12,7 @@ function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
-function ProfileCard({ profile, label }: { profile: WPSProfile; label: string }) {
+function ProfileCard({ profile }: { profile: WPSProfile }) {
   const formatScore = (n: number) => n.toFixed(2);
   const globalRankText =
     (profile.totalRanked ?? 0) > 0 && profile.globalWpsRank != null && profile.globalWpsRank > 0
@@ -25,7 +25,6 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
 
   return (
     <div className="card flex-1 min-w-0">
-      <div className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">{label}</div>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center shrink-0">
           <Trophy className="w-6 h-6 text-gray-300" />
@@ -47,11 +46,11 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
           <span className="text-2xl font-bold text-green-400">{formatScore(profile.wpsScore)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400">Global Rank</span>
+          <span className="text-gray-400">World rank</span>
           <span>{globalRankText}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400">Country Rank</span>
+          <span className="text-gray-400">Country rank</span>
           <span>{countryRankText}</span>
         </div>
       </div>
@@ -59,7 +58,7 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
         to={`/profile/${profile.wcaId}`}
         className="inline-flex items-center gap-1 mt-4 text-green-400 hover:text-green-300 text-sm"
       >
-        View full profile →
+        Open profile
       </Link>
     </div>
   );
@@ -78,19 +77,19 @@ export function ComparePage() {
     const l = leftRaw.trim().toUpperCase();
     const r = rightRaw.trim().toUpperCase();
     if (!l || !r) {
-      setError('Enter both WCA IDs');
+      setError('Enter two WCA IDs.');
       return;
     }
     if (!isValidWCAId(l)) {
-      setError('Invalid left WCA ID (format: 2019ABCD01)');
+      setError('The first WCA ID should look like 2017GARR05.');
       return;
     }
     if (!isValidWCAId(r)) {
-      setError('Invalid right WCA ID (format: 2019ABCD01)');
+      setError('The second WCA ID should look like 2017GARR05.');
       return;
     }
     if (l === r) {
-      setError('Enter two different WCA IDs');
+      setError('Enter two different WCA IDs.');
       return;
     }
 
@@ -106,7 +105,7 @@ export function ComparePage() {
       const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
       const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { data?: { error?: string } } }) : null;
       const msg = userMsg ?? ax?.response?.data?.error;
-      setError(typeof msg === 'string' ? msg : 'Failed to load comparison');
+      setError(typeof msg === 'string' ? msg : 'The comparison could not be loaded.');
       setData(null);
     } finally {
       setLoading(false);
@@ -141,7 +140,7 @@ export function ComparePage() {
 
   usePageMetadata({
     title: 'Compare Cubers | WPS Ranking',
-    description: 'Compare two speedcubers side by side using WPS scores, global rank, and country rank.',
+    description: 'Compare two speedcubers by WPS, world rank, and country rank.',
     canonicalPath: '/compare',
   });
 
@@ -150,10 +149,10 @@ export function ComparePage() {
       <div className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 flex items-center justify-center gap-2">
           <GitCompare className="w-9 h-9 text-green-400" />
-          Compare <span className="text-green-400">Cubers</span>
+          Compare <span className="text-green-400">cubers</span>
         </h1>
         <p className="text-lg text-gray-300">
-          Enter two WCA IDs to compare WPS and ranks side-by-side
+          Enter two WCA IDs to compare their WPS and ranks.
         </p>
       </div>
 
@@ -162,7 +161,7 @@ export function ComparePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="left" className="block text-sm font-medium text-gray-400 mb-1">
-                Left WCA ID
+                First cuber
               </label>
               <input
                 id="left"
@@ -175,7 +174,7 @@ export function ComparePage() {
             </div>
             <div>
               <label htmlFor="right" className="block text-sm font-medium text-gray-400 mb-1">
-                Right WCA ID
+                Second cuber
               </label>
               <input
                 id="right"
@@ -198,7 +197,7 @@ export function ComparePage() {
             {loading ? (
               <>
                 <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                Comparing...
+                Comparing…
               </>
             ) : (
               <>
@@ -238,8 +237,8 @@ export function ComparePage() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <ProfileCard profile={data.left} label="Left" />
-            <ProfileCard profile={data.right} label="Right" />
+            <ProfileCard profile={data.left} />
+            <ProfileCard profile={data.right} />
           </div>
         </div>
       )}

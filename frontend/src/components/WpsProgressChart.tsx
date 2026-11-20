@@ -112,7 +112,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (loadError) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        Unable to load history data.
+        The history could not be loaded. Refresh the page to try again.
       </div>
     );
   }
@@ -120,7 +120,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (data.length === 0) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        No history data available for the last 180 days.
+        No history for the last 180 days.
       </div>
     );
   }
@@ -128,7 +128,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (data.length === 1) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        Only one historical snapshot is available so far. More WPS history will appear after future daily refreshes.
+        The chart needs at least two days of data. A new point is added after each daily update.
       </div>
     );
   }
@@ -157,11 +157,11 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
     return (
       <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
         <div className="flex flex-col gap-4 border-b border-gray-700 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <h3 className="text-lg font-semibold text-white">WPS Progress</h3>
+          <h3 className="text-lg font-semibold text-white">WPS history</h3>
           {controls}
         </div>
         <div className="px-6 py-8 text-center text-gray-400">
-          Not enough snapshots for the selected range yet.
+          Not enough data for this range yet. Pick a longer range.
         </div>
       </div>
     );
@@ -175,7 +175,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
       <div className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm shadow-lg">
         <div className="text-gray-300">{formatDate(point.date)}</div>
         <div className="mt-1 text-white">WPS: {point.wps.toFixed(2)}</div>
-        <div className="text-gray-400">Global rank: #{point.globalRank.toLocaleString()}</div>
+        <div className="text-gray-400">World rank: #{point.globalRank.toLocaleString()}</div>
         <div className="text-gray-400">
           Country rank: {point.countryRank != null ? `#${point.countryRank.toLocaleString()}` : '—'}
         </div>
@@ -186,7 +186,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
       <div className="flex flex-col gap-4 border-b border-gray-700 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <h3 className="text-lg font-semibold text-white">WPS Progress</h3>
+        <h3 className="text-lg font-semibold text-white">WPS history</h3>
         {controls}
       </div>
       <div className="h-72 p-4">

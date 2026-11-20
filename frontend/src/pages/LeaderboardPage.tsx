@@ -50,9 +50,9 @@ export function LeaderboardPage() {
         (err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
             ((err as { response?: { status?: number } }).response?.status === 503
-              ? 'Leaderboard data is temporarily unavailable. Please refresh after the next data update.'
-              : 'Failed to load leaderboard')
-          : 'Failed to load leaderboard');
+              ? 'The leaderboard is empty right now. It fills after the next daily update.'
+              : 'The leaderboard could not be loaded.')
+          : 'The leaderboard could not be loaded.');
       setError(message);
       setData(null);
     } finally {
@@ -94,7 +94,7 @@ export function LeaderboardPage() {
   const isFiltered = selectedCountry !== ALL;
   const selectedCountryName =
     countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
-  const pageTitle = isFiltered ? `WPS Leaderboard - ${selectedCountryName}` : 'Global WPS Leaderboard';
+  const pageTitle = isFiltered ? `${selectedCountryName} leaderboard` : 'World leaderboard';
   // The API's totalRanked is the global count, so it is only shown unfiltered.
   const totalRanked = isFiltered ? undefined : data?.totalRanked;
   const subtitle = [
@@ -109,8 +109,8 @@ export function LeaderboardPage() {
   usePageMetadata({
     title: `${pageTitle} | WPS Ranking`,
     description: isFiltered
-      ? `Top WPS-ranked speedcubers from ${selectedCountryName}. Browse ranks, countries, and weighted performance scores.`
-      : 'Browse the global WPS leaderboard for speedcubers, including ranks, countries, WCA IDs, and weighted performance scores.',
+      ? `The top speedcubers from ${selectedCountryName} by WPS, an all-around score from official WCA ranks.`
+      : 'The top speedcubers in the world by WPS, an all-around score from official WCA ranks in 16 events.',
     canonicalPath: isFiltered ? `/leaderboard?country=${encodeURIComponent(selectedCountry)}` : '/leaderboard',
   });
 
@@ -134,7 +134,7 @@ export function LeaderboardPage() {
         <div className="card py-12 text-center">
           <p className="text-red-400">{error ?? 'Failed to load data'}</p>
           <button type="button" onClick={() => loadData(selectedCountry)} className="btn-primary mt-4">
-            Try Again
+            Try again
           </button>
         </div>
       </div>

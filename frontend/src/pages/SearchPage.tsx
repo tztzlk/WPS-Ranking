@@ -85,7 +85,7 @@ export function SearchPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h1 className="mb-2 text-3xl font-bold text-white md:text-4xl">
-          Search <span className="text-green-400">Cubers</span>
+          Search <span className="text-green-400">cubers</span>
         </h1>
         <p className="text-gray-300">Find a cuber by name, surname, WCA ID, or country code</p>
       </div>

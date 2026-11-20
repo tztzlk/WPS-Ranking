@@ -33,18 +33,18 @@ export class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </h1>
             <p className="text-gray-400 mb-6">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+              The page crashed. Refresh it to try again.
             </p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary flex items-center space-x-2 mx-auto"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Refresh Page</span>
+              <span>Refresh page</span>
             </button>
             {import.meta.env.DEV && this.state.error && (
               <details className="mt-6 text-left">
-                <summary className="text-gray-400 cursor-pointer">Error Details</summary>
+                <summary className="text-gray-400 cursor-pointer">Error details</summary>
                 <pre className="mt-2 text-xs text-red-400 bg-gray-800 p-4 rounded overflow-auto">
                   {this.state.error.stack}
                 </pre>

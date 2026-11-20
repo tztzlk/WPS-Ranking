@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Trophy, Search, TrendingUp, Users, Award, Layers } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Trophy, Search, TrendingUp, Users, Layers, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheItem } from '../types';
 import { RankingList } from '../components/RankingList';
@@ -23,7 +23,7 @@ function WeeklyMoversList({
         {title}
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-500">No weekly movement data available.</p>
+        <p className="text-sm text-gray-500">Nobody moved this way in the last 7 days.</p>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
@@ -56,6 +56,8 @@ export function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [totalRanked, setTotalRanked] = useState<number | null>(null);
   const [totalCountries, setTotalCountries] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadLeaderboard();
@@ -79,7 +81,7 @@ export function HomePage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } })
           : null;
-      setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load leaderboard');
+      setError(userMsg ?? ax?.response?.data?.error ?? 'The leaderboard could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -88,9 +90,9 @@ export function HomePage() {
   const formatCount = (n: number | null) => (n ? n.toLocaleString('en-US') : '—');
 
   usePageMetadata({
-    title: 'WPS Ranking | Global Speedcubing Leaderboard',
+    title: 'WPS Ranking | All-around speedcubing leaderboard',
     description:
-      'Track the Weighted Performance Scale leaderboard for speedcubers worldwide, explore weekly movers, and search for your WCA ranking.',
+      'An all-around ranking of speedcubers. WPS turns official WCA world ranks by average in 16 events into one score. Find any cuber by name or WCA ID.',
     canonicalPath: '/',
   });
 
@@ -98,21 +100,43 @@ export function HomePage() {
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold leading-tight text-white md:text-6xl">
-          Global Rankings for <span className="text-green-400">Speedcubers</span>
+          All-around rankings for <span className="text-green-400">speedcubers</span>
         </h1>
         <p className="mx-auto mb-6 max-w-2xl text-lg text-gray-300 md:text-xl">
-          WPS Ranking measures all-around speedcubing strength using weighted WCA event rankings, not just a single specialty.
+          WPS turns your official WCA world ranks in 16 events into one score.
         </p>
-        <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-          <Link to="/search" className="btn-primary flex items-center justify-center space-x-2">
-            <Search className="h-5 w-5" />
-            <span>Search Your Rank</span>
-          </Link>
-          <Link to="/about" className="btn-secondary flex items-center justify-center space-x-2">
-            <Award className="h-5 w-5" />
-            <span>Why WPS Is Different</span>
-          </Link>
-        </div>
+        <form
+          role="search"
+          className="mx-auto flex max-w-xl gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const q = searchQuery.trim();
+            navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+          }}
+        >
+          <label htmlFor="home-search" className="sr-only">
+            Find a cuber
+          </label>
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              id="home-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Name, surname or WCA ID"
+              autoComplete="off"
+              className="input-field w-full py-3 pl-10"
+            />
+          </div>
+          <button type="submit" className="btn-primary px-5">
+            Find
+          </button>
+        </form>
+        <Link to="/about" className="mt-4 inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white">
+          How WPS works
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
@@ -132,10 +156,7 @@ export function HomePage() {
       <div className="card">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Top 5 Cubers Worldwide</h2>
-            <p className="mt-2 max-w-3xl text-gray-400">
-              The current top five cubers by weighted all-around performance.
-            </p>
+            <h2 className="text-2xl font-bold text-white">Top 5 in the world</h2>
           </div>
         </div>
 
@@ -149,7 +170,7 @@ export function HomePage() {
           <div className="py-12 text-center">
             <p className="text-red-400">{error}</p>
             <button type="button" onClick={() => loadLeaderboard()} className="btn-primary mt-4">
-              Try Again
+              Try again
             </button>
           </div>
         ) : (
@@ -161,7 +182,7 @@ export function HomePage() {
             <div className="mt-6 flex flex-col items-center gap-2">
               <Link to="/leaderboard" className="btn-primary flex w-full items-center justify-center space-x-2 sm:w-auto">
                 <TrendingUp className="h-5 w-5" />
-                <span>View Full Leaderboard</span>
+                <span>Full leaderboard</span>
               </Link>
             </div>
 
@@ -169,14 +190,14 @@ export function HomePage() {
             <div className="mt-8 border-t border-gray-700 pt-6">
               <div className="mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-400" />
-                <h3 className="text-xl font-semibold text-white">Biggest Movers This Week</h3>
+                <h3 className="text-xl font-semibold text-white">Biggest movers this week</h3>
               </div>
               <p className="mb-4 max-w-3xl text-sm text-gray-400">
-                These are the largest weekly rank changes based on historical snapshots. It helps surface momentum, not just the current order.
+                The largest changes in world rank over the last 7 days.
               </p>
               <div className="grid gap-4 md:grid-cols-2">
-                <WeeklyMoversList title="Movers Up" items={biggestMoversUp} direction="up" />
-                <WeeklyMoversList title="Movers Down" items={biggestMoversDown} direction="down" />
+                <WeeklyMoversList title="Up" items={biggestMoversUp} direction="up" />
+                <WeeklyMoversList title="Down" items={biggestMoversDown} direction="down" />
               </div>
             </div>
             )}
@@ -184,15 +205,6 @@ export function HomePage() {
         )}
       </div>
 
-      <div className="rounded-lg bg-gray-800 p-8 text-center">
-        <h3 className="mb-4 text-2xl font-bold text-white">Ready to Find Your Rank?</h3>
-        <p className="mb-6 text-gray-300">
-          Search for your WCA ID or name to see your WPS score, global standing, and profile history over time.
-        </p>
-        <Link to="/search" className="btn-primary inline-flex w-full items-center justify-center sm:w-auto">
-          Search Now
-        </Link>
-      </div>
     </div>
   );
 }

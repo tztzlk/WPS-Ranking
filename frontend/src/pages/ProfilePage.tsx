@@ -98,7 +98,7 @@ export function ProfilePage() {
           ? (err as { response?: { data?: { error?: string } } })
           : null;
 
-      setError(userMsg ?? ax?.response?.data?.error ?? 'Failed to load profile');
+      setError(userMsg ?? ax?.response?.data?.error ?? 'The profile could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ export function ProfilePage() {
     title: profile ? `${profile.name} | WPS Ranking` : 'Profile | WPS Ranking',
     description: profile
       ? `${profile.name} ${profile.countryName ? `from ${profile.countryName} ` : ''}has a WPS score of ${profile.wpsScore.toFixed(2)}. View current rank, history, and score breakdown.`
-      : 'View a speedcuber profile with WPS score, current rank, and ranking history.',
+      : 'A speedcuber profile with WPS score, world and country rank, and history.',
     canonicalPath: profile ? `/profile/${encodeURIComponent(profile.wcaId)}` : wcaId ? `/profile/${encodeURIComponent(wcaId)}` : '/profile',
   });
 
@@ -150,9 +150,9 @@ export function ProfilePage() {
   if (error || !profile) {
     return (
       <div className="py-12 text-center">
-        <p className="mb-4 text-red-400">{error || 'Profile not found'}</p>
-        <Link to="/leaderboard" className="btn-primary">
-          Back to Leaderboard
+        <p className="mb-4 text-red-400">{error || 'No cuber with this WCA ID.'}</p>
+        <Link to="/search" className="btn-primary">
+          Search cubers
         </Link>
       </div>
     );
@@ -271,7 +271,7 @@ export function ProfilePage() {
             onClick={() => setShowBreakdown((value) => !value)}
             className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
           >
-            <span className="font-medium">{showBreakdown ? 'Hide WPS calculation' : 'Show WPS calculation'}</span>
+            <span className="font-medium">{showBreakdown ? 'Hide WPS breakdown' : 'Show WPS breakdown'}</span>
             {showBreakdown ? (
               <ChevronUp className="h-5 w-5 shrink-0 text-gray-400" />
             ) : (
@@ -280,10 +280,12 @@ export function ProfilePage() {
           </button>
           {showBreakdown && (
             <div className="space-y-4 border-t border-gray-700 px-6 py-5">
-              <h3 className="text-lg font-semibold text-white">WPS Calculation Breakdown</h3>
               <p className="text-sm text-gray-300">
-                Each event is scored by the cuber&apos;s world rank relative to everyone with an average in it, times the
-                event weight. The contributions of all events add up to WPS.
+                Each event scores the cuber&apos;s world rank against everyone with an average in it, times the event
+                weight. The contributions of all events add up to WPS.{' '}
+                <Link to="/about" className="text-green-400 hover:text-green-300">
+                  How WPS works
+                </Link>
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
@@ -341,15 +343,9 @@ export function ProfilePage() {
                   <span className="text-white">{breakdown.events[0]?.eventName ?? '—'}</span>
                 </span>
                 <span>
-                  <span className="text-gray-500">Best world rank used:</span>{' '}
+                  <span className="text-gray-500">Best world rank:</span>{' '}
                   <span className="text-white">
                     #{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}
-                  </span>
-                </span>
-                <span>
-                  <span className="text-gray-500">Snapshot date:</span>{' '}
-                  <span className="text-white">
-                    {profile.lastUpdated ? new Date(profile.lastUpdated).toLocaleDateString() : '—'}
                   </span>
                 </span>
               </div>
@@ -358,16 +354,6 @@ export function ProfilePage() {
         </div>
       )}
 
-      <div className="card bg-gray-800/50">
-        <h3 className="mb-4 text-lg font-semibold text-white">About WPS Score</h3>
-        <p className="mb-4 text-gray-300">
-          The Weighted Performance Scale (WPS) scores each event by your world rank relative to everyone who competes in it,
-          weighted by how popular the event is, and adds up all events.
-        </p>
-        <Link to="/about" className="text-green-400 hover:text-green-300">
-          Learn more about the WPS formula →
-        </Link>
-      </div>
     </div>
   );
 }

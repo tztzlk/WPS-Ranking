@@ -22,27 +22,11 @@ export interface SearchResult {
 }
 
 export interface AboutData {
-  title: string;
-  description: string;
-  formula: {
-    description: string;
-    calculation: string;
-    normalization: string;
-    intro?: string;
-    steps?: string[];
-    formulaBlock?: string;
-    variables?: { label: string; meaning: string }[];
-    credits?: string;
-  };
-  philosophy: {
-    fairness: string;
-    versatility: string;
-    transparency: string;
-  };
   eventWeights: Record<string, number>;
+  /** People with an average in each event (size of the field). */
+  eventParticipants: Record<string, number>;
   maxScore: number;
-  features: string[];
-  benefits: string[];
+  generatedAt: string | null;
 }
 
 /** Cached Top-100 leaderboard from GET /api/leaderboard */
@@ -106,21 +90,21 @@ export interface ProfileHistoryItem {
 }
 
 export const EVENT_NAMES: Record<string, string> = {
-  '333': '3x3x3 Cube',
-  '222': '2x2x2 Cube',
-  '444': '4x4x4 Cube',
-  '555': '5x5x5 Cube',
-  '666': '6x6x6 Cube',
-  '777': '7x7x7 Cube',
-  '333bf': '3x3x3 Blindfolded',
-  '333fm': '3x3x3 Fewest Moves',
-  '333oh': '3x3x3 One-Handed',
+  '333': '3x3 Cube',
+  '222': '2x2 Cube',
+  '444': '4x4 Cube',
+  '555': '5x5 Cube',
+  '666': '6x6 Cube',
+  '777': '7x7 Cube',
+  '333bf': '3x3 Blindfolded',
+  '333fm': '3x3 Fewest Moves',
+  '333oh': '3x3 One-Handed',
   'clock': 'Clock',
   'minx': 'Megaminx',
   'pyram': 'Pyraminx',
   'skewb': 'Skewb',
   'sq1': 'Square-1',
-  '444bf': '4x4x4 Blindfolded',
-  '555bf': '5x5x5 Blindfolded',
-  '333mbf': '3x3x3 Multi-Blind',
+  '444bf': '4x4 Blindfolded',
+  '555bf': '5x5 Blindfolded',
+  '333mbf': '3x3 Multi-Blind',
 };

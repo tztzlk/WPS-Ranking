@@ -102,13 +102,10 @@ export function Layout() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">WPS Ranking</h3>
               <p className="text-gray-400">
-                Global speedcubing leaderboard powered by the Weighted Performance Scale system.
+                An all-around ranking of speedcubers, updated daily from official WCA data.
               </p>
               <div className="mt-6">
-                <p className="mb-2 font-semibold text-green-300">Support WPS Ranking</p>
-                <p className="mb-3 text-sm text-gray-400">
-                  Donations help cover hosting, database, and ongoing development costs.
-                </p>
+                <p className="mb-3 text-sm text-gray-400">Donations on Ko-fi pay for development time.</p>
                 <a
                   href="https://ko-fi.com/tonyokoo"
                   target="_blank"
@@ -120,20 +117,20 @@ export function Layout() {
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Pages</h3>
               <ul className="space-y-2">
                 <li><Link to="/" className="text-gray-400 hover:text-white">Home</Link></li>
                 <li><Link to="/leaderboard" className="text-gray-400 hover:text-white">Leaderboard</Link></li>
                 <li><Link to="/search" className="text-gray-400 hover:text-white">Search</Link></li>
                 <li><Link to="/compare" className="text-gray-400 hover:text-white">Compare</Link></li>
-                <li><Link to="/about" className="text-gray-400 hover:text-white">About WPS</Link></li>
+                <li><Link to="/about" className="text-gray-400 hover:text-white">How WPS works</Link></li>
                 <li><Link to="/about#feedback" className="text-gray-400 hover:text-white">Feedback</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Data Source</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Data</h3>
               <p className="text-gray-400">
-                Rankings are calculated using official data from the{' '}
+                Rankings use the official results export of the{' '}
                 <a
                   href="https://www.worldcubeassociation.org"
                   target="_blank"
@@ -142,12 +139,11 @@ export function Layout() {
                 >
                   World Cube Association
                 </a>
+                . This site is not affiliated with the WCA.
               </p>
               <div className="mt-6 rounded-lg border border-gray-700 bg-gray-800/70 p-4">
-                <p className="font-semibold text-white">Have feedback?</p>
-                <p className="mt-2 text-sm text-gray-400">
-                  Report a bug, suggest a feature, or follow project improvements through GitHub Issues.
-                </p>
+                <p className="font-semibold text-white">Feedback</p>
+                <p className="mt-2 text-sm text-gray-400">Report a bug or suggest a feature on GitHub.</p>
                 <div className="mt-3 flex flex-wrap gap-3 text-sm">
                   <a
                     href="https://github.com/tztzlk/WPS-Ranking/issues/new"
@@ -155,7 +151,7 @@ export function Layout() {
                     rel="noopener noreferrer"
                     className="text-green-400 hover:text-green-300"
                   >
-                    New issue
+                    Open an issue
                   </a>
                   <a
                     href="https://github.com/tztzlk/WPS-Ranking/issues"
@@ -163,7 +159,7 @@ export function Layout() {
                     rel="noopener noreferrer"
                     className="text-gray-300 hover:text-white"
                   >
-                    View issues
+                    Open issues
                   </a>
                 </div>
               </div>

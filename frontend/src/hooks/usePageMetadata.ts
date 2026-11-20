@@ -6,9 +6,9 @@ type PageMetadata = {
   canonicalPath?: string;
 };
 
-const DEFAULT_TITLE = 'WPS Ranking - Global Speedcubing Leaderboard';
+const DEFAULT_TITLE = 'WPS Ranking | All-around speedcubing leaderboard';
 const DEFAULT_DESCRIPTION =
-  'Weighted Performance Scale ranking system for speedcubers worldwide. Track performance across all WCA events.';
+  'An all-around ranking of speedcubers. One score from official WCA world ranks by average in 16 events.';
 
 function upsertMeta(selector: string, create: () => HTMLMetaElement): HTMLMetaElement {
   const existing = document.head.querySelector<HTMLMetaElement>(selector);
