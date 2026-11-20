@@ -1,11 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, MapPin, Award, Calendar, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trophy, Globe2, Layers, Share2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+
+/** "top 0.01%" style share of the field at or above this rank. */
+function topPercent(rank: number, total: number): string {
+  const pct = (rank / total) * 100;
+  if (pct < 0.01) return 'top 0.01%';
+  if (pct < 1) return `top ${pct.toFixed(2)}%`;
+  if (pct < 10) return `top ${pct.toFixed(1)}%`;
+  return `top ${Math.round(pct)}%`;
+}
+
+function initials(name: string): string {
+  const words = name.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
+  return ((words[0]?.[0] ?? '') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
+}
 
 function getApiBaseOrigin(): string | null {
   const rawBase = import.meta.env.VITE_API_BASE_URL as string | undefined;
@@ -28,7 +42,7 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -92,11 +106,6 @@ export function ProfilePage() {
 
   const formatScore = (score: number) => score.toFixed(2);
 
-  const globalRankText =
-    (profile?.totalRanked ?? 0) > 0 && profile?.globalWpsRank != null && profile.globalWpsRank > 0
-      ? `#${profile.globalWpsRank.toLocaleString()} of ${(profile.totalRanked ?? 0).toLocaleString()}`
-      : null;
-
   const handleShareProfile = async () => {
     if (!profile) return;
 
@@ -125,9 +134,15 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="py-12 text-center">
-        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-green-400" />
-        <p className="mt-4 text-gray-400">Loading profile...</p>
+      <div className="mx-auto max-w-6xl space-y-6" aria-busy="true" aria-label="Loading profile">
+        <div className="h-8 w-40 animate-pulse rounded bg-gray-800" />
+        <div className="h-32 animate-pulse rounded-lg bg-gray-800" />
+        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-lg bg-gray-800" />
+          ))}
+        </div>
+        <div className="h-64 animate-pulse rounded-lg bg-gray-800" />
       </div>
     );
   }
@@ -143,17 +158,43 @@ export function ProfilePage() {
     );
   }
 
-  const countryRankText =
-    profile.countryRank != null && profile.countryTotal != null && profile.countryTotal > 0
-      ? `#${profile.countryRank.toLocaleString()} of ${profile.countryTotal.toLocaleString()} in ${profile.countryName ?? 'country'}`
-      : null;
+  const total = profile.totalRanked ?? 0;
+  const globalRank = profile.globalWpsRank != null && profile.globalWpsRank > 0 ? profile.globalWpsRank : null;
+  const countryRank = profile.countryRank != null && profile.countryRank > 0 ? profile.countryRank : null;
+  const countryTotal = profile.countryTotal ?? 0;
+  const eventsScored = breakdown?.events.length ?? null;
+  const maxContribution = Math.max(0.01, ...(breakdown?.events.map((e) => e.eventScore) ?? []));
+
+  const stats = [
+    {
+      icon: Globe2,
+      label: 'World rank',
+      value: globalRank ? `#${globalRank.toLocaleString('en-US')}` : '—',
+      detail: globalRank && total > 0 ? `${topPercent(globalRank, total)} of ${total.toLocaleString('en-US')}` : 'Not ranked',
+    },
+    {
+      icon: Trophy,
+      label: 'Country rank',
+      value: countryRank ? `#${countryRank.toLocaleString('en-US')}` : '—',
+      detail:
+        countryRank && countryTotal > 0
+          ? `${profile.countryName ?? 'country'} · of ${countryTotal.toLocaleString('en-US')}`
+          : profile.countryName ?? '—',
+    },
+    {
+      icon: Layers,
+      label: 'Events scored',
+      value: eventsScored != null ? `${eventsScored}/16` : '—',
+      detail: 'by average',
+    },
+  ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link to="/leaderboard" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white">
+        <Link to="/leaderboard" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Leaderboard</span>
+          Leaderboard
         </Link>
         <button
           type="button"
@@ -168,51 +209,57 @@ export function ProfilePage() {
       </div>
 
       <div className="card">
-        <div className="flex flex-col items-start justify-between md:flex-row md:items-center">
-          <div className="flex items-center space-x-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-700">
-              <Trophy className="h-10 w-10 text-gray-300" />
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-xl font-bold text-green-300 ring-1 ring-green-500/30 sm:h-20 sm:w-20 sm:text-2xl"
+              aria-hidden="true"
+            >
+              {initials(profile.name)}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
-              <div className="mt-2 flex items-center space-x-4 text-gray-400">
-                <span className="font-mono">{profile.wcaId}</span>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">{profile.name}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
                 {profile.countryIso2 && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="inline-flex items-center gap-1.5">
                     <CountryFlag iso2={profile.countryIso2} name={profile.countryName} />
-                    <span>{profile.countryName ?? '—'}</span>
-                  </div>
+                    {profile.countryName ?? '—'}
+                  </span>
                 )}
+                <a
+                  href={`https://www.worldcubeassociation.org/persons/${encodeURIComponent(profile.wcaId)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-mono hover:text-white"
+                  title="Open WCA profile"
+                >
+                  {profile.wcaId}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </div>
             </div>
           </div>
-          <div className="mt-6 text-center md:mt-0 md:text-right">
-            <div className="text-4xl font-bold text-green-400">{formatScore(profile.wpsScore)}</div>
-            <div className="text-gray-400">WPS Score</div>
-            {globalRankText && <div className="mt-2 text-lg text-gray-300">Global Rank: {globalRankText}</div>}
+          <div className="flex items-baseline gap-2 sm:block sm:text-right">
+            <div className="text-4xl font-bold tabular-nums text-green-400 sm:text-5xl">{formatScore(profile.wpsScore)}</div>
+            <div className="text-sm text-gray-400">
+              WPS
+              {profile.lastUpdated && (
+                <span className="text-gray-500"> · {new Date(profile.lastUpdated).toLocaleDateString()}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="card text-center">
-          <Award className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">{globalRankText ?? '—'}</h3>
-          <p className="text-gray-400">Global WPS Rank</p>
-        </div>
-        <div className="card text-center">
-          <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">{countryRankText ?? '—'}</h3>
-          <p className="text-gray-400">Country Rank</p>
-        </div>
-        <div className="card text-center">
-          <Calendar className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-sm font-bold text-white">
-            {profile.lastUpdated ? new Date(profile.lastUpdated).toLocaleDateString() : '—'}
-          </h3>
-          <p className="text-gray-400">Last Updated</p>
-        </div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-6">
+        {stats.map(({ icon: Icon, label, value, detail }) => (
+          <div key={label} className="card px-2 py-4 text-center sm:p-6">
+            <Icon className="mx-auto mb-2 h-5 w-5 text-green-400 sm:h-7 sm:w-7" aria-hidden="true" />
+            <div className="text-xl font-bold tabular-nums text-white sm:text-3xl">{value}</div>
+            <div className="text-xs font-medium text-gray-300 sm:text-sm">{label}</div>
+            <div className="mt-1 text-[11px] leading-tight text-gray-500 sm:text-xs">{detail}</div>
+          </div>
+        ))}
       </div>
 
       <WpsProgressChart data={history} loadError={historyLoadError} />
@@ -243,31 +290,47 @@ export function ProfilePage() {
                   <thead>
                     <tr className="border-b border-gray-600">
                       <th className="py-2 pr-4 font-medium text-gray-400">Event</th>
-                      <th className="py-2 pr-4 font-medium text-gray-400">World Rank</th>
-                      <th className="py-2 pr-4 font-medium text-gray-400">Of</th>
-                      <th className="py-2 pr-4 font-medium text-gray-400">Weight</th>
-                      <th className="py-2 font-medium text-gray-400">Contribution</th>
+                      <th className="py-2 pr-4 font-medium text-gray-400">World rank</th>
+                      <th className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">Weight</th>
+                      <th className="py-2 text-right font-medium text-gray-400 sm:text-left">Contribution</th>
                     </tr>
                   </thead>
                   <tbody>
                     {breakdown.events.map((row) => (
                       <tr key={row.eventId} className="border-b border-gray-700/50">
                         <td className="py-2 pr-4 text-white">{row.eventName}</td>
-                        <td className="py-2 pr-4 text-gray-300">#{row.worldRank.toLocaleString()}</td>
-                        <td className="py-2 pr-4 text-gray-400">
-                          {row.participants ? row.participants.toLocaleString() : '—'}
+                        <td className="py-2 pr-4 text-gray-300">
+                          <span className="tabular-nums">#{row.worldRank.toLocaleString('en-US')}</span>
+                          {row.participants > 0 && (
+                            <span className="block text-xs text-gray-500 sm:ml-1 sm:inline">
+                              of {row.participants.toLocaleString('en-US')}
+                            </span>
+                          )}
                         </td>
-                        <td className="py-2 pr-4 text-gray-300">{row.weight.toFixed(2)}</td>
-                        <td className="py-2 text-green-400">{row.eventScore.toFixed(2)}</td>
+                        <td className="hidden py-2 pr-4 tabular-nums text-gray-300 sm:table-cell">{row.weight.toFixed(2)}</td>
+                        <td className="py-2">
+                          <div className="flex items-center justify-end gap-3 sm:justify-start">
+                            <div className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-gray-700 sm:block" aria-hidden="true">
+                              <div
+                                className="h-full rounded-full bg-green-500"
+                                style={{ width: `${Math.min(100, (row.eventScore / maxContribution) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="tabular-nums text-green-400">{row.eventScore.toFixed(2)}</span>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-gray-600">
-                      <td className="py-3 pr-4 font-medium text-white" colSpan={4}>
+                      <td className="py-3 pr-4 font-medium text-white sm:hidden" colSpan={2}>
                         Total WPS
                       </td>
-                      <td className="py-3 font-semibold text-green-400">{breakdown.wps.toFixed(2)}</td>
+                      <td className="hidden py-3 pr-4 font-medium text-white sm:table-cell" colSpan={3}>
+                        Total WPS
+                      </td>
+                      <td className="py-3 text-right font-semibold tabular-nums text-green-400 sm:pl-[6.75rem] sm:text-left">{breakdown.wps.toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 </table>

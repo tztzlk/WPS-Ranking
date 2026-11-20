@@ -8,13 +8,19 @@
   }
   
   body {
-    @apply bg-gray-900 text-gray-100 font-sans;
+    @apply bg-gray-900 text-gray-100 font-sans antialiased;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-green-400 ring-offset-2 ring-offset-gray-900;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
   
   .btn-secondary {
@@ -22,7 +28,7 @@
   }
   
   .card {
-    @apply bg-gray-800 border border-gray-700 rounded-lg p-6 shadow-lg;
+    @apply bg-gray-800/80 border border-gray-700/80 rounded-xl p-6 shadow-lg shadow-black/20;
   }
   
   .input-field {

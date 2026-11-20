@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { GitCompare, Trophy, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile } from '../types';
@@ -66,17 +66,17 @@ function ProfileCard({ profile, label }: { profile: WPSProfile; label: string })
 }
 
 export function ComparePage() {
-  const [leftId, setLeftId] = useState('');
-  const [rightId, setRightId] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [leftId, setLeftId] = useState(() => (searchParams.get('left') ?? '').toUpperCase());
+  const [rightId, setRightId] = useState(() => (searchParams.get('right') ?? '').toUpperCase());
   const [data, setData] = useState<{ left: WPSProfile; right: WPSProfile } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
 
-  const handleCompare = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const l = leftId.trim();
-    const r = rightId.trim();
+  const runCompare = useCallback(async (leftRaw: string, rightRaw: string) => {
+    const l = leftRaw.trim().toUpperCase();
+    const r = rightRaw.trim().toUpperCase();
     if (!l || !r) {
       setError('Enter both WCA IDs');
       return;
@@ -97,6 +97,7 @@ export function ComparePage() {
     setLoading(true);
     setError(null);
     setData(null);
+    setSearchParams({ left: l, right: r }, { replace: true });
 
     try {
       const result = await apiService.getCompare(l, r);
@@ -110,7 +111,22 @@ export function ComparePage() {
     } finally {
       setLoading(false);
     }
+    // setSearchParams is only used to write the URL; re-creating runCompare on URL change is not wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCompare = (e: React.FormEvent) => {
+    e.preventDefault();
+    void runCompare(leftId, rightId);
   };
+
+  // A shared /compare?left=…&right=… link compares right away.
+  useEffect(() => {
+    const l = searchParams.get('left');
+    const r = searchParams.get('right');
+    if (l && r) void runCompare(l, r);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleShareCompare = async () => {
     const url = window.location.href;
@@ -139,14 +155,6 @@ export function ComparePage() {
         <p className="text-lg text-gray-300">
           Enter two WCA IDs to compare WPS and ranks side-by-side
         </p>
-        <button
-          type="button"
-          onClick={handleShareCompare}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition"
-        >
-          <Share2 className="w-4 h-4" />
-          {shareCopied ? 'Copied!' : 'Share compare link'}
-        </button>
       </div>
 
       <div className="card">
@@ -161,8 +169,8 @@ export function ComparePage() {
                 type="text"
                 value={leftId}
                 onChange={(e) => setLeftId(e.target.value.toUpperCase())}
-                placeholder="e.g. 2019SMIT01"
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
+                placeholder="e.g. 2017GARR05"
+                className="input-field w-full font-mono uppercase"
               />
             </div>
             <div>
@@ -174,8 +182,8 @@ export function ComparePage() {
                 type="text"
                 value={rightId}
                 onChange={(e) => setRightId(e.target.value.toUpperCase())}
-                placeholder="e.g. 2020KORE02"
-                className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
+                placeholder="e.g. 2019TARA09"
+                className="input-field w-full font-mono uppercase"
               />
             </div>
           </div>
@@ -203,9 +211,36 @@ export function ComparePage() {
       </div>
 
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ProfileCard profile={data.left} label="Left" />
-          <ProfileCard profile={data.right} label="Right" />
+        <div className="space-y-4">
+          <div className="flex flex-col items-center justify-between gap-3 rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-3 sm:flex-row">
+            <p className="text-center text-gray-200 sm:text-left">
+              {data.left.wpsScore === data.right.wpsScore ? (
+                'Both cubers have the same WPS.'
+              ) : (
+                <>
+                  <span className="font-semibold text-white">
+                    {(data.left.wpsScore > data.right.wpsScore ? data.left : data.right).name}
+                  </span>{' '}
+                  leads by{' '}
+                  <span className="font-semibold tabular-nums text-green-400">
+                    {Math.abs(data.left.wpsScore - data.right.wpsScore).toFixed(2)} WPS
+                  </span>
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={handleShareCompare}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
+            >
+              <Share2 className="h-4 w-4" />
+              {shareCopied ? 'Copied!' : 'Copy link'}
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <ProfileCard profile={data.left} label="Left" />
+            <ProfileCard profile={data.right} label="Right" />
+          </div>
         </div>
       )}
     </div>

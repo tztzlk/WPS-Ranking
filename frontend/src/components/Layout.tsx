@@ -16,7 +16,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <header className="bg-gray-800 border-b border-gray-700">
+      <header className="sticky top-0 z-40 border-b border-gray-700/80 bg-gray-900/85 backdrop-blur supports-[backdrop-filter]:bg-gray-900/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
@@ -26,18 +26,18 @@ export function Layout() {
               <span className="text-lg font-bold text-white sm:text-xl">WPS Ranking</span>
             </Link>
 
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex md:gap-1 lg:gap-2" aria-label="Main">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
                       isActive
-                        ? 'bg-green-600 text-white'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                        ? 'bg-gray-800 text-white ring-1 ring-gray-700 [&>svg]:text-green-400'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -52,6 +52,7 @@ export function Layout() {
               className="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white md:hidden"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
@@ -69,7 +70,7 @@ export function Layout() {
             <div className="px-4 py-2 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
                 return (
                   <Link
                     key={item.path}
@@ -77,8 +78,8 @@ export function Layout() {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
                       isActive
-                        ? 'bg-green-600 text-white'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                        ? 'bg-gray-800 text-white ring-1 ring-gray-700 [&>svg]:text-green-400'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />

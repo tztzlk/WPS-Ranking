@@ -75,8 +75,11 @@ export async function searchPersons(query: string, limit: number = SEARCH_LIMIT)
     }
   }
 
-  // Escape LIKE wildcards in user input; the prefix index uses text_pattern_ops.
-  const prefix = q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`) + '%';
+  // Matches the start of any word of the name ("garrett" finds "Luke Garrett").
+  // LIKE wildcards in user input are escaped; idx_person_name_trgm serves '% q%'.
+  const escaped = q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`);
+  const prefix = `${escaped}%`;
+  const wordPrefix = `% ${escaped}%`;
   const countryFilter =
     q.length === 2 ? Prisma.sql`OR p.country_iso2 = ${q.toUpperCase()}` : Prisma.empty;
 
@@ -85,7 +88,7 @@ export async function searchPersons(query: string, limit: number = SEARCH_LIMIT)
            l.wps AS "wpsScore", l.global_rank AS "wpsRank"
     FROM persons p
     LEFT JOIN leaderboard_entries l ON l.person_id = p.id
-    WHERE p.name_lower LIKE ${prefix} ${countryFilter}
+    WHERE p.name_lower LIKE ${prefix} OR p.name_lower LIKE ${wordPrefix} ${countryFilter}
     ORDER BY l.wps DESC NULLS LAST, p.id
     LIMIT ${take}
   `);

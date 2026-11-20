@@ -103,9 +103,9 @@ export const apiService = {
 
   async searchCubers(query: string, limit: number = 20, signal?: AbortSignal): Promise<SearchResult[]> {
     const trimmed = query.trim();
-    const isWcaId = /^\d{4}[A-Z]{4}\d{2}$/.test(trimmed);
+    const isWcaId = /^\d{4}[A-Z]{4}\d{2}$/.test(trimmed.toUpperCase());
     const params: Record<string, string | number> = isWcaId
-      ? { wcaId: trimmed, limit }
+      ? { wcaId: trimmed.toUpperCase(), limit }
       : { q: trimmed, limit };
     const response = await api.get<{ results: SearchResult[] }>('/search', { params, signal });
     return response.data.results;

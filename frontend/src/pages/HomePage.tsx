@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Search, TrendingUp, Users, Award } from 'lucide-react';
+import { Trophy, Search, TrendingUp, Users, Award, Layers } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LeaderboardCacheItem } from '../types';
-import { CountryFlag } from '../components/CountryFlag';
+import { RankingList } from '../components/RankingList';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 function WeeklyMoversList({
@@ -85,7 +85,6 @@ export function HomePage() {
     }
   };
 
-  const formatScore = (score: number) => score.toFixed(2);
   const formatCount = (n: number | null) => (n ? n.toLocaleString('en-US') : '—');
 
   usePageMetadata({
@@ -116,22 +115,18 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
-        <div className="card text-center">
-          <Trophy className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">{formatCount(totalRanked)}</h3>
-          <p className="text-gray-400">Ranked Cubers</p>
-        </div>
-        <div className="card text-center">
-          <TrendingUp className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">17</h3>
-          <p className="text-gray-400">WCA Events</p>
-        </div>
-        <div className="card text-center">
-          <Users className="mx-auto mb-2 h-8 w-8 text-green-400" />
-          <h3 className="text-2xl font-bold text-white">{formatCount(totalCountries)}</h3>
-          <p className="text-gray-400">Countries</p>
-        </div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
+        {[
+          { icon: Users, value: formatCount(totalRanked), label: 'Ranked cubers' },
+          { icon: Layers, value: '16', label: 'Events scored' },
+          { icon: Trophy, value: formatCount(totalCountries), label: 'Countries' },
+        ].map(({ icon: Icon, value, label }) => (
+          <div key={label} className="card flex flex-col items-center px-2 py-4 text-center sm:p-6">
+            <Icon className="mb-2 h-6 w-6 text-green-400 sm:h-8 sm:w-8" aria-hidden="true" />
+            <div className="text-lg font-bold tabular-nums text-white sm:text-2xl">{value}</div>
+            <div className="text-xs text-gray-400 sm:text-base">{label}</div>
+          </div>
+        ))}
       </div>
 
       <div className="card">
@@ -142,15 +137,13 @@ export function HomePage() {
               The current top five cubers by weighted all-around performance.
             </p>
           </div>
-          <Link to="/leaderboard" className="text-sm font-medium text-green-400 hover:text-green-300 md:text-right">
-            View full leaderboard
-          </Link>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-green-400" />
-            <p className="mt-4 text-gray-400">Loading leaderboard...</p>
+          <div className="space-y-3" aria-busy="true" aria-label="Loading leaderboard">
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded bg-gray-700/50" />
+            ))}
           </div>
         ) : error ? (
           <div className="py-12 text-center">
@@ -161,57 +154,8 @@ export function HomePage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="px-4 py-3 text-left font-medium text-gray-400">Rank</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-400">Name</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-400">Country</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-400">WPS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((cuber, index) => (
-                    <tr key={cuber.personId} className="border-b border-gray-700 hover:bg-gray-800/50">
-                      <td className="px-4 py-4">
-                        <div className="flex items-center space-x-2">
-                          {index < 3 ? (
-                            <Trophy
-                              className={`h-5 w-5 ${
-                                index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-300' : 'text-amber-600'
-                              }`}
-                            />
-                          ) : (
-                            <span className="flex h-5 w-5 items-center justify-center text-sm font-medium text-gray-400">
-                              {cuber.rank ?? index + 1}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Link to={`/profile/${cuber.personId}`} className="font-medium text-white hover:text-green-400">
-                          {cuber.name}
-                        </Link>
-                        <div className="text-sm text-gray-400">{cuber.personId}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          {cuber.countryIso2 ? (
-                            <CountryFlag iso2={cuber.countryIso2} name={cuber.countryName ?? cuber.countryId} />
-                          ) : (
-                            <span className="text-gray-500">--</span>
-                          )}
-                          <span className="text-gray-300">{cuber.countryName ?? cuber.countryId ?? '--'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="font-bold text-green-400">{formatScore(cuber.wps)}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="-mx-6">
+              <RankingList items={leaderboard} showChange={false} />
             </div>
 
             <div className="mt-6 flex flex-col items-center gap-2">
@@ -219,9 +163,9 @@ export function HomePage() {
                 <TrendingUp className="h-5 w-5" />
                 <span>View Full Leaderboard</span>
               </Link>
-              <p className="text-sm text-gray-500">Showing the current top 5 by weighted all-around performance</p>
             </div>
 
+            {(biggestMoversUp.length > 0 || biggestMoversDown.length > 0) && (
             <div className="mt-8 border-t border-gray-700 pt-6">
               <div className="mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-400" />
@@ -235,6 +179,7 @@ export function HomePage() {
                 <WeeklyMoversList title="Movers Down" items={biggestMoversDown} direction="down" />
               </div>
             </div>
+            )}
           </>
         )}
       </div>

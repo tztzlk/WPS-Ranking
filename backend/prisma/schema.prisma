@@ -23,6 +23,7 @@ model Person {
   // The migration creates this index with text_pattern_ops so that
   // `LIKE 'prefix%'` (Prisma startsWith) can use it under any collation.
   @@index([nameLower], map: "idx_person_name_lower")
+  @@index([nameLower(ops: raw("gin_trgm_ops"))], type: Gin, map: "idx_person_name_trgm")
   @@index([countryIso2], map: "idx_person_country_iso2")
   @@map("persons")
 }
