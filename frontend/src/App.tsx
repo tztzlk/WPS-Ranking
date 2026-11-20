@@ -5,6 +5,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ComparePage } from './pages/ComparePage';
 import { AboutPage } from './pages/AboutPage';
 import { SearchPage } from './pages/SearchPage';
+import { CountriesPage } from './pages/CountriesPage';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         path: 'leaderboard',
         element: <LeaderboardPage />
+      },
+      {
+        path: 'countries',
+        element: <CountriesPage />
       },
       {
         path: 'profile/:wcaId',

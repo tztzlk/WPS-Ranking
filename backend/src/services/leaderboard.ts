@@ -6,6 +6,7 @@
 import type { LeaderboardEntry } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getMetaValues } from './personDb';
+import { COUNTRY_TEAM_SIZE, continentByCode } from '../types';
 
 const MOVERS_LIMIT = 5;
 
@@ -61,7 +62,33 @@ export interface CountryLeaderboardResponse {
   source: string;
 }
 
-export type LeaderboardResponse = CountryLeaderboardResponse | GlobalLeaderboardResponse;
+export interface ContinentLeaderboardItem {
+  continentRank: number;
+  personId: string;
+  name: string;
+  countryIso2?: string;
+  countryName?: string;
+  wps: number;
+  globalWpsRank: number;
+  rankChange: number | null;
+}
+
+export interface ContinentLeaderboardResponse {
+  scope: 'continent';
+  continent: string;
+  continentName: string;
+  generatedAt: string;
+  count: number;
+  items: ContinentLeaderboardItem[];
+  biggestMoversUp: [];
+  biggestMoversDown: [];
+  source: string;
+}
+
+export type LeaderboardResponse =
+  | CountryLeaderboardResponse
+  | GlobalLeaderboardResponse
+  | ContinentLeaderboardResponse;
 
 async function getHeaderMeta(): Promise<{ generatedAt: string; totalRanked: number }> {
   const meta = await getMetaValues(['generatedAt', 'totalRanked']);
@@ -177,5 +204,99 @@ export async function getCountryLeaderboard(
     biggestMoversUp: [],
     biggestMoversDown: [],
     source: 'postgres',
+  };
+}
+
+export async function getContinentLeaderboard(
+  code: string,
+  limit = 100,
+): Promise<ContinentLeaderboardResponse | null> {
+  const continent = continentByCode(code);
+  if (!continent) return null;
+
+  const [entries, meta] = await Promise.all([
+    prisma.leaderboardEntry.findMany({
+      where: { continent: continent.code },
+      orderBy: [{ continentRank: 'asc' }, { personId: 'asc' }],
+      take: Math.max(1, limit),
+    }),
+    getHeaderMeta(),
+  ]);
+  if (!entries.length) return null;
+
+  return {
+    scope: 'continent',
+    continent: continent.code,
+    continentName: continent.name,
+    generatedAt: meta.generatedAt,
+    count: entries.length,
+    items: entries.map((e) => ({
+      continentRank: e.continentRank ?? 0,
+      personId: e.personId,
+      name: e.name,
+      countryIso2: e.countryIso2 ?? undefined,
+      countryName: e.countryName ?? undefined,
+      wps: e.wps,
+      globalWpsRank: e.globalRank,
+      rankChange: e.rankChange1d,
+    })),
+    biggestMoversUp: [],
+    biggestMoversDown: [],
+    source: 'postgres',
+  };
+}
+
+export interface CountryRankingItem {
+  rank: number;
+  iso2: string;
+  name: string;
+  continent: string | null;
+  teamScore: number;
+  rankedCount: number;
+  best: { personId: string; name: string; wps: number } | null;
+}
+
+export interface CountryRankingResponse {
+  generatedAt: string;
+  teamSize: number;
+  items: CountryRankingItem[];
+}
+
+/** All countries by team score, each with its best cuber. */
+export async function getCountryRanking(): Promise<CountryRankingResponse | null> {
+  const [countries, leaders, meta] = await Promise.all([
+    prisma.country.findMany({
+      where: { teamRank: { not: null } },
+      orderBy: [{ teamRank: 'asc' }, { name: 'asc' }],
+    }),
+    prisma.leaderboardEntry.findMany({
+      where: { countryRank: 1 },
+      orderBy: { personId: 'asc' },
+      select: { personId: true, name: true, wps: true, countryIso2: true },
+    }),
+    getHeaderMeta(),
+  ]);
+  if (!countries.length) return null;
+
+  // countryRank 1 can be shared on equal WPS; the first by WCA ID is shown.
+  const bestByCountry = new Map<string, { personId: string; name: string; wps: number }>();
+  for (const l of leaders) {
+    if (l.countryIso2 && !bestByCountry.has(l.countryIso2)) {
+      bestByCountry.set(l.countryIso2, { personId: l.personId, name: l.name, wps: l.wps });
+    }
+  }
+
+  return {
+    generatedAt: meta.generatedAt,
+    teamSize: COUNTRY_TEAM_SIZE,
+    items: countries.map((c) => ({
+      rank: c.teamRank ?? 0,
+      iso2: c.iso2,
+      name: c.name,
+      continent: c.continent,
+      teamScore: c.teamScore ?? 0,
+      rankedCount: c.rankedCount,
+      best: bestByCountry.get(c.iso2) ?? null,
+    })),
   };
 }

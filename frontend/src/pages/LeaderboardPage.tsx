@@ -1,14 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
-import { apiService } from '../services/api';
-import { LeaderboardCacheResponse, LeaderboardCacheItem } from '../types';
+import { apiService, LeaderboardRegion } from '../services/api';
+import { CONTINENTS, LeaderboardCacheResponse, LeaderboardCacheItem, SCORED_EVENT_COUNT } from '../types';
 import { RankingList } from '../components/RankingList';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
+/** Select values: 'ALL', 'continent:EU' or 'country:KZ'. */
 const ALL = 'ALL';
 const PAGE_SIZE = 100;
 const MAX_ROWS = 500; // API limit
+
+function regionFromValue(value: string): LeaderboardRegion {
+  const [kind, code] = value.split(':');
+  if (kind === 'continent' && code) return { continent: code };
+  if (kind === 'country' && code) return { country: code };
+  return null;
+}
+
+function valueFromParams(params: URLSearchParams): string {
+  const country = params.get('country');
+  if (country) return `country:${country.toUpperCase()}`;
+  const continent = params.get('continent');
+  if (continent) return `continent:${continent.toUpperCase()}`;
+  return ALL;
+}
 
 function formatGeneratedAt(iso: string): string {
   try {
@@ -24,20 +40,18 @@ export function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedCountry, setSelectedCountry] = useState<string>(() => searchParams.get('country') ?? ALL);
-  const [countryOptions, setCountryOptions] = useState<{ countryIso2: string; countryName: string }[]>([
-    { countryIso2: ALL, countryName: 'All countries' },
-  ]);
+  const [selected, setSelected] = useState<string>(() => valueFromParams(searchParams));
+  const [countries, setCountries] = useState<{ iso2: string; name: string }[]>([]);
 
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadData = useCallback(async (country: string, rows: number = PAGE_SIZE) => {
+  const loadData = useCallback(async (value: string, rows: number = PAGE_SIZE) => {
     try {
       if (rows === PAGE_SIZE) setLoading(true);
       else setLoadingMore(true);
       setError(null);
-      const result = await apiService.getLeaderboardTop100(rows, country === ALL ? undefined : country);
+      const result = await apiService.getLeaderboardTop100(rows, regionFromValue(value));
       setData(result);
       setLimit(rows);
     } catch (err: unknown) {
@@ -62,39 +76,30 @@ export function LeaderboardPage() {
   }, []);
 
   useEffect(() => {
-    loadData(selectedCountry);
-  }, [loadData, selectedCountry]);
+    loadData(selected);
+  }, [loadData, selected]);
 
   useEffect(() => {
-    apiService.getCountries().then(
-      (list) =>
-        setCountryOptions([
-          { countryIso2: ALL, countryName: 'All countries' },
-          ...list.map((c) => ({ countryIso2: c.iso2, countryName: c.name })),
-        ]),
-      () => {}
-    );
+    apiService.getCountries().then(setCountries, () => {});
   }, []);
 
-  const handleCountryChange = (value: string) => {
-    setSelectedCountry(value);
-    if (value === ALL) {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete('country');
-        return next;
-      });
-    } else {
-      setSearchParams({ country: value });
-    }
+  const handleRegionChange = (value: string) => {
+    setSelected(value);
+    const region = regionFromValue(value);
+    setSearchParams(region ?? {});
   };
 
   const items: LeaderboardCacheItem[] = data?.items ?? [];
   const generatedAt = data?.generatedAt ?? '';
-  const isFiltered = selectedCountry !== ALL;
-  const selectedCountryName =
-    countryOptions.find((c) => c.countryIso2 === selectedCountry)?.countryName ?? selectedCountry;
-  const pageTitle = isFiltered ? `${selectedCountryName} leaderboard` : 'World leaderboard';
+  const region = regionFromValue(selected);
+  const isFiltered = region !== null;
+  const regionName =
+    region && 'continent' in region
+      ? CONTINENTS.find((c) => c.code === region.continent)?.name ?? region.continent
+      : region
+        ? countries.find((c) => c.iso2 === region.country)?.name ?? data?.countryName ?? region.country
+        : 'World';
+  const pageTitle = `${regionName} leaderboard`;
   // The API's totalRanked is the global count, so it is only shown unfiltered.
   const totalRanked = isFiltered ? undefined : data?.totalRanked;
   const subtitle = [
@@ -109,9 +114,9 @@ export function LeaderboardPage() {
   usePageMetadata({
     title: `${pageTitle} | WPS Ranking`,
     description: isFiltered
-      ? `The top speedcubers from ${selectedCountryName} by WPS, an all-around score from official WCA ranks.`
-      : 'The top speedcubers in the world by WPS, an all-around score from official WCA ranks in 16 events.',
-    canonicalPath: isFiltered ? `/leaderboard?country=${encodeURIComponent(selectedCountry)}` : '/leaderboard',
+      ? `The top speedcubers from ${regionName} by WPS, an all-around score from official WCA ranks.`
+      : `The top speedcubers in the world by WPS, an all-around score from official WCA ranks in ${SCORED_EVENT_COUNT} events.`,
+    canonicalPath: region ? `/leaderboard?${new URLSearchParams(region).toString()}` : '/leaderboard',
   });
 
   if (loading) {
@@ -133,7 +138,7 @@ export function LeaderboardPage() {
         <h1 className="text-3xl font-bold text-white">{pageTitle}</h1>
         <div className="card py-12 text-center">
           <p className="text-red-400">{error ?? 'Failed to load data'}</p>
-          <button type="button" onClick={() => loadData(selectedCountry)} className="btn-primary mt-4">
+          <button type="button" onClick={() => loadData(selected)} className="btn-primary mt-4">
             Try again
           </button>
         </div>
@@ -152,20 +157,34 @@ export function LeaderboardPage() {
           {subtitle && <p className="mt-1 text-sm text-gray-400">{subtitle}</p>}
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="country-filter" className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Country
+          <label htmlFor="region-filter" className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            Region
           </label>
           <select
-            id="country-filter"
-            value={selectedCountry}
-            onChange={(e) => handleCountryChange(e.target.value)}
+            id="region-filter"
+            value={selected}
+            onChange={(e) => handleRegionChange(e.target.value)}
             className="input-field w-full md:w-64"
           >
-            {countryOptions.map((opt) => (
-              <option key={opt.countryIso2} value={opt.countryIso2}>
-                {opt.countryName}
-              </option>
-            ))}
+            <option value={ALL}>World</option>
+            <optgroup label="Continents">
+              {CONTINENTS.map((c) => (
+                <option key={c.code} value={`continent:${c.code}`}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Countries">
+              {/* Keeps a ?country= selection visible while the list loads. */}
+              {region && 'country' in region && !countries.some((c) => c.iso2 === region.country) && (
+                <option value={selected}>{regionName}</option>
+              )}
+              {countries.map((c) => (
+                <option key={c.iso2} value={`country:${c.iso2}`}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
       </div>
@@ -173,7 +192,7 @@ export function LeaderboardPage() {
       <div className="card overflow-hidden p-0">
         {items.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
-            No ranked cubers found{isFiltered ? ` from ${selectedCountryName}` : ''}
+            No ranked cubers found{isFiltered ? ` from ${regionName}` : ''}
           </div>
         ) : (
           <RankingList items={items} showChange={hasChanges} />
@@ -184,7 +203,7 @@ export function LeaderboardPage() {
         <div className="flex justify-center">
           <button
             type="button"
-            onClick={() => loadData(selectedCountry, Math.min(limit + PAGE_SIZE, MAX_ROWS))}
+            onClick={() => loadData(selected, Math.min(limit + PAGE_SIZE, MAX_ROWS))}
             disabled={loadingMore}
             className="btn-secondary min-w-[10rem] disabled:opacity-60"
           >

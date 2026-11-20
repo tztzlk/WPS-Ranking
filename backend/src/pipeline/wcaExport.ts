@@ -12,7 +12,7 @@ const EXPORT_INFO_URL =
   process.env.WCA_EXPORT_INFO_URL ?? 'https://www.worldcubeassociation.org/api/v0/export/public';
 
 /** v2 export file names, without the WCA_export_ prefix. */
-export const REQUIRED_TSVS = ['persons', 'countries', 'ranks_average'] as const;
+export const REQUIRED_TSVS = ['persons', 'countries', 'ranks_average', 'ranks_single'] as const;
 export type TsvName = (typeof REQUIRED_TSVS)[number];
 
 export interface ExportInfo {

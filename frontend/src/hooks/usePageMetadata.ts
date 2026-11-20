@@ -8,7 +8,7 @@ type PageMetadata = {
 
 const DEFAULT_TITLE = 'WPS Ranking | All-around speedcubing leaderboard';
 const DEFAULT_DESCRIPTION =
-  'An all-around ranking of speedcubers. One score from official WCA world ranks by average in 16 events.';
+  'An all-around ranking of speedcubers. One score from official WCA world ranks in 17 events.';
 
 function upsertMeta(selector: string, create: () => HTMLMetaElement): HTMLMetaElement {
   const existing = document.head.querySelector<HTMLMetaElement>(selector);

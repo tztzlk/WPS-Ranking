@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trophy, Search, TrendingUp, Users, Layers, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/api';
-import { LeaderboardCacheItem } from '../types';
+import { LeaderboardCacheItem, SCORED_EVENT_COUNT } from '../types';
 import { RankingList } from '../components/RankingList';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
@@ -92,7 +92,7 @@ export function HomePage() {
   usePageMetadata({
     title: 'WPS Ranking | All-around speedcubing leaderboard',
     description:
-      'An all-around ranking of speedcubers. WPS turns official WCA world ranks by average in 16 events into one score. Find any cuber by name or WCA ID.',
+      'An all-around ranking of speedcubers. WPS turns official WCA world ranks in 17 events into one score. Find any cuber by name or WCA ID.',
     canonicalPath: '/',
   });
 
@@ -103,7 +103,7 @@ export function HomePage() {
           All-around rankings for <span className="text-green-400">speedcubers</span>
         </h1>
         <p className="mx-auto mb-6 max-w-2xl text-lg text-gray-300 md:text-xl">
-          WPS turns your official WCA world ranks in 16 events into one score.
+          WPS turns your official WCA world ranks in 17 events into one score.
         </p>
         <form
           role="search"
@@ -142,7 +142,7 @@ export function HomePage() {
       <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
         {[
           { icon: Users, value: formatCount(totalRanked), label: 'Ranked cubers' },
-          { icon: Layers, value: '16', label: 'Events scored' },
+          { icon: Layers, value: String(SCORED_EVENT_COUNT), label: 'Events scored' },
           { icon: Trophy, value: formatCount(totalCountries), label: 'Countries' },
         ].map(({ icon: Icon, value, label }) => (
           <div key={label} className="card flex flex-col items-center px-2 py-4 text-center sm:p-6">

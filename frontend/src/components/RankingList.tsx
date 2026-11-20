@@ -41,7 +41,7 @@ const gridClass = (showChange: boolean) =>
 export function RankingList({
   items,
   showChange = true,
-  rankOf = (item, index) => item.rank ?? item.countryRank ?? index + 1,
+  rankOf = (item, index) => item.rank ?? item.countryRank ?? item.continentRank ?? index + 1,
 }: {
   items: LeaderboardCacheItem[];
   showChange?: boolean;

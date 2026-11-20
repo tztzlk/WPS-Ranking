@@ -7,7 +7,11 @@ import {
   WpsBreakdownResponse,
   ProfileHistoryItem,
   CountryListItem,
+  CountryRankingResponse,
 } from '../types';
+
+/** Leaderboard scope: the world, a continent (AF, AS, EU, NA, OC, SA) or a country (ISO2). */
+export type LeaderboardRegion = { continent: string } | { country: string } | null;
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '');
 
@@ -85,14 +89,18 @@ export const apiService = {
     return countriesRequest;
   },
 
-  async getLeaderboardTop100(limit = 100, country?: string): Promise<LeaderboardCacheResponse> {
-    const params: { limit: number; country?: string } = { limit };
-    if (country && country !== 'ALL') params.country = country;
+  async getLeaderboardTop100(limit = 100, region: LeaderboardRegion = null): Promise<LeaderboardCacheResponse> {
+    const params = { limit, ...(region ?? {}) };
     const config: RetryableConfig = {
       params,
       _disableRetry: true,
     };
     const response = await api.get<LeaderboardCacheResponse>('/leaderboard', config);
+    return response.data;
+  },
+
+  async getCountryRanking(): Promise<CountryRankingResponse> {
+    const response = await api.get<CountryRankingResponse>('/countries/ranking');
     return response.data;
   },
 

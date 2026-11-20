@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GitCompare, Trophy, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
-import { WPSProfile } from '../types';
+import { WPSProfile, WpsBreakdownResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
+import { CompareEvents } from '../components/CompareEvents';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
@@ -69,6 +70,7 @@ export function ComparePage() {
   const [leftId, setLeftId] = useState(() => (searchParams.get('left') ?? '').toUpperCase());
   const [rightId, setRightId] = useState(() => (searchParams.get('right') ?? '').toUpperCase());
   const [data, setData] = useState<{ left: WPSProfile; right: WPSProfile } | null>(null);
+  const [breakdowns, setBreakdowns] = useState<{ left: WpsBreakdownResponse; right: WpsBreakdownResponse } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
@@ -96,11 +98,18 @@ export function ComparePage() {
     setLoading(true);
     setError(null);
     setData(null);
+    setBreakdowns(null);
     setSearchParams({ left: l, right: r }, { replace: true });
 
     try {
-      const result = await apiService.getCompare(l, r);
+      const [result, lb, rb] = await Promise.all([
+        apiService.getCompare(l, r),
+        // A missing breakdown only hides the event chart.
+        apiService.getWpsBreakdown(l).catch(() => null),
+        apiService.getWpsBreakdown(r).catch(() => null),
+      ]);
       setData(result);
+      if (lb && rb) setBreakdowns({ left: lb, right: rb });
     } catch (err: unknown) {
       const userMsg = err && typeof err === 'object' && 'userMessage' in err ? (err as { userMessage?: string }).userMessage : null;
       const ax = err && typeof err === 'object' && 'response' in err ? (err as { response?: { data?: { error?: string } } }) : null;
@@ -140,7 +149,7 @@ export function ComparePage() {
 
   usePageMetadata({
     title: 'Compare Cubers | WPS Ranking',
-    description: 'Compare two speedcubers by WPS, world rank, and country rank.',
+    description: 'Compare two speedcubers by WPS, world rank, country rank, and the WPS each event adds.',
     canonicalPath: '/compare',
   });
 
@@ -240,6 +249,12 @@ export function ComparePage() {
             <ProfileCard profile={data.left} />
             <ProfileCard profile={data.right} />
           </div>
+          {breakdowns && (
+            <CompareEvents
+              left={{ name: data.left.name, breakdown: breakdowns.left }}
+              right={{ name: data.right.name, breakdown: breakdowns.right }}
+            />
+          )}
         </div>
       )}
     </div>

@@ -38,7 +38,39 @@ export const EVENT_WEIGHTS: Record<string, number> = {
   'sq1': 0.4,
   '444bf': 0.12,
   '555bf': 0.1,
+  '333mbf': 0.15,
 };
+
+/**
+ * Events scored by the WCA ranking by single instead of by average. In these
+ * events most people never get an average (3 successful blindfolded attempts
+ * in one round, or 3 FMC attempts), and Multi-Blind has no average at all.
+ */
+export const SINGLE_RANKED_EVENTS: readonly string[] = ['333bf', '444bf', '555bf', '333mbf', '333fm'];
+
+export type RankType = 'single' | 'average';
+
+export function rankTypeOf(eventId: string): RankType {
+  return SINGLE_RANKED_EVENTS.includes(eventId) ? 'single' : 'average';
+}
+
+/** WCA continent id (countries export) -> short code and display name. */
+export const CONTINENTS: Record<string, { code: string; name: string }> = {
+  _Africa: { code: 'AF', name: 'Africa' },
+  _Asia: { code: 'AS', name: 'Asia' },
+  _Europe: { code: 'EU', name: 'Europe' },
+  '_North America': { code: 'NA', name: 'North America' },
+  _Oceania: { code: 'OC', name: 'Oceania' },
+  '_South America': { code: 'SA', name: 'South America' },
+};
+
+export function continentByCode(code: string): { code: string; name: string } | undefined {
+  const upper = code.trim().toUpperCase();
+  return Object.values(CONTINENTS).find((c) => c.code === upper);
+}
+
+/** Country ranking: average WPS of the country's best N cubers; empty places count as 0. */
+export const COUNTRY_TEAM_SIZE = 10;
 
 /** Display names for WCA events (for WPS breakdown API). */
 export const EVENT_NAMES: Record<string, string> = {
@@ -62,10 +94,11 @@ export const EVENT_NAMES: Record<string, string> = {
 };
 
 /**
- * WPS v2. The pipeline computes the same formula in SQL (pipeline/publish.ts).
+ * WPS v3 (v2 formula; BLD/FMC by single, MBLD added). The pipeline computes the same formula in SQL (pipeline/publish.ts).
  *
  *   eventScore(e) = w_e * (1 - ln(R_e) / ln(N_e + 1))
- *     R_e = world rank by average, N_e = people with an average in e.
+ *     R_e = world rank in e (by average, or by single for SINGLE_RANKED_EVENTS),
+ *     N_e = people in that ranking of e.
  *     Rank 1 -> w_e, last place -> ~0: a rank counts relative to the size of the field,
  *     and merely having a result is worth nothing.
  *   WPS = 100 * (sum of all event scores) / MAX_WPS_SCORE

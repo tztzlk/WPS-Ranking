@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Search, Trophy, Info, Home, GitCompare } from 'lucide-react';
+import { Search, Trophy, Info, Home, GitCompare, Flag } from 'lucide-react';
 
 export function Layout() {
   const location = useLocation();
@@ -9,6 +9,7 @@ export function Layout() {
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+    { path: '/countries', label: 'Countries', icon: Flag },
     { path: '/search', label: 'Search', icon: Search },
     { path: '/compare', label: 'Compare', icon: GitCompare },
     { path: '/about', label: 'About', icon: Info },
@@ -121,6 +122,7 @@ export function Layout() {
               <ul className="space-y-2">
                 <li><Link to="/" className="text-gray-400 hover:text-white">Home</Link></li>
                 <li><Link to="/leaderboard" className="text-gray-400 hover:text-white">Leaderboard</Link></li>
+                <li><Link to="/countries" className="text-gray-400 hover:text-white">Country ranking</Link></li>
                 <li><Link to="/search" className="text-gray-400 hover:text-white">Search</Link></li>
                 <li><Link to="/compare" className="text-gray-400 hover:text-white">Compare</Link></li>
                 <li><Link to="/about" className="text-gray-400 hover:text-white">How WPS works</Link></li>

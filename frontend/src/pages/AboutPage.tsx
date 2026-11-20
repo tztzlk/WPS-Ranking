@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, MessageSquare } from 'lucide-react';
 import { FormulaBox } from '../components/FormulaBox';
+import { SingleTag } from '../components/WpsPotential';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { apiService } from '../services/api';
 import { AboutData, EVENT_NAMES } from '../types';
@@ -32,11 +33,11 @@ export function AboutPage() {
   usePageMetadata({
     title: 'How WPS works | WPS Ranking',
     description:
-      'How the WPS score is calculated from official WCA world ranks by average in 16 events, how event weights are chosen, and where the data comes from.',
+      'How the WPS score is calculated from official WCA world ranks in 17 events, how event weights are chosen, and where the data comes from.',
     canonicalPath: '/about',
   });
 
-  const maxScore = aboutData ? formatWeight(aboutData.maxScore) : '7.52';
+  const maxScore = aboutData ? formatWeight(aboutData.maxScore) : '7.67';
   // By weight, then by field size, so equal weights still read top-down by popularity.
   const weights = aboutData
     ? Object.entries(aboutData.eventWeights).sort(
@@ -54,8 +55,8 @@ export function AboutPage() {
           How <span className="text-green-400">WPS</span> works
         </h1>
         <p className="max-w-2xl text-lg leading-relaxed text-gray-300">
-          WPS gives every cuber one score from 0 to 100. It is based on their official WCA world ranks by average in 16
-          events. A high rank in a big event counts more than the same rank in a small one.
+          WPS gives every cuber one score from 0 to 100. It is based on their official WCA world ranks in 17 events. A
+          high rank in a big event counts more than the same rank in a small one.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <a href="#feedback" className="btn-primary inline-flex items-center justify-center gap-2">
@@ -77,7 +78,7 @@ export function AboutPage() {
       <Section title="The formula">
         <ol className="mb-6 space-y-3 text-gray-300">
           {[
-            'For each event, your world rank by average is compared with the number of people who have an average in that event. World #1 gets the full event weight. Last place gets 0.',
+            'For each event, your world rank is compared with the number of people in that event\'s ranking. World #1 gets the full event weight. Last place gets 0.',
             'The scores of all your events are added up.',
             `The total is divided by the maximum possible score, ${maxScore}, and multiplied by 100. A WPS of 100 would mean world #1 in every event.`,
           ].map((step, i) => (
@@ -91,12 +92,12 @@ export function AboutPage() {
         </ol>
         <FormulaBox />
         <p className="mt-3 text-sm text-gray-400">
-          R<sub>e</sub> is your world rank by average in event e, N<sub>e</sub> is the number of people with an average
-          in it, and w<sub>e</sub> is the event weight. ln is the natural logarithm.
+          R<sub>e</sub> is your world rank in event e, N<sub>e</sub> is the number of people in that ranking, and
+          w<sub>e</sub> is the event weight. ln is the natural logarithm.
         </p>
         <p className="mt-4 text-sm leading-relaxed text-gray-300">
           The logarithm makes a climb near the top worth more than the same climb near the bottom. In 3x3, going from #20
-          to #10 adds 0.73 WPS. Going from #20,010 to #20,000 adds less than 0.01 WPS.
+          to #10 adds 0.72 WPS. Going from #20,010 to #20,000 adds less than 0.01 WPS.
         </p>
       </Section>
 
@@ -106,7 +107,7 @@ export function AboutPage() {
             <h3 className="mb-3 font-semibold text-green-300">It measures</h3>
             <ul className="list-disc space-y-2 pl-5 text-sm text-gray-300">
               <li>How high you rank across all the events you compete in.</li>
-              <li>Consistency. Ranks are by average, so one lucky single does not count.</li>
+              <li>Consistency. Most events use the ranking by average, so one lucky solve does not count.</li>
             </ul>
           </div>
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
@@ -121,6 +122,15 @@ export function AboutPage() {
             </ul>
           </div>
         </div>
+      </Section>
+
+      <Section title="Average or single">
+        <p className="text-gray-300">
+          Most events use the WCA ranking by average. 3x3, 4x4 and 5x5 Blindfolded, Multi-Blind and Fewest Moves use the
+          ranking by single. In these events most competitors never get an average. An average takes three
+          successful blindfolded solves in one round, and Multi-Blind has no average at all. By single, 3x3 Blindfolded has about
+          three times as many ranked people as by average.
+        </p>
       </Section>
 
       <Section title="Event weights">
@@ -150,7 +160,10 @@ export function AboutPage() {
                 const n = aboutData.eventParticipants?.[eventId] ?? 0;
                 return (
                   <tr key={eventId} className="border-b border-gray-700/50 last:border-b-0">
-                    <td className="py-2 pr-3 text-white">{EVENT_NAMES[eventId] || eventId}</td>
+                    <td className="py-2 pr-3 text-white">
+                      {EVENT_NAMES[eventId] || eventId}
+                      {aboutData.singleRankedEvents?.includes(eventId) && <SingleTag />}
+                    </td>
                     <td className="py-2 pr-3">
                       <div className="flex items-center gap-3">
                         <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-gray-700 sm:block" aria-hidden="true">

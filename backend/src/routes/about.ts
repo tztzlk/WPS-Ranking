@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { EVENT_WEIGHTS, MAX_WPS_SCORE } from '../types';
+import { COUNTRY_TEAM_SIZE, EVENT_WEIGHTS, MAX_WPS_SCORE, SINGLE_RANKED_EVENTS } from '../types';
 import { getMetaValues } from '../services/personDb';
 import { asyncRoute } from '../lib/asyncRoute';
 
@@ -23,6 +23,8 @@ router.get(
     res.json({
       eventWeights: EVENT_WEIGHTS,
       eventParticipants,
+      singleRankedEvents: SINGLE_RANKED_EVENTS,
+      countryTeamSize: COUNTRY_TEAM_SIZE,
       maxScore: Math.round(MAX_WPS_SCORE * 100) / 100,
       generatedAt: meta.generatedAt ?? null,
     });

@@ -30,23 +30,27 @@ model Person {
 
 /// Current ranking: one row per ranked person.
 model LeaderboardEntry {
-  personId     String   @id @map("person_id") @db.VarChar(10)
-  name         String
-  countryIso2  String?  @map("country_iso2") @db.VarChar(2)
-  countryName  String?  @map("country_name")
-  wps          Float
+  personId      String   @id @map("person_id") @db.VarChar(10)
+  name          String
+  countryIso2   String?  @map("country_iso2") @db.VarChar(2)
+  countryName   String?  @map("country_name")
+  wps           Float
   /// RANK() over WPS rounded to 0.01: equal WPS -> equal rank.
-  globalRank   Int      @map("global_rank")
-  countryRank  Int?     @map("country_rank")
+  globalRank    Int      @map("global_rank")
+  countryRank   Int?     @map("country_rank")
+  /// AF, AS, EU, NA, OC, SA (see CONTINENTS in src/types).
+  continent     String?  @db.VarChar(2)
+  continentRank Int?     @map("continent_rank")
   /// Global rank change vs the previous export (positive = moved up).
-  rankChange1d Int?     @map("rank_change_1d")
+  rankChange1d  Int?     @map("rank_change_1d")
   /// Global rank change vs the export ~7 days earlier.
-  rankChange7d Int?     @map("rank_change_7d")
-  generatedAt  DateTime @map("generated_at")
-  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  rankChange7d  Int?     @map("rank_change_7d")
+  generatedAt   DateTime @map("generated_at")
+  person        Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([globalRank], map: "idx_leaderboard_global_rank")
   @@index([countryIso2, countryRank], map: "idx_leaderboard_country_rank")
+  @@index([continent, continentRank], map: "idx_leaderboard_continent_rank")
   @@map("leaderboard_entries")
 }
 
@@ -61,9 +65,13 @@ model WpsBreakdown {
 }
 
 model Country {
-  iso2        String @id @db.VarChar(2)
+  iso2        String  @id @db.VarChar(2)
   name        String
-  rankedCount Int    @map("ranked_count")
+  rankedCount Int     @map("ranked_count")
+  continent   String? @db.VarChar(2)
+  /// Average WPS of the country's best COUNTRY_TEAM_SIZE cubers (empty places count as 0).
+  teamScore   Float?  @map("team_score")
+  teamRank    Int?    @map("team_rank")
 
   @@map("countries")
 }

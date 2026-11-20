@@ -19,9 +19,9 @@ WCA export ──► src/pipeline ──COPY──► Supabase Postgres ◄─�
 ### Daily pipeline
 
 1. Ask the WCA API for the current export date; stop if it is already published.
-2. Download the TSV export, extract `persons`, `countries`, `ranks_average`.
+2. Download the TSV export, extract `persons`, `countries`, `ranks_average`, `ranks_single`.
 3. Stream them into TEMP staging tables with `COPY`.
-4. Compute WPS, world and country ranks in SQL.
+4. Compute WPS, world, continent and country ranks, and country team scores in SQL.
 5. In **one short transaction**: replace `persons`, `leaderboard_entries`, `wps_breakdowns`, `countries`; append history; update `meta`. Readers see old or new data, never a half-import; a failed run changes nothing.
 
 Takes ~30 s and ~120 MB RAM for ~300k persons.
@@ -35,21 +35,24 @@ Storing a full ranking snapshot per day costs ~30 MB/day (it filled the 500 MB f
 
 Global/country rank on any past day = `above[position of that day's WPS] + 1`. This reproduces the stored ranks exactly and costs ~0.3 MB/day. The profile chart, daily rank change and weekly movers all come from these two tables.
 
-## WPS formula (v2)
+## WPS formula (v3)
 
 ```
 Event score = weight × (1 − ln(world_rank) / ln(participants + 1))
-WPS         = Σ event scores / max possible × 100   (max = world #1 in every event = Σ weights = 7.52)
+WPS         = Σ event scores / max possible × 100   (max = world #1 in every event = Σ weights = 7.67)
 ```
 
-- `world_rank` is the world rank by average, `participants` the number of people with an average in that event.
+- `world_rank` is the world rank in the event's WCA ranking, `participants` the number of people in that ranking.
+- 3BLD, 4BLD, 5BLD, MBLD and FMC use the ranking by single (`SINGLE_RANKED_EVENTS`); the other events use the ranking by average. In these events most people never get an average, and MBLD has none.
 - World #1 earns the full weight and last place earns ~0, so a rank counts relative to the size of the field and merely having a result is worth nothing.
 - All events add up, so WPS is an all-around score; a result near the bottom of an event adds almost nothing.
 - Weights follow event popularity (number of participants); they are not a difficulty score.
 
 The same formula lives in `backend/src/types/index.ts` (API breakdown) and `backend/src/pipeline/publish.ts` (SQL). Ranks use `RANK()` over WPS rounded to 0.01, so equal WPS means equal rank.
 
-v1 (`weight × 10 / ln(rank + 1)`) rewarded merely entering events: last place in all 16 events ranked in the top ~2.5%. Switching to v2 reset the history (migration `20261119000200_wps_v2`).
+v1 (`weight × 10 / ln(rank + 1)`) rewarded merely entering events: last place in all 16 events ranked in the top ~2.5%. Switching to v2 reset the history (migration `20261119000200_wps_v2`). v3 moved BLD and FMC to the single ranking, added MBLD and reset the history again (migration `20261120000100_wps_v3_regions`).
+
+Country ranking: a country's team score is the sum of its 10 best WPS values divided by 10, so a country with fewer ranked cubers counts the empty places as 0.
 
 | Event | ID | Weight |
 |-------|----|--------|
@@ -69,6 +72,7 @@ v1 (`weight × 10 / ln(rank + 1)`) rewarded merely entering events: last place i
 | Square-1 | `sq1` | 0.4 |
 | 4x4 Blindfolded | `444bf` | 0.12 |
 | 5x5 Blindfolded | `555bf` | 0.1 |
+| 3x3 Multi-Blind | `333mbf` | 0.15 |
 
 Weights live in `backend/src/types/index.ts` (`EVENT_WEIGHTS`) and are used by both the pipeline and the API.
 

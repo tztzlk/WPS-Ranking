@@ -23,8 +23,12 @@ export interface SearchResult {
 
 export interface AboutData {
   eventWeights: Record<string, number>;
-  /** People with an average in each event (size of the field). */
+  /** People in each event's ranking (size of the field). */
   eventParticipants: Record<string, number>;
+  /** Events scored by the ranking by single; the rest use the ranking by average. */
+  singleRankedEvents: string[];
+  /** Country ranking: number of best cubers averaged. */
+  countryTeamSize: number;
   maxScore: number;
   generatedAt: string | null;
 }
@@ -33,6 +37,7 @@ export interface AboutData {
 export interface LeaderboardCacheItem {
   rank?: number;
   countryRank?: number;
+  continentRank?: number;
   personId: string;
   name: string;
   countryId?: string;
@@ -44,7 +49,7 @@ export interface LeaderboardCacheItem {
 }
 
 export interface LeaderboardCacheResponse {
-  scope: 'global' | 'country';
+  scope: 'global' | 'country' | 'continent';
   generatedAt: string;
   count: number;
   totalRanked?: number;
@@ -52,6 +57,8 @@ export interface LeaderboardCacheResponse {
   totalCountries?: number;
   countryIso2?: string;
   countryName?: string;
+  continent?: string;
+  continentName?: string;
   source?: string;
   items: LeaderboardCacheItem[];
   biggestMoversUp: LeaderboardCacheItem[];
@@ -68,18 +75,64 @@ export interface WpsBreakdownEvent {
   eventId: string;
   eventName: string;
   weight: number;
+  rankType: RankType;
   worldRank: number;
-  /** People with an average in this event. */
+  /** People in that ranking of the event. */
   participants: number;
   /** Contribution to WPS in points; all events sum to `wps`. */
   eventScore: number;
+}
+
+export type RankType = 'single' | 'average';
+
+/** What WPS would gain if the cuber reached their typical level in an event. */
+export interface WpsPotentialItem {
+  eventId: string;
+  eventName: string;
+  rankType: RankType;
+  /** null = no result in this event yet. */
+  worldRank: number | null;
+  targetRank: number;
+  participants: number;
+  gain: number;
 }
 
 export interface WpsBreakdownResponse {
   personId: string;
   events: WpsBreakdownEvent[];
   wps: number;
+  /** Median rank / field size over the cuber's events, e.g. 0.05 = top 5%. */
+  typicalShare?: number;
+  potential?: WpsPotentialItem[];
 }
+
+export interface CountryRankingItem {
+  rank: number;
+  iso2: string;
+  name: string;
+  continent: string | null;
+  teamScore: number;
+  rankedCount: number;
+  best: { personId: string; name: string; wps: number } | null;
+}
+
+export interface CountryRankingResponse {
+  generatedAt: string;
+  teamSize: number;
+  items: CountryRankingItem[];
+}
+
+export const CONTINENTS: { code: string; name: string }[] = [
+  { code: 'AF', name: 'Africa' },
+  { code: 'AS', name: 'Asia' },
+  { code: 'EU', name: 'Europe' },
+  { code: 'NA', name: 'North America' },
+  { code: 'OC', name: 'Oceania' },
+  { code: 'SA', name: 'South America' },
+];
+
+/** Number of events in WPS. Keep in sync with EVENT_WEIGHTS in the backend. */
+export const SCORED_EVENT_COUNT = 17;
 
 /** Profile history for WPS progress chart (GET /api/profile/:wcaId/history). */
 export interface ProfileHistoryItem {

@@ -7,7 +7,7 @@
  * failed run changes nothing.
  */
 import type { Client } from 'pg';
-import { MAX_WPS_SCORE } from '../types';
+import { COUNTRY_TEAM_SIZE, MAX_WPS_SCORE } from '../types';
 
 /** rank_distribution older than this is deleted. The profile chart shows 180 days. */
 const DISTRIBUTION_RETENTION_DAYS = 200;
@@ -74,11 +74,13 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
            lower(p.name)                 AS name_lower,
            p.country_id,
            COALESCE(c.name, p.country_id) AS country_name,
-           NULLIF(c.iso2, '')            AS country_iso2
+           NULLIF(c.iso2, '')            AS country_iso2,
+           ct.code                       AS continent
     FROM stg_persons p
-    LEFT JOIN stg_countries c ON c.id = p.country_id;
+    LEFT JOIN stg_countries c ON c.id = p.country_id
+    LEFT JOIN stg_continents ct ON ct.id = c.continent_id;
 
-    -- N_e: everyone with an average in the event (the size of the field).
+    -- N_e: everyone in the event's ranking (the size of the field).
     CREATE TEMP TABLE stg_event_n AS
     SELECT event_id, count(*)::int AS participants
     FROM stg_ranks
@@ -102,18 +104,21 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
     `
     CREATE TEMP TABLE stg_lb AS
     WITH scored AS (
-      SELECT s.person_id, p.name, p.country_iso2, p.country_name,
+      SELECT s.person_id, p.name, p.country_iso2, p.country_name, p.continent,
              round((s.total / $1::float8 * 100)::numeric, 2) AS wps
       FROM stg_scores s
       JOIN stg_people p ON p.id = s.person_id
     )
-    SELECT person_id, name, country_iso2, country_name,
+    SELECT person_id, name, country_iso2, country_name, continent,
            wps::float8                                       AS wps,
            (wps * 100)::int                                  AS wps_centi,
            rank() OVER (ORDER BY wps DESC)::int              AS global_rank,
            CASE WHEN country_iso2 IS NOT NULL
                 THEN rank() OVER (PARTITION BY country_iso2 ORDER BY wps DESC)::int
-           END                                               AS country_rank
+           END                                               AS country_rank,
+           CASE WHEN continent IS NOT NULL
+                THEN rank() OVER (PARTITION BY continent ORDER BY wps DESC)::int
+           END                                               AS continent_rank
     FROM scored
     `,
     [MAX_WPS_SCORE],
@@ -195,8 +200,9 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
       `
       INSERT INTO leaderboard_entries
         (person_id, name, country_iso2, country_name, wps, global_rank, country_rank,
-         rank_change_1d, rank_change_7d, generated_at)
+         continent, continent_rank, rank_change_1d, rank_change_7d, generated_at)
       SELECT l.person_id, l.name, l.country_iso2, l.country_name, l.wps, l.global_rank, l.country_rank,
+             l.continent, l.continent_rank,
              r1.global_rank - l.global_rank,
              r7.global_rank - l.global_rank,
              $1::timestamptz
@@ -210,12 +216,27 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
       INSERT INTO wps_breakdowns (person_id, event_ranks)
       SELECT person_id, event_ranks FROM stg_scores
     `);
-    await client.query(`
-      INSERT INTO countries (iso2, name, ranked_count)
-      SELECT country_iso2, min(country_name), count(*)
-      FROM stg_lb WHERE country_iso2 IS NOT NULL
-      GROUP BY country_iso2
-    `);
+    // Team score: the best COUNTRY_TEAM_SIZE WPS values, summed and divided by
+    // COUNTRY_TEAM_SIZE, so a country with fewer ranked cubers counts the empty places as 0.
+    await client.query(
+      `
+      INSERT INTO countries (iso2, name, ranked_count, continent, team_score, team_rank)
+      SELECT iso2, name, ranked_count, continent, team_score,
+             rank() OVER (ORDER BY team_score DESC)::int
+      FROM (
+        SELECT country_iso2 AS iso2, min(country_name) AS name, count(*)::int AS ranked_count,
+               min(continent) AS continent,
+               round((sum(wps) FILTER (WHERE pos <= $1::int) / $1::int)::numeric, 2)::float8 AS team_score
+        FROM (
+          SELECT country_iso2, country_name, continent, wps,
+                 row_number() OVER (PARTITION BY country_iso2 ORDER BY wps DESC, person_id) AS pos
+          FROM stg_lb WHERE country_iso2 IS NOT NULL
+        ) ranked
+        GROUP BY country_iso2
+      ) c
+      `,
+      [COUNTRY_TEAM_SIZE],
+    );
 
     await client.query(
       `
@@ -225,7 +246,7 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
       `,
       [
         ['generatedAt', 'totalRanked', 'wcaExportDate', 'refreshLastSuccessAt', 'eventParticipants', 'wpsFormulaVersion'],
-        [exportDateIso, String(ranked), exportDateIso, new Date().toISOString(), eventParticipants, '2'],
+        [exportDateIso, String(ranked), exportDateIso, new Date().toISOString(), eventParticipants, '3'],
       ],
     );
 

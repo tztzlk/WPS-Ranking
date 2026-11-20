@@ -75,6 +75,7 @@ async function main(): Promise<void> {
       persons: tsvPath(dir, 'persons'),
       countries: tsvPath(dir, 'countries'),
       ranksAverage: tsvPath(dir, 'ranks_average'),
+      ranksSingle: tsvPath(dir, 'ranks_single'),
     });
     done();
 

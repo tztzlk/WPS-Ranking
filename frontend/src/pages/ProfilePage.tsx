@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Globe2, Layers, Share2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { apiService } from '../services/api';
-import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem } from '../types';
+import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem, SCORED_EVENT_COUNT } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
+import { SingleTag, WpsPotential } from '../components/WpsPotential';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 /** "top 0.01%" style share of the field at or above this rank. */
@@ -184,8 +185,8 @@ export function ProfilePage() {
     {
       icon: Layers,
       label: 'Events scored',
-      value: eventsScored != null ? `${eventsScored}/16` : '—',
-      detail: 'by average',
+      value: eventsScored != null ? `${eventsScored}/${SCORED_EVENT_COUNT}` : '—',
+      detail: 'with a WCA result',
     },
   ];
 
@@ -281,8 +282,9 @@ export function ProfilePage() {
           {showBreakdown && (
             <div className="space-y-4 border-t border-gray-700 px-6 py-5">
               <p className="text-sm text-gray-300">
-                Each event scores the cuber&apos;s world rank against everyone with an average in it, times the event
-                weight. The contributions of all events add up to WPS.{' '}
+                Each event scores the cuber&apos;s world rank against the number of people in that event&apos;s ranking,
+                times the event weight. Events marked single use the ranking by single, the others the ranking by
+                average. The contributions of all events add up to WPS.{' '}
                 <Link to="/about" className="text-green-400 hover:text-green-300">
                   How WPS works
                 </Link>
@@ -292,19 +294,25 @@ export function ProfilePage() {
                   <thead>
                     <tr className="border-b border-gray-600">
                       <th className="py-2 pr-4 font-medium text-gray-400">Event</th>
-                      <th className="py-2 pr-4 font-medium text-gray-400">World rank</th>
+                      <th className="whitespace-nowrap py-2 pr-4 font-medium text-gray-400">World rank</th>
                       <th className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">Weight</th>
-                      <th className="py-2 text-right font-medium text-gray-400 sm:text-left">Contribution</th>
+                      <th className="py-2 text-right font-medium text-gray-400 sm:text-left">
+                        <span className="sm:hidden">WPS</span>
+                        <span className="hidden sm:inline">Contribution</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {breakdown.events.map((row) => (
                       <tr key={row.eventId} className="border-b border-gray-700/50">
-                        <td className="py-2 pr-4 text-white">{row.eventName}</td>
+                        <td className="py-2 pr-4 text-white">
+                          {row.eventName}
+                          {row.rankType === 'single' && <SingleTag />}
+                        </td>
                         <td className="py-2 pr-4 text-gray-300">
                           <span className="tabular-nums">#{row.worldRank.toLocaleString('en-US')}</span>
                           {row.participants > 0 && (
-                            <span className="block text-xs text-gray-500 sm:ml-1 sm:inline">
+                            <span className="block whitespace-nowrap text-xs text-gray-500 sm:ml-1 sm:inline">
                               of {row.participants.toLocaleString('en-US')}
                             </span>
                           )}
@@ -354,6 +362,9 @@ export function ProfilePage() {
         </div>
       )}
 
+      {breakdown?.potential && breakdown.typicalShare != null && (
+        <WpsPotential name={profile.name} typicalShare={breakdown.typicalShare} items={breakdown.potential} />
+      )}
     </div>
   );
 }

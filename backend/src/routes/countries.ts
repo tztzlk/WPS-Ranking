@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
-import { getCountriesList } from '../services/leaderboard';
+import { getCountriesList, getCountryRanking } from '../services/leaderboard';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 const COUNTRIES_CACHE_CONTROL = 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400';
@@ -55,5 +56,22 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch countries' });
   }
 });
+
+/**
+ * GET /api/countries/ranking
+ * Countries by team score (average WPS of their best cubers), with the best cuber of each.
+ */
+router.get(
+  '/ranking',
+  asyncRoute(async (_req: Request, res: Response) => {
+    const data = await getCountryRanking();
+    if (!data) {
+      res.status(503).json({ error: 'Country ranking not available' });
+      return;
+    }
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
+    res.json(data);
+  }),
+);
 
 export { router as countriesRoutes };
