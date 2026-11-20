@@ -1,49 +1,37 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { ComparePage } from './pages/ComparePage';
-import { AboutPage } from './pages/AboutPage';
-import { SearchPage } from './pages/SearchPage';
-import { CountriesPage } from './pages/CountriesPage';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { RouteError } from './pages/RouteError';
 
+// Home is in the main bundle; every other page is a separate chunk loaded on
+// first visit. The router keeps the current page on screen while it loads.
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
     children: [
       {
-        index: true,
-        element: <HomePage />
+        // Errors and unknown URLs render inside the layout, with the header and footer.
+        errorElement: <RouteError />,
+        children: [
+          { index: true, element: <HomePage /> },
+          { path: 'leaderboard', lazy: () => import('./pages/LeaderboardPage').then((m) => ({ Component: m.LeaderboardPage })) },
+          { path: 'countries', lazy: () => import('./pages/CountriesPage').then((m) => ({ Component: m.CountriesPage })) },
+          { path: 'profile/:wcaId', lazy: () => import('./pages/ProfilePage').then((m) => ({ Component: m.ProfilePage })) },
+          { path: 'compare', lazy: () => import('./pages/ComparePage').then((m) => ({ Component: m.ComparePage })) },
+          { path: 'about', lazy: () => import('./pages/AboutPage').then((m) => ({ Component: m.AboutPage })) },
+          { path: 'search', lazy: () => import('./pages/SearchPage').then((m) => ({ Component: m.SearchPage })) },
+          {
+            path: '*',
+            loader: () => {
+              throw new Response('Not found', { status: 404 });
+            },
+          },
+        ],
       },
-      {
-        path: 'leaderboard',
-        element: <LeaderboardPage />
-      },
-      {
-        path: 'countries',
-        element: <CountriesPage />
-      },
-      {
-        path: 'profile/:wcaId',
-        element: <ProfilePage />
-      },
-      {
-        path: 'compare',
-        element: <ComparePage />
-      },
-      {
-        path: 'about',
-        element: <AboutPage />
-      },
-      {
-        path: 'search',
-        element: <SearchPage />
-      }
-    ]
-  }
+    ],
+  },
 ]);
 
 function App() {

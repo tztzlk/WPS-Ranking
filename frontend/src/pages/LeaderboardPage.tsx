@@ -108,7 +108,8 @@ export function LeaderboardPage() {
   ]
     .filter(Boolean)
     .join(' · ');
-  const hasChanges = items.some((i) => typeof i.rankChange === 'number' && i.rankChange !== 0);
+  // rankChange is the change in world rank, so it is only shown on the world list.
+  const hasChanges = !isFiltered && items.some((i) => typeof i.rankChange === 'number' && i.rankChange !== 0);
   const canLoadMore = items.length >= limit && limit < MAX_ROWS;
 
   usePageMetadata({

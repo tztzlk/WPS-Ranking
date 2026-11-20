@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Globe2, Layers, Share2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem, SCORED_EVENT_COUNT } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
-import { WpsProgressChart } from '../components/WpsProgressChart';
 import { SingleTag, WpsPotential } from '../components/WpsPotential';
 import { Avatar, useWcaAvatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+
+// The chart library (recharts) is the largest dependency; load it only on profiles.
+const WpsProgressChart = lazy(() =>
+  import('../components/WpsProgressChart').then((m) => ({ default: m.WpsProgressChart })),
+);
 
 /** "top 0.01%" style share of the field at or above this rank. */
 function topPercent(rank: number, total: number): string {
@@ -255,7 +259,9 @@ export function ProfilePage() {
         ))}
       </div>
 
-      <WpsProgressChart data={history} loadError={historyLoadError} />
+      <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-gray-800" aria-hidden="true" />}>
+        <WpsProgressChart data={history} loadError={historyLoadError} />
+      </Suspense>
 
       {breakdown && breakdown.events.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">

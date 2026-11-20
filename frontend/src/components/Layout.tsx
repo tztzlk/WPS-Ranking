@@ -1,10 +1,14 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, Link, useLocation, useNavigation } from 'react-router-dom';
+import { clearChunkReloadFlag } from '../pages/RouteError';
 import { Search, Trophy, Info, Home, GitCompare, Flag } from 'lucide-react';
 
 export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // True while the next page's code is loading (pages are separate chunks).
+  const pageLoading = useNavigation().state === 'loading';
+  useEffect(clearChunkReloadFlag, [location.pathname]);
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
@@ -93,6 +97,9 @@ export function Layout() {
         )}
       </header>
 
+      {pageLoading && (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-green-400" role="progressbar" aria-label="Loading page" />
+      )}
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <Outlet />
       </main>
@@ -132,14 +139,15 @@ export function Layout() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">Data</h3>
               <p className="text-gray-400">
-                Rankings use the official results export of the{' '}
+                This information is based on competition results owned and maintained by the World Cube
+                Association, published at{' '}
                 <a
-                  href="https://www.worldcubeassociation.org"
+                  href="https://worldcubeassociation.org/results"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-green-400 hover:text-green-300"
                 >
-                  World Cube Association
+                  worldcubeassociation.org/results
                 </a>
                 . This site is not affiliated with the WCA.
               </p>

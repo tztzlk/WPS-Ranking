@@ -1,10 +1,10 @@
 import crypto from 'crypto';
+import { DATA_CACHE_CONTROL as COUNTRIES_CACHE_CONTROL } from '../lib/cache';
 import { Router, Request, Response } from 'express';
 import { getCountriesList, getCountryRanking } from '../services/leaderboard';
 import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
-const COUNTRIES_CACHE_CONTROL = 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400';
 
 /**
  * GET /api/countries
@@ -69,7 +69,7 @@ router.get(
       res.status(503).json({ error: 'Country ranking not available' });
       return;
     }
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control', COUNTRIES_CACHE_CONTROL);
     res.json(data);
   }),
 );

@@ -13,6 +13,7 @@ import { cuberRoutes } from './routes/cuber';
 import { ogRoutes } from './routes/og';
 import { ogMetaRoutes } from './routes/ogMeta';
 import { errorHandler } from './middleware/errorHandler';
+import { DATA_CACHE_CONTROL } from './lib/cache';
 
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught exception:', err);
@@ -42,7 +43,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', (req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+  res.setHeader('Cache-Control', DATA_CACHE_CONTROL);
 
   const timer = setTimeout(() => {
     if (!res.headersSent) {

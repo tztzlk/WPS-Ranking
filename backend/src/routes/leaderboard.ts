@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { DATA_CACHE_CONTROL as PAGE_CACHE_CONTROL } from '../lib/cache';
 import { Router, Request, Response } from 'express';
 import {
   getGlobalLeaderboard,
@@ -11,7 +12,6 @@ const router = Router();
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
-const PAGE_CACHE_CONTROL = 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
 
 function applyConditionalJsonCache(
   req: Request,

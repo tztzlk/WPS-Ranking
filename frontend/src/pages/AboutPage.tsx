@@ -203,6 +203,23 @@ export function AboutPage() {
             )}
           </p>
           <p>WPS Ranking is an independent project and is not affiliated with the WCA.</p>
+          {/* Wording required by the WCA export license. */}
+          <p className="text-sm text-gray-400">
+            This information is based on competition results owned and maintained by the World Cube Association,
+            published at{' '}
+            <a
+              href="https://worldcubeassociation.org/results"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-400 hover:text-green-300"
+            >
+              worldcubeassociation.org/results
+            </a>
+            {aboutData?.generatedAt
+              ? ` as of ${new Date(aboutData.generatedAt).toLocaleDateString('en-US', { dateStyle: 'long', timeZone: 'UTC' })}`
+              : ''}
+            .
+          </p>
           <p className="text-sm text-gray-400">
             The idea of a weighted all-around ranking comes from STUCUBE&apos;s video{' '}
             <a href={STUCUBE_VIDEO_URL} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300">
