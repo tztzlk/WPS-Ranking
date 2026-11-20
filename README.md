@@ -24,7 +24,9 @@ WCA export ──► src/pipeline ──COPY──► Supabase Postgres ◄─�
 4. Compute WPS, world, continent and country ranks, and country team scores in SQL.
 5. In **one short transaction**: replace `persons`, `leaderboard_entries`, `wps_breakdowns`, `countries`; append history; update `meta`. Readers see old or new data, never a half-import; a failed run changes nothing.
 
-Takes ~30 s and ~120 MB RAM for ~300k persons.
+6. Avatars: WCA photo thumbnails for the top 1000 in the world, top 100 per continent and top 25 per country (~3,800 people) come from the public WCA API (`/api/v0/persons?wca_ids=...`, 200 per request) into `person_avatars`. A failure here is logged and does not fail the refresh. The profile and compare pages ask the WCA API directly in the browser.
+
+Takes ~30 s and ~120 MB RAM for ~300k persons, plus ~2 min for avatars (the WCA API is slow).
 
 ### History without daily full copies
 

@@ -19,6 +19,7 @@ export interface SearchResult {
   countryIso2?: string;
   wpsScore: number;
   wpsRank?: number | null;
+  avatarUrl?: string | null;
 }
 
 export interface AboutData {
@@ -46,6 +47,8 @@ export interface LeaderboardCacheItem {
   wps: number;
   globalWpsRank?: number;
   rankChange: number | null;
+  /** WCA photo thumbnail, when stored for this cuber. */
+  avatarUrl?: string | null;
 }
 
 export interface LeaderboardCacheResponse {
@@ -113,7 +116,7 @@ export interface CountryRankingItem {
   continent: string | null;
   teamScore: number;
   rankedCount: number;
-  best: { personId: string; name: string; wps: number } | null;
+  best: { personId: string; name: string; wps: number; avatarUrl?: string | null } | null;
 }
 
 export interface CountryRankingResponse {

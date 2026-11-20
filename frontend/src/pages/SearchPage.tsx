@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { SearchResult } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { RankBadge } from '../components/RankingList';
+import { Avatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const DEBOUNCE_MS = 300;
@@ -142,6 +143,7 @@ export function SearchPage() {
                   <span className="w-14 shrink-0 text-sm">
                     {cuber.wpsRank ? <RankBadge rank={cuber.wpsRank} /> : <span className="text-gray-600">—</span>}
                   </span>
+                  <Avatar name={cuber.name} url={cuber.avatarUrl} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <CountryFlag iso2={cuber.countryIso2} />

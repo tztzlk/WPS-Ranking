@@ -6,6 +6,7 @@ import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem, SCORED_EVENT_COUN
 import { CountryFlag } from '../components/CountryFlag';
 import { WpsProgressChart } from '../components/WpsProgressChart';
 import { SingleTag, WpsPotential } from '../components/WpsPotential';
+import { Avatar, useWcaAvatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 /** "top 0.01%" style share of the field at or above this rank. */
@@ -15,11 +16,6 @@ function topPercent(rank: number, total: number): string {
   if (pct < 1) return `top ${pct.toFixed(2)}%`;
   if (pct < 10) return `top ${pct.toFixed(1)}%`;
   return `top ${Math.round(pct)}%`;
-}
-
-function initials(name: string): string {
-  const words = name.replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
-  return ((words[0]?.[0] ?? '') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
 }
 
 function getApiBaseOrigin(): string | null {
@@ -45,6 +41,7 @@ export function ProfilePage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
+  const avatarUrl = useWcaAvatar(profile?.wcaId);
 
   useEffect(() => {
     if (wcaId) loadProfile(wcaId);
@@ -212,12 +209,7 @@ export function ProfilePage() {
       <div className="card">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-            <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-xl font-bold text-green-300 ring-1 ring-green-500/30 sm:h-20 sm:w-20 sm:text-2xl"
-              aria-hidden="true"
-            >
-              {initials(profile.name)}
-            </div>
+            <Avatar name={profile.name} url={avatarUrl} className="h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl" />
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-white sm:text-3xl">{profile.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Trophy } from 'lucide-react';
 import { LeaderboardCacheItem } from '../types';
 import { CountryFlag } from './CountryFlag';
+import { Avatar } from './Avatar';
 
 const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
 
@@ -76,12 +77,15 @@ export function RankingList({
           <span role="cell">
             <RankBadge rank={rankOf(item, index)} />
           </span>
-          <span role="cell" className="min-w-0">
-            <span className="flex items-center gap-2">
-              <CountryFlag iso2={item.countryIso2} name={item.countryName} className="md:hidden" />
-              <span className="truncate font-medium text-white group-hover:text-green-300">{item.name}</span>
+          <span role="cell" className="flex min-w-0 items-center gap-3">
+            <Avatar name={item.name} url={item.avatarUrl} />
+            <span className="min-w-0">
+              <span className="flex items-center gap-2">
+                <CountryFlag iso2={item.countryIso2} name={item.countryName} className="md:hidden" />
+                <span className="truncate font-medium text-white group-hover:text-green-300">{item.name}</span>
+              </span>
+              <span className="block font-mono text-xs text-gray-500">{item.personId}</span>
             </span>
-            <span className="block font-mono text-xs text-gray-500">{item.personId}</span>
           </span>
           <span role="cell" className="hidden min-w-0 items-center gap-2 text-gray-300 md:flex">
             <CountryFlag iso2={item.countryIso2} name={item.countryName} />

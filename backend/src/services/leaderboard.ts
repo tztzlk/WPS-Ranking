@@ -7,6 +7,7 @@ import type { LeaderboardEntry } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getMetaValues } from './personDb';
 import { COUNTRY_TEAM_SIZE, continentByCode } from '../types';
+import { getAvatarUrls, withAvatars } from './avatars';
 
 const MOVERS_LIMIT = 5;
 
@@ -24,6 +25,7 @@ export interface GlobalLeaderboardItem {
   countryIso2?: string;
   wps: number;
   rankChange: number | null;
+  avatarUrl?: string | null;
 }
 
 export interface CountryLeaderboardItem {
@@ -35,6 +37,7 @@ export interface CountryLeaderboardItem {
   wps: number;
   globalWpsRank: number;
   rankChange: number | null;
+  avatarUrl?: string | null;
 }
 
 export interface GlobalLeaderboardResponse {
@@ -71,6 +74,7 @@ export interface ContinentLeaderboardItem {
   wps: number;
   globalWpsRank: number;
   rankChange: number | null;
+  avatarUrl?: string | null;
 }
 
 export interface ContinentLeaderboardResponse {
@@ -136,8 +140,8 @@ async function getWeeklyMovers(): Promise<{
     }),
   ]);
   return {
-    biggestMoversUp: up.map((e) => toGlobalItem(e, e.rankChange7d)),
-    biggestMoversDown: down.map((e) => toGlobalItem(e, e.rankChange7d)),
+    biggestMoversUp: await withAvatars(up.map((e) => toGlobalItem(e, e.rankChange7d))),
+    biggestMoversDown: await withAvatars(down.map((e) => toGlobalItem(e, e.rankChange7d))),
   };
 }
 
@@ -159,7 +163,7 @@ export async function getGlobalLeaderboard(limit = 100): Promise<GlobalLeaderboa
     totalRanked: meta.totalRanked,
     totalCountries,
     count: entries.length,
-    items: entries.map((e) => toGlobalItem(e)),
+    items: await withAvatars(entries.map((e) => toGlobalItem(e))),
     ...movers,
     source: 'postgres',
   };
@@ -182,7 +186,7 @@ export async function getCountryLeaderboard(
   ]);
   if (!entries.length) return null;
 
-  const items: CountryLeaderboardItem[] = entries.map((e) => ({
+  const items: CountryLeaderboardItem[] = await withAvatars(entries.map((e) => ({
     countryRank: e.countryRank ?? 0,
     personId: e.personId,
     name: e.name,
@@ -191,7 +195,7 @@ export async function getCountryLeaderboard(
     wps: e.wps,
     globalWpsRank: e.globalRank,
     rankChange: e.rankChange1d,
-  }));
+  })));
 
   return {
     scope: 'country',
@@ -230,7 +234,7 @@ export async function getContinentLeaderboard(
     continentName: continent.name,
     generatedAt: meta.generatedAt,
     count: entries.length,
-    items: entries.map((e) => ({
+    items: await withAvatars(entries.map((e) => ({
       continentRank: e.continentRank ?? 0,
       personId: e.personId,
       name: e.name,
@@ -239,7 +243,7 @@ export async function getContinentLeaderboard(
       wps: e.wps,
       globalWpsRank: e.globalRank,
       rankChange: e.rankChange1d,
-    })),
+    }))),
     biggestMoversUp: [],
     biggestMoversDown: [],
     source: 'postgres',
@@ -253,7 +257,7 @@ export interface CountryRankingItem {
   continent: string | null;
   teamScore: number;
   rankedCount: number;
-  best: { personId: string; name: string; wps: number } | null;
+  best: { personId: string; name: string; wps: number; avatarUrl: string | null } | null;
 }
 
 export interface CountryRankingResponse {
@@ -279,10 +283,16 @@ export async function getCountryRanking(): Promise<CountryRankingResponse | null
   if (!countries.length) return null;
 
   // countryRank 1 can be shared on equal WPS; the first by WCA ID is shown.
-  const bestByCountry = new Map<string, { personId: string; name: string; wps: number }>();
+  const avatars = await getAvatarUrls(leaders.map((l) => l.personId));
+  const bestByCountry = new Map<string, { personId: string; name: string; wps: number; avatarUrl: string | null }>();
   for (const l of leaders) {
     if (l.countryIso2 && !bestByCountry.has(l.countryIso2)) {
-      bestByCountry.set(l.countryIso2, { personId: l.personId, name: l.name, wps: l.wps });
+      bestByCountry.set(l.countryIso2, {
+        personId: l.personId,
+        name: l.name,
+        wps: l.wps,
+        avatarUrl: avatars.get(l.personId) ?? null,
+      });
     }
   }
 

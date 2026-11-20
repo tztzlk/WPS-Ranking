@@ -14,6 +14,7 @@ import 'dotenv/config';
 import { connect } from './db';
 import { loadStaging } from './load';
 import { computeAndPublish } from './publish';
+import { avatarsMissing, refreshAvatars } from './avatars';
 import { downloadExport, extractExport, fetchExportInfo, readExportDate, tsvPath } from './wcaExport';
 
 function parseArgs(argv: string[]): { force: boolean; dir?: string } {
@@ -22,6 +23,18 @@ function parseArgs(argv: string[]): { force: boolean; dir?: string } {
   const dir = dirIdx >= 0 ? argv[dirIdx + 1] : undefined;
   if (dirIdx >= 0 && !dir) throw new Error('--dir needs a path');
   return { force, dir };
+}
+
+/** Avatars are optional: a WCA API failure is logged and the refresh still succeeds. */
+async function updateAvatars(client: Awaited<ReturnType<typeof connect>>): Promise<void> {
+  const done = step('avatars (WCA API)');
+  try {
+    const result = await refreshAvatars(client);
+    console.log('[refresh] avatars', result);
+  } catch (error) {
+    console.warn('[refresh] avatars skipped, keeping the previous ones:', error);
+  }
+  done();
 }
 
 function step(label: string): () => void {
@@ -46,6 +59,8 @@ async function main(): Promise<void> {
       console.log(`[refresh] WCA export available: ${available}, last published: ${lastPublished ?? 'never'}`);
       if (available === lastPublished && !args.force) {
         console.log('[refresh] Export unchanged, nothing to do.');
+        // First run after the avatars table was added: fill it without waiting for a new export.
+        if (await avatarsMissing(client)) await updateAvatars(client);
         return;
       }
 
@@ -84,6 +99,8 @@ async function main(): Promise<void> {
     done();
 
     console.log('[refresh] published', { exportDate, ...result });
+
+    await updateAvatars(client);
   } finally {
     await client.end().catch(() => {});
     if (workDir) await fs.promises.rm(workDir, { recursive: true, force: true });

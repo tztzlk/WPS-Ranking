@@ -1,6 +1,7 @@
 import type { SearchResultItem, ProfileResponse } from '../types';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { getAvatarUrls } from './avatars';
 
 export interface PersonWithScoreRank {
   id: string;
@@ -63,8 +64,10 @@ export async function searchPersons(query: string, limit: number = SEARCH_LIMIT)
   if (isValidWCAId(q)) {
     const person = await findPersonById(q);
     if (person) {
+      const avatars = await getAvatarUrls([person.id]);
       return [
         {
+          avatarUrl: avatars.get(person.id) ?? null,
           wcaId: person.id,
           name: person.name,
           countryIso2: person.countryIso2,
@@ -93,7 +96,9 @@ export async function searchPersons(query: string, limit: number = SEARCH_LIMIT)
     LIMIT ${take}
   `);
 
+  const avatars = await getAvatarUrls(rows.map((r) => r.wcaId));
   return rows.map((r) => ({
+    avatarUrl: avatars.get(r.wcaId) ?? null,
     wcaId: r.wcaId,
     name: r.name,
     countryIso2: r.countryIso2,

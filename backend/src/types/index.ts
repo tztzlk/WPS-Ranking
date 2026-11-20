@@ -5,6 +5,7 @@ export interface SearchResultItem {
   countryIso2: string | null;
   wpsScore: number;
   wpsRank: number | null;
+  avatarUrl?: string | null;
 }
 
 /** Profile API response */

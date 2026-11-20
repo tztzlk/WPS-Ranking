@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { GitCompare, Trophy, Share2 } from 'lucide-react';
+import { GitCompare, Share2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { CompareEvents } from '../components/CompareEvents';
+import { Avatar, useWcaAvatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
@@ -14,6 +15,7 @@ function isValidWCAId(id: string): boolean {
 }
 
 function ProfileCard({ profile }: { profile: WPSProfile }) {
+  const avatarUrl = useWcaAvatar(profile.wcaId);
   const formatScore = (n: number) => n.toFixed(2);
   const globalRankText =
     (profile.totalRanked ?? 0) > 0 && profile.globalWpsRank != null && profile.globalWpsRank > 0
@@ -27,9 +29,7 @@ function ProfileCard({ profile }: { profile: WPSProfile }) {
   return (
     <div className="card flex-1 min-w-0">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center shrink-0">
-          <Trophy className="w-6 h-6 text-gray-300" />
-        </div>
+        <Avatar name={profile.name} url={avatarUrl} className="h-12 w-12 text-base" />
         <div className="min-w-0">
           <h2 className="text-xl font-bold text-white truncate">{profile.name}</h2>
           <div className="flex items-center gap-2 text-gray-400 mt-0.5">

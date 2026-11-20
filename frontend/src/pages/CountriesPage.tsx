@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { CONTINENTS, CountryRankingResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { RankBadge } from '../components/RankingList';
+import { Avatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const ALL = 'ALL';
@@ -124,11 +125,14 @@ export function CountriesPage() {
                     {c.best ? ` · best: ${c.best.name}` : ''}
                   </span>
                 </span>
-                <span role="cell" className="hidden min-w-0 text-gray-300 md:block">
+                <span role="cell" className="hidden min-w-0 items-center gap-3 text-gray-300 md:flex">
                   {c.best ? (
                     <>
-                      <span className="block truncate">{c.best.name}</span>
-                      <span className="block text-xs tabular-nums text-gray-500">{c.best.wps.toFixed(2)} WPS</span>
+                      <Avatar name={c.best.name} url={c.best.avatarUrl} />
+                      <span className="min-w-0">
+                        <span className="block truncate">{c.best.name}</span>
+                        <span className="block text-xs tabular-nums text-gray-500">{c.best.wps.toFixed(2)} WPS</span>
+                      </span>
                     </>
                   ) : (
                     '—'

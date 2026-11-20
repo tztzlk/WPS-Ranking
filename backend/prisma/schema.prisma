@@ -110,3 +110,13 @@ model RankDistribution {
   @@id([snapshotDate, scope])
   @@map("rank_distribution")
 }
+
+/// WCA profile photo thumbnails for people shown in lists (top of the world,
+/// continent and country rankings). Filled by the pipeline from the WCA API;
+/// people without a photo have no row. No FK: persons is truncated on publish.
+model PersonAvatar {
+  personId String @id @map("person_id") @db.VarChar(10)
+  thumbUrl String @map("thumb_url")
+
+  @@map("person_avatars")
+}
