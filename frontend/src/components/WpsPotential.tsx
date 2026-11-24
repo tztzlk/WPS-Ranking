@@ -2,7 +2,7 @@ import { TrendingUp } from 'lucide-react';
 import { WpsPotentialItem } from '../types';
 
 /** "top 0.01%" style label for a rank / field-size ratio. */
-export function topShareLabel(share: number): string {
+function topShareLabel(share: number): string {
   const pct = share * 100;
   if (pct < 0.01) return 'top 0.01%';
   if (pct < 1) return `top ${pct.toFixed(2)}%`;

@@ -5,7 +5,8 @@ import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { CompareEvents } from '../components/CompareEvents';
-import { Avatar, useWcaAvatar } from '../components/Avatar';
+import { Avatar } from '../components/Avatar';
+import { useWcaAvatar } from '../hooks/useWcaAvatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;

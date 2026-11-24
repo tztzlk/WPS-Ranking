@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { findPersonById, toProfileResponse, isValidWCAId, getMetaValues } from '../services/personDb';
+import { findPersonById, toProfileResponse, parseWcaId, getMetaValues } from '../services/personDb';
 import { getProfileHistory } from '../services/history';
 import type { ProfileResponse } from '../types';
 import { asyncRoute } from '../lib/asyncRoute';
@@ -8,8 +8,8 @@ import { asyncRoute } from '../lib/asyncRoute';
 const router = Router();
 
 router.get('/:id/history', asyncRoute(async (req, res) => {
-  const id = (req.params.id ?? '').trim().toUpperCase();
-  if (!id || !isValidWCAId(id)) {
+  const id = parseWcaId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
@@ -18,12 +18,12 @@ router.get('/:id/history', asyncRoute(async (req, res) => {
 }));
 
 router.get('/', asyncRoute(async (req, res) => {
-  const personId = (req.query.personId as string)?.trim();
-  if (!personId) {
+  if (!req.query.personId) {
     res.status(400).json({ error: 'personId query parameter is required' });
     return;
   }
-  if (!isValidWCAId(personId)) {
+  const personId = parseWcaId(req.query.personId);
+  if (!personId) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }
@@ -36,8 +36,8 @@ router.get('/', asyncRoute(async (req, res) => {
 }));
 
 router.get('/:wcaId', asyncRoute(async (req, res) => {
-  const wcaId = req.params.wcaId?.trim();
-  if (!wcaId || !isValidWCAId(wcaId)) {
+  const wcaId = parseWcaId(req.params.wcaId);
+  if (!wcaId) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
     return;
   }

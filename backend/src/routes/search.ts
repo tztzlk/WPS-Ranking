@@ -3,11 +3,18 @@ import { searchPersons } from '../services/personDb';
 
 const router = Router();
 
+// Shorter queries match most of the ~300k persons; longer ones are not names.
+const MIN_QUERY_LENGTH = 2;
+const MAX_QUERY_LENGTH = 64;
+
 router.get('/', async (req, res) => {
   try {
-    const q = ((req.query.wcaId as string) ?? (req.query.q as string))?.trim();
-    if (!q) {
-      res.status(400).json({ error: 'wcaId or q query parameter is required' });
+    const raw = req.query.wcaId ?? req.query.q;
+    const q = typeof raw === 'string' ? raw.trim() : '';
+    if (q.length < MIN_QUERY_LENGTH || q.length > MAX_QUERY_LENGTH) {
+      res.status(400).json({
+        error: `q must be a single ${MIN_QUERY_LENGTH}-${MAX_QUERY_LENGTH} character query parameter`,
+      });
       return;
     }
 

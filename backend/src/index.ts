@@ -49,6 +49,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cache-Control', DATA_CACHE_CONTROL);
+  // Error responses must not be cached: a 404 just before the nightly refresh, or a
+  // transient 503, would otherwise be served from the CDN for up to an hour.
+  // Every error path (routes, errorHandler, the timeout below) goes through res.status().
+  const setStatus = res.status.bind(res);
+  res.status = (code: number) => {
+    if (code >= 400) res.setHeader('Cache-Control', 'no-store');
+    return setStatus(code);
+  };
 
   const timer = setTimeout(() => {
     if (!res.headersSent) {

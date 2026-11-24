@@ -5,7 +5,8 @@ import { apiService } from '../services/api';
 import { WPSProfile, WpsBreakdownResponse, ProfileHistoryItem, SCORED_EVENT_COUNT } from '../types';
 import { CountryFlag } from '../components/CountryFlag';
 import { SingleTag, WpsPotential } from '../components/WpsPotential';
-import { Avatar, useWcaAvatar } from '../components/Avatar';
+import { Avatar } from '../components/Avatar';
+import { useWcaAvatar } from '../hooks/useWcaAvatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 
 // The chart library (recharts) is the largest dependency; load it only on profiles.

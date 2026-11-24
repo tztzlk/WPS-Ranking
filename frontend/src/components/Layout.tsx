@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigation } from 'react-router-dom';
-import { clearChunkReloadFlag } from '../pages/RouteError';
+import { clearChunkReloadFlag } from '../lib/chunkReload';
 import { useDataDate } from '../hooks/useDataDate';
 import { Search, Trophy, Info, Home, GitCompare, Flag } from 'lucide-react';
 

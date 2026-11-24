@@ -20,6 +20,16 @@ export function isValidWCAId(id: string): boolean {
   return typeof id === 'string' && WCA_ID_REGEX.test(id.trim());
 }
 
+/**
+ * A WCA ID from a route or query parameter, upper-cased ("2017garr05" → "2017GARR05").
+ * Null when it is missing, repeated (`?id=a&id=b` gives an array) or not a WCA ID.
+ */
+export function parseWcaId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const id = value.trim().toUpperCase();
+  return WCA_ID_REGEX.test(id) ? id : null;
+}
+
 export async function findPersonById(personId: string): Promise<PersonWithScoreRank | null> {
   const normalized = personId.trim().toUpperCase();
   if (!normalized) return null;
@@ -61,8 +71,9 @@ export async function searchPersons(query: string, limit: number = SEARCH_LIMIT)
   if (!q) return [];
   const take = Math.min(Math.max(1, limit), SEARCH_LIMIT);
 
-  if (isValidWCAId(q)) {
-    const person = await findPersonById(q);
+  const wcaId = parseWcaId(q);
+  if (wcaId) {
+    const person = await findPersonById(wcaId);
     if (person) {
       const avatars = await getAvatarUrls([person.id]);
       return [

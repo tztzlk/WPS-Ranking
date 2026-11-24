@@ -1,23 +1,25 @@
 import { Router, Request, Response } from 'express';
 import { getProfileByWcaId } from './profile';
-import { isValidWCAId } from '../services/personDb';
+import { parseWcaId } from '../services/personDb';
 import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 
 router.get('/', asyncRoute(async (req: Request, res: Response) => {
-  const left = ((req.query.left ?? req.query.id1) as string)?.trim();
-  const right = ((req.query.right ?? req.query.id2) as string)?.trim();
+  const leftRaw = req.query.left ?? req.query.id1;
+  const rightRaw = req.query.right ?? req.query.id2;
 
-  if (!left || !right) {
+  if (!leftRaw || !rightRaw) {
     res.status(400).json({ error: 'Query parameters "left" and "right" (WCA IDs) are required' });
     return;
   }
-  if (!isValidWCAId(left)) {
+  const left = parseWcaId(leftRaw);
+  const right = parseWcaId(rightRaw);
+  if (!left) {
     res.status(400).json({ error: 'Invalid "left" WCA ID format' });
     return;
   }
-  if (!isValidWCAId(right)) {
+  if (!right) {
     res.status(400).json({ error: 'Invalid "right" WCA ID format' });
     return;
   }

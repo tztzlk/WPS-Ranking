@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom';
-
-const RELOAD_FLAG = 'wps-chunk-reload';
+import { RELOAD_FLAG } from '../lib/chunkReload';
 
 /** A lazy page chunk failed to load: usually a new deploy replaced the old files. */
 function isChunkLoadError(error: unknown): boolean {
@@ -49,13 +48,4 @@ export function RouteError() {
       </div>
     </div>
   );
-}
-
-/** Call once a page has loaded fine, so a later deploy can reload again. */
-export function clearChunkReloadFlag(): void {
-  try {
-    sessionStorage.removeItem(RELOAD_FLAG);
-  } catch {
-    /* storage unavailable */
-  }
 }
