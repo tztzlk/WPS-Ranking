@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { RELOAD_FLAG } from '../lib/chunkReload';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { useTranslation } from 'react-i18next';
 
 /** A lazy page chunk failed to load: usually a new deploy replaced the old files. */
 function isChunkLoadError(error: unknown): boolean {
@@ -11,6 +12,7 @@ function isChunkLoadError(error: unknown): boolean {
 
 /** Router error page: a 404 for unknown URLs, otherwise a short error message. */
 export function RouteError() {
+  const { t } = useTranslation();
   const error = useRouteError();
   const chunkError = isChunkLoadError(error);
 
@@ -28,28 +30,28 @@ export function RouteError() {
 
   const notFound = isRouteErrorResponse(error) && error.status === 404;
   usePageMetadata({
-    title: notFound ? 'Page not found | WPS Ranking' : 'Error | WPS Ranking',
-    description: notFound ? 'There is no page at this address.' : 'This page could not be shown.',
+    title: notFound ? t('errors.metaNotFoundTitle') : t('errors.metaErrorTitle'),
+    description: notFound ? t('errors.notFoundText') : t('errors.metaErrorDescription'),
     noindex: true,
   });
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="mb-3 text-2xl font-bold text-white">{notFound ? 'Page not found' : 'This page could not be shown'}</h1>
+      <h1 className="mb-3 text-2xl font-bold text-white">{notFound ? t('errors.notFoundTitle') : t('errors.errorTitle')}</h1>
       <p className="mb-6 text-gray-400">
         {notFound
-          ? 'There is no page at this address.'
+          ? t('errors.notFoundText')
           : chunkError
-            ? 'The site was updated while this tab was open. Refresh the page.'
-            : 'Something went wrong. Refresh the page to try again.'}
+            ? t('errors.chunkText')
+            : t('errors.errorText')}
       </p>
       <div className="flex justify-center gap-3">
         {!notFound && (
           <button type="button" onClick={() => window.location.reload()} className="btn-primary">
-            Refresh
+            {t('actions.refresh')}
           </button>
         )}
         <Link to="/" className={notFound ? 'btn-primary' : 'btn-secondary'}>
-          Home
+          {t('nav.home')}
         </Link>
       </div>
     </div>

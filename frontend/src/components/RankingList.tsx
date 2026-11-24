@@ -3,10 +3,13 @@ import { ChevronRight, Trophy } from 'lucide-react';
 import { LeaderboardCacheItem } from '../types';
 import { CountryFlag } from './CountryFlag';
 import { Avatar } from './Avatar';
+import { useTranslation } from 'react-i18next';
+import { useFormat } from '../i18n/format';
 
 const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
 
 export function RankBadge({ rank }: { rank: number }) {
+  const fmt = useFormat();
   if (rank >= 1 && rank <= 3) {
     return (
       <span className="inline-flex items-center gap-1 font-semibold text-white">
@@ -15,17 +18,18 @@ export function RankBadge({ rank }: { rank: number }) {
       </span>
     );
   }
-  return <span className="tabular-nums text-gray-400">{rank.toLocaleString()}</span>;
+  return <span className="tabular-nums text-gray-400">{fmt.int(rank)}</span>;
 }
 
 export function RankChange({ change }: { change: number | null | undefined }) {
+  const fmt = useFormat();
   if (typeof change !== 'number' || Number.isNaN(change) || change === 0) {
     return <span className="text-gray-600">—</span>;
   }
   return change > 0 ? (
-    <span className="tabular-nums text-green-400">▲ {change}</span>
+    <span className="tabular-nums text-green-400">▲ {fmt.int(change)}</span>
   ) : (
-    <span className="tabular-nums text-red-400">▼ {Math.abs(change)}</span>
+    <span className="tabular-nums text-red-400">▼ {fmt.int(Math.abs(change))}</span>
   );
 }
 
@@ -48,6 +52,8 @@ export function RankingList({
   showChange?: boolean;
   rankOf?: (item: LeaderboardCacheItem, index: number) => number;
 }) {
+  const { t } = useTranslation();
+  const fmt = useFormat();
   const GRID = gridClass(showChange);
   return (
     <div className="text-sm md:text-base">
@@ -55,19 +61,19 @@ export function RankingList({
         aria-hidden="true"
         className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-400`}
       >
-        <span>Rank</span>
-        <span>Cuber</span>
+        <span>{t('ranking.rank')}</span>
+        <span>{t('ranking.cuber')}</span>
         <span className="hidden md:block">
-          Country
+          {t('ranking.country')}
         </span>
         <span className={showChange ? 'hidden md:block' : 'hidden'}>
-          Change
+          {t('ranking.change')}
         </span>
         <span className="text-right">
-          WPS
+          {t('ranking.wps')}
         </span>
       </div>
-      <ol aria-label="Ranking">
+      <ol aria-label={t('ranking.label')}>
         {items.map((item, index) => (
           <li key={item.personId} className="border-b border-gray-700/60 last:border-b-0">
             <Link
@@ -81,21 +87,21 @@ export function RankingList({
                 <Avatar name={item.name} url={item.avatarUrl} />
                 <span className="min-w-0">
                   <span className="flex items-center gap-2">
-                    <CountryFlag iso2={item.countryIso2} name={item.countryName} className="md:hidden" />
-                    <span className="truncate font-medium text-white group-hover:text-green-300">{item.name}</span>
+                    <CountryFlag iso2={item.countryIso2} name={fmt.country(item.countryIso2, item.countryName)} className="md:hidden" />
+                    <span className="truncate font-medium text-white group-hover:text-green-300">{fmt.person(item.name)}</span>
                   </span>
                   <span className="block font-mono text-xs text-gray-400">{item.personId}</span>
                 </span>
               </span>
               <span className="hidden min-w-0 items-center gap-2 text-gray-300 md:flex">
-                <CountryFlag iso2={item.countryIso2} name={item.countryName} />
-                <span className="truncate">{item.countryName ?? item.countryId ?? '—'}</span>
+                <CountryFlag iso2={item.countryIso2} name={fmt.country(item.countryIso2, item.countryName)} />
+                <span className="truncate">{fmt.country(item.countryIso2, item.countryName ?? item.countryId) || '—'}</span>
               </span>
               <span className={showChange ? 'hidden text-sm md:block' : 'hidden'}>
                 <RankChange change={item.rankChange} />
               </span>
               <span className="flex items-center justify-end gap-1">
-                <span className="font-semibold tabular-nums text-green-400">{item.wps.toFixed(2)}</span>
+                <span className="font-semibold tabular-nums text-green-400">{fmt.num(item.wps)}</span>
                 <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
               </span>
             </Link>

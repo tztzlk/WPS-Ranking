@@ -1,0 +1,97 @@
+{
+  "siteName": "WPS Ranking",
+  "nav": {
+    "main": "主导航",
+    "home": "首页",
+    "leaderboard": "排行榜",
+    "countries": "国家和地区",
+    "search": "搜索",
+    "compare": "对比",
+    "about": "关于",
+    "toggleMenu": "展开或收起菜单",
+    "loadingPage": "页面加载中"
+  },
+  "language": {
+    "label": "语言"
+  },
+  "footer": {
+    "tagline": "魔方选手全能排名，每天根据 WCA 官方数据更新。",
+    "donate": "Ko-fi 上的捐助用于支持网站开发。",
+    "donateButton": "在 Ko-fi 上支持",
+    "pages": "页面",
+    "countryRanking": "国家和地区排名",
+    "howWpsWorks": "WPS 如何计算",
+    "feedback": "反馈",
+    "legal": "法律与隐私",
+    "data": "数据",
+    "dataNotice": "本站信息基于世界魔方协会（WCA）拥有并维护的比赛成绩，原始数据发布于 <link>worldcubeassociation.org/results</link>。本站与 WCA 无关。",
+    "dataNoticeDated": "本站信息基于世界魔方协会（WCA）拥有并维护的比赛成绩，原始数据发布于 <link>worldcubeassociation.org/results</link>，数据截至 {{date}}。本站与 WCA 无关。",
+    "feedbackText": "在 GitHub 上报告问题或提出建议。",
+    "openIssue": "提交 issue",
+    "openIssues": "查看 issues",
+    "copyright": "© {{year}} WPS Ranking。成绩数据 © 世界魔方协会。"
+  },
+  "ranking": {
+    "label": "排名",
+    "rank": "排名",
+    "cuber": "选手",
+    "country": "国家/地区",
+    "change": "变化",
+    "wps": "WPS"
+  },
+  "actions": {
+    "tryAgain": "重试",
+    "refresh": "刷新",
+    "refreshPage": "刷新页面",
+    "showMore": "显示更多",
+    "loading": "加载中…",
+    "copied": "已复制！",
+    "copyLink": "复制链接",
+    "share": "分享"
+  },
+  "errors": {
+    "network": "暂时无法加载最新数据，请重试。",
+    "notFoundTitle": "页面不存在",
+    "notFoundText": "这个地址没有对应的页面。",
+    "errorTitle": "无法显示此页面",
+    "errorText": "出了点问题，请刷新页面重试。",
+    "chunkText": "网站在此标签页打开期间已更新，请刷新页面。",
+    "crashTitle": "出了点问题",
+    "crashText": "页面出错了，请刷新后重试。",
+    "details": "错误详情",
+    "metaNotFoundTitle": "页面不存在 | WPS Ranking",
+    "metaErrorTitle": "错误 | WPS Ranking",
+    "metaErrorDescription": "无法显示此页面。"
+  },
+  "rankType": {
+    "single": "单次",
+    "average": "平均"
+  },
+  "continents": {
+    "AF": "非洲",
+    "AS": "亚洲",
+    "EU": "欧洲",
+    "NA": "北美洲",
+    "OC": "大洋洲",
+    "SA": "南美洲"
+  },
+  "events": {
+    "333": "三阶",
+    "222": "二阶",
+    "444": "四阶",
+    "555": "五阶",
+    "666": "六阶",
+    "777": "七阶",
+    "333bf": "三阶盲拧",
+    "333fm": "三阶最少步",
+    "333oh": "三阶单手",
+    "clock": "魔表",
+    "minx": "五魔方",
+    "pyram": "金字塔",
+    "skewb": "斜转",
+    "sq1": "SQ1",
+    "444bf": "四阶盲拧",
+    "555bf": "五阶盲拧",
+    "333mbf": "三阶多盲"
+  }
+}

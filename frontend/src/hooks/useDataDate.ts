@@ -6,10 +6,7 @@ let request: Promise<string | null> | null = null;
 
 function loadDataDate(): Promise<string | null> {
   request ??= apiService.getAbout().then(
-    (about) =>
-      about.generatedAt
-        ? new Date(about.generatedAt).toLocaleDateString('en-US', { dateStyle: 'long', timeZone: 'UTC' })
-        : null,
+    (about) => about.generatedAt ?? null,
     () => {
       request = null;
       return null;
@@ -18,7 +15,7 @@ function loadDataDate(): Promise<string | null> {
   return request;
 }
 
-/** Date of the WCA export the current data is built from, e.g. "November 20, 2026". */
+/** Date (ISO) of the WCA export the current data is built from; format it with useFormat().date. */
 export function useDataDate(): string | null {
   const [date, setDate] = useState<string | null>(null);
   useEffect(() => {

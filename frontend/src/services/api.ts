@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import {
   WPSProfile,
@@ -56,11 +57,10 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    if (!error.response) {
-      (error as AxiosError & { userMessage?: string }).userMessage =
-        "We couldn't load the latest data just now. Please try again.";
-    } else if (error.response?.data && typeof (error.response.data as Record<string, unknown>).error === 'string') {
-      (error as AxiosError & { userMessage?: string }).userMessage = (error.response.data as Record<string, unknown>).error as string;
+    // Only network failures get a ready message. API error texts are English, so pages
+    // map the HTTP status (error.response.status) to their own translated message.
+    if (!error.response && !axios.isCancel(error)) {
+      (error as AxiosError & { userMessage?: string }).userMessage = i18n.t('errors.network');
     }
     return Promise.reject(error);
   }

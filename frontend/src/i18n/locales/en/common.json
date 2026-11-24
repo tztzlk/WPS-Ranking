@@ -1,0 +1,97 @@
+{
+  "siteName": "WPS Ranking",
+  "nav": {
+    "main": "Main",
+    "home": "Home",
+    "leaderboard": "Leaderboard",
+    "countries": "Countries",
+    "search": "Search",
+    "compare": "Compare",
+    "about": "About",
+    "toggleMenu": "Toggle menu",
+    "loadingPage": "Loading page"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "footer": {
+    "tagline": "An all-around ranking of speedcubers, updated daily from official WCA data.",
+    "donate": "Donations on Ko-fi pay for development time.",
+    "donateButton": "Support on Ko-fi",
+    "pages": "Pages",
+    "countryRanking": "Country ranking",
+    "howWpsWorks": "How WPS works",
+    "feedback": "Feedback",
+    "legal": "Legal and privacy",
+    "data": "Data",
+    "dataNotice": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link>. This site is not affiliated with the WCA.",
+    "dataNoticeDated": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link> as of {{date}}. This site is not affiliated with the WCA.",
+    "feedbackText": "Report a bug or suggest a feature on GitHub.",
+    "openIssue": "Open an issue",
+    "openIssues": "Open issues",
+    "copyright": "© {{year}} WPS Ranking. Results data © World Cube Association."
+  },
+  "ranking": {
+    "label": "Ranking",
+    "rank": "Rank",
+    "cuber": "Cuber",
+    "country": "Country",
+    "change": "Change",
+    "wps": "WPS"
+  },
+  "actions": {
+    "tryAgain": "Try again",
+    "refresh": "Refresh",
+    "refreshPage": "Refresh page",
+    "showMore": "Show more",
+    "loading": "Loading…",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "share": "Share"
+  },
+  "errors": {
+    "network": "We couldn't load the latest data just now. Please try again.",
+    "notFoundTitle": "Page not found",
+    "notFoundText": "There is no page at this address.",
+    "errorTitle": "This page could not be shown",
+    "errorText": "Something went wrong. Refresh the page to try again.",
+    "chunkText": "The site was updated while this tab was open. Refresh the page.",
+    "crashTitle": "Something went wrong",
+    "crashText": "The page crashed. Refresh it to try again.",
+    "details": "Error details",
+    "metaNotFoundTitle": "Page not found | WPS Ranking",
+    "metaErrorTitle": "Error | WPS Ranking",
+    "metaErrorDescription": "This page could not be shown."
+  },
+  "rankType": {
+    "single": "single",
+    "average": "average"
+  },
+  "continents": {
+    "AF": "Africa",
+    "AS": "Asia",
+    "EU": "Europe",
+    "NA": "North America",
+    "OC": "Oceania",
+    "SA": "South America"
+  },
+  "events": {
+    "333": "3x3 Cube",
+    "222": "2x2 Cube",
+    "444": "4x4 Cube",
+    "555": "5x5 Cube",
+    "666": "6x6 Cube",
+    "777": "7x7 Cube",
+    "333bf": "3x3 Blindfolded",
+    "333fm": "3x3 Fewest Moves",
+    "333oh": "3x3 One-Handed",
+    "clock": "Clock",
+    "minx": "Megaminx",
+    "pyram": "Pyraminx",
+    "skewb": "Skewb",
+    "sq1": "Square-1",
+    "444bf": "4x4 Blindfolded",
+    "555bf": "5x5 Blindfolded",
+    "333mbf": "3x3 Multi-Blind"
+  }
+}

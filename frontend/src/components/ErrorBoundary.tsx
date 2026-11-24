@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
@@ -30,21 +31,21 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md mx-auto text-center p-8">
             <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white mb-4">
-              Something went wrong
+              {i18n.t('errors.crashTitle')}
             </h1>
             <p className="text-gray-400 mb-6">
-              The page crashed. Refresh it to try again.
+              {i18n.t('errors.crashText')}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary flex items-center space-x-2 mx-auto"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Refresh page</span>
+              <span>{i18n.t('actions.refreshPage')}</span>
             </button>
             {import.meta.env.DEV && this.state.error && (
               <details className="mt-6 text-left">
-                <summary className="text-gray-400 cursor-pointer">Error details</summary>
+                <summary className="text-gray-400 cursor-pointer">{i18n.t('errors.details')}</summary>
                 <pre className="mt-2 text-xs text-red-400 bg-gray-800 p-4 rounded overflow-auto">
                   {this.state.error.stack}
                 </pre>
