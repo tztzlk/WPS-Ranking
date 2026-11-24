@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, isRouteErrorResponse, useRouteError } from 'react-router-dom';
 import { RELOAD_FLAG } from '../lib/chunkReload';
+import { usePageMetadata } from '../hooks/usePageMetadata';
 
 /** A lazy page chunk failed to load: usually a new deploy replaced the old files. */
 function isChunkLoadError(error: unknown): boolean {
@@ -26,6 +27,11 @@ export function RouteError() {
   }, [chunkError]);
 
   const notFound = isRouteErrorResponse(error) && error.status === 404;
+  usePageMetadata({
+    title: notFound ? 'Page not found | WPS Ranking' : 'Error | WPS Ranking',
+    description: notFound ? 'There is no page at this address.' : 'This page could not be shown.',
+    noindex: true,
+  });
   return (
     <div className="mx-auto max-w-md py-16 text-center">
       <h1 className="mb-3 text-2xl font-bold text-white">{notFound ? 'Page not found' : 'This page could not be shown'}</h1>

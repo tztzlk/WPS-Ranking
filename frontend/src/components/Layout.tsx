@@ -11,6 +11,8 @@ export function Layout() {
   const pageLoading = useNavigation().state === 'loading';
   const dataDate = useDataDate();
   useEffect(clearChunkReloadFlag, [location.pathname]);
+  // Close the mobile menu on any navigation, including browser Back/Forward.
+  useEffect(() => setMobileMenuOpen(false), [location.key]);
 
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
@@ -41,6 +43,7 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
                       isActive
                         ? 'bg-gray-800 text-white ring-1 ring-gray-700 [&>svg]:text-green-400'
@@ -82,6 +85,7 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
                       isActive

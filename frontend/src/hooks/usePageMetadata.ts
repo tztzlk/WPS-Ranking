@@ -4,6 +4,8 @@ type PageMetadata = {
   title: string;
   description: string;
   canonicalPath?: string;
+  /** Error pages: the SPA answers every URL with HTTP 200, so tell crawlers not to index it. */
+  noindex?: boolean;
 };
 
 const DEFAULT_TITLE = 'WPS Ranking | All-around speedcubing leaderboard';
@@ -42,7 +44,7 @@ function getSiteOrigin(): string {
   return window.location.origin.replace(/\/+$/, '');
 }
 
-export function usePageMetadata({ title, description, canonicalPath }: PageMetadata): void {
+export function usePageMetadata({ title, description, canonicalPath, noindex = false }: PageMetadata): void {
   useEffect(() => {
     const safeTitle = title?.trim() || DEFAULT_TITLE;
     const safeDescription = description?.trim() || DEFAULT_DESCRIPTION;
@@ -94,5 +96,14 @@ export function usePageMetadata({ title, description, canonicalPath }: PageMetad
 
     const canonical = upsertCanonical();
     canonical.href = canonicalUrl;
-  }, [canonicalPath, description, title]);
+
+    if (!noindex) return;
+    const robots = upsertMeta('meta[name="robots"]', () => {
+      const meta = document.createElement('meta');
+      meta.name = 'robots';
+      return meta;
+    });
+    robots.content = 'noindex';
+    return () => robots.remove();
+  }, [canonicalPath, description, title, noindex]);
 }

@@ -24,6 +24,10 @@ export function SearchPage() {
   // search effect's deps so updating ?q= does not trigger another search.
   const setParamsRef = useRef(setSearchParams);
   setParamsRef.current = setSearchParams;
+  // The ?q= this page wrote last. A different ?q= came from outside (the header
+  // "Search" link, Back/Forward), and the input follows it.
+  const writtenQueryRef = useRef(searchParams.get('q') ?? '');
+  const urlQuery = searchParams.get('q') ?? '';
 
   const executeSearch = useCallback(
     async (q: string) => {
@@ -36,12 +40,15 @@ export function SearchPage() {
 
       setLoading(true);
       setError(null);
+      writtenQueryRef.current = normalizedQuery;
       setParamsRef.current({ q: normalizedQuery }, { replace: true, preventScrollReset: true });
       try {
         const data = await apiService.searchCubers(normalizedQuery, 20, controller.signal);
+        if (controller.signal.aborted) return;
         setResults(data);
         setSearchedFor(normalizedQuery);
       } catch (err: unknown) {
+        if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === 'AbortError') return;
         if (err && typeof err === 'object' && 'name' in err && (err as { name?: string }).name === 'CanceledError') return;
         const userMsg =
@@ -59,12 +66,30 @@ export function SearchPage() {
   // Search as you type (debounced); also runs once for a ?q= link.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.trim().length < MIN_QUERY_LENGTH) return;
+    if (query.trim().length < MIN_QUERY_LENGTH) {
+      // The query was cleared or shortened: drop the old results and the pending request.
+      abortRef.current?.abort();
+      setLoading(false);
+      setResults([]);
+      setSearchedFor(null);
+      setError(null);
+      if (writtenQueryRef.current) {
+        writtenQueryRef.current = '';
+        setParamsRef.current({}, { replace: true, preventScrollReset: true });
+      }
+      return;
+    }
     debounceRef.current = setTimeout(() => executeSearch(query), DEBOUNCE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [query, executeSearch]);
+
+  useEffect(() => {
+    if (urlQuery === writtenQueryRef.current) return;
+    writtenQueryRef.current = urlQuery;
+    setQuery(urlQuery);
+  }, [urlQuery]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 

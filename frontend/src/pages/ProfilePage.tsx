@@ -8,6 +8,7 @@ import { SingleTag, WpsPotential } from '../components/WpsPotential';
 import { Avatar } from '../components/Avatar';
 import { useWcaAvatar } from '../hooks/useWcaAvatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { shareLink } from '../lib/shareLink';
 
 // The chart library (recharts) is the largest dependency; load it only on profiles.
 const WpsProgressChart = lazy(() =>
@@ -101,16 +102,9 @@ export function ProfilePage() {
     // Link previews (Telegram, Discord) get a server-rendered page for this URL; see vercel.json.
     const shareUrl = `${window.location.origin}/profile/${encodeURIComponent(profile.wcaId)}`;
 
-    try {
-      if (navigator.share) {
-        await navigator.share({ url: shareUrl });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 2000);
-      }
-    } catch {
-      setShareCopied(false);
+    if ((await shareLink(shareUrl)) === 'copied') {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
     }
   };
 
@@ -120,6 +114,7 @@ export function ProfilePage() {
       ? `${profile.name} ${profile.countryName ? `from ${profile.countryName} ` : ''}has a WPS score of ${profile.wpsScore.toFixed(2)}. View current rank, history, and score breakdown.`
       : 'A speedcuber profile with WPS score, world and country rank, and history.',
     canonicalPath: profile ? `/profile/${encodeURIComponent(profile.wcaId)}` : wcaId ? `/profile/${encodeURIComponent(wcaId)}` : '/profile',
+    noindex: Boolean(error),
   });
 
   if (loading) {
@@ -256,6 +251,8 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={() => setShowBreakdown((value) => !value)}
+            aria-expanded={showBreakdown}
+            aria-controls="wps-breakdown"
             className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
           >
             <span className="font-medium">{showBreakdown ? 'Hide WPS breakdown' : 'Show WPS breakdown'}</span>
@@ -266,7 +263,7 @@ export function ProfilePage() {
             )}
           </button>
           {showBreakdown && (
-            <div className="space-y-4 border-t border-gray-700 px-6 py-5">
+            <div id="wps-breakdown" className="space-y-4 border-t border-gray-700 px-6 py-5">
               <p className="text-sm text-gray-300">
                 Each event scores the cuber&apos;s world rank against the number of people in that event&apos;s ranking,
                 times the event weight. Events marked single use the ranking by single, the others the ranking by

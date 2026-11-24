@@ -8,6 +8,7 @@ import { CompareEvents } from '../components/CompareEvents';
 import { Avatar } from '../components/Avatar';
 import { useWcaAvatar } from '../hooks/useWcaAvatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { shareLink } from '../lib/shareLink';
 
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
 
@@ -138,13 +139,9 @@ export function ComparePage() {
   }, []);
 
   const handleShareCompare = async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
+    if ((await shareLink(window.location.href)) === 'copied') {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
-    } catch {
-      setShareCopied(false);
     }
   };
 

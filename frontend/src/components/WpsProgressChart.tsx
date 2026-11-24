@@ -87,6 +87,7 @@ function ToggleGroup<T extends string>({
           key={option.value}
           type="button"
           onClick={() => onChange(option.value)}
+          aria-pressed={value === option.value}
           className={`px-3 py-2 text-sm font-medium transition-colors ${
             value === option.value
               ? activeClassName
