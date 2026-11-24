@@ -89,10 +89,15 @@ export const apiService = {
     return countriesRequest;
   },
 
-  async getLeaderboardTop100(limit = 100, region: LeaderboardRegion = null): Promise<LeaderboardCacheResponse> {
+  async getLeaderboardTop100(
+    limit = 100,
+    region: LeaderboardRegion = null,
+    signal?: AbortSignal,
+  ): Promise<LeaderboardCacheResponse> {
     const params = { limit, ...(region ?? {}) };
     const config: RetryableConfig = {
       params,
+      signal,
       _disableRetry: true,
     };
     const response = await api.get<LeaderboardCacheResponse>('/leaderboard', config);
@@ -104,8 +109,8 @@ export const apiService = {
     return response.data;
   },
 
-  async getProfile(wcaId: string): Promise<WPSProfile> {
-    const response = await api.get<WPSProfile>(`/profile/${wcaId}`);
+  async getProfile(wcaId: string, signal?: AbortSignal): Promise<WPSProfile> {
+    const response = await api.get<WPSProfile>(`/profile/${encodeURIComponent(wcaId)}`, { signal });
     return response.data;
   },
 

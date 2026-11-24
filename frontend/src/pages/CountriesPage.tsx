@@ -60,7 +60,7 @@ export function CountriesPage() {
           <select
             id="continent-filter"
             value={continent}
-            onChange={(e) => setSearchParams(e.target.value === ALL ? {} : { continent: e.target.value })}
+            onChange={(e) => setSearchParams(e.target.value === ALL ? {} : { continent: e.target.value }, { preventScrollReset: true })}
             className="input-field w-full md:w-56"
           >
             <option value={ALL}>All continents</option>

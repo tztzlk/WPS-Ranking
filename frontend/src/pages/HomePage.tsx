@@ -66,6 +66,7 @@ export function HomePage() {
   const loadLeaderboard = async () => {
     try {
       setLoading(true);
+      setError(null);
       const result = await apiService.getLeaderboardTop100(5);
       setLeaderboard(result.items);
       setBiggestMoversUp(result.biggestMoversUp ?? []);

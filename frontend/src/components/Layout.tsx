@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, Link, useLocation, useNavigation } from 'react-router-dom';
+import { Outlet, Link, ScrollRestoration, useLocation, useNavigation } from 'react-router-dom';
 import { clearChunkReloadFlag } from '../lib/chunkReload';
 import { useDataDate } from '../hooks/useDataDate';
 import { Search, Trophy, Info, Home, GitCompare, Flag } from 'lucide-react';
@@ -106,6 +106,8 @@ export function Layout() {
       <main className="max-w-7xl mx-auto min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <Outlet />
       </main>
+      {/* New pages open at the top, Back/Forward returns to the old position, and #hash links scroll to their section. */}
+      <ScrollRestoration />
 
       <footer className="bg-gray-800 border-t border-gray-700 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

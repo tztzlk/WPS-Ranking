@@ -48,37 +48,35 @@ export function ProfilePage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // A newer profile (or leaving the page) aborts this one; an aborted load must not
+    // touch state, or the old profile or its error could show on the new URL.
+    const stale = () => controller.signal.aborted;
+
+    setLoading(true);
+    setError(null);
+    setProfile(null);
+    setBreakdown(null);
+    setHistory([]);
+    setHistoryLoadError(false);
+
     try {
-      setLoading(true);
-      setError(null);
-      setBreakdown(null);
-      setHistory([]);
-      setHistoryLoadError(false);
+      const data = await apiService.getProfile(id, controller.signal);
+      if (stale()) return;
+      setProfile(data);
 
-      const data = await apiService.getProfile(id);
-      if (!controller.signal.aborted) setProfile(data);
-
-      if (!controller.signal.aborted && data?.wcaId) {
+      if (data?.wcaId) {
         const [breakdownRes, historyRes] = await Promise.allSettled([
           apiService.getWpsBreakdown(data.wcaId),
           apiService.getProfileHistory(data.wcaId),
         ]);
+        if (stale()) return;
 
-        if (!controller.signal.aborted && breakdownRes.status === 'fulfilled') {
-          setBreakdown(breakdownRes.value);
-        }
-
-        if (!controller.signal.aborted) {
-          if (historyRes.status === 'fulfilled') {
-            setHistory(historyRes.value);
-            setHistoryLoadError(false);
-          } else {
-            setHistoryLoadError(true);
-          }
-        }
+        if (breakdownRes.status === 'fulfilled') setBreakdown(breakdownRes.value);
+        if (historyRes.status === 'fulfilled') setHistory(historyRes.value);
+        else setHistoryLoadError(true);
       }
     } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (stale()) return;
 
       const userMsg =
         err && typeof err === 'object' && 'userMessage' in err
@@ -91,7 +89,7 @@ export function ProfilePage() {
 
       setError(userMsg ?? ax?.response?.data?.error ?? 'The profile could not be loaded.');
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
   };
 

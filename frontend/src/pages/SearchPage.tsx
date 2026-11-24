@@ -36,7 +36,7 @@ export function SearchPage() {
 
       setLoading(true);
       setError(null);
-      setParamsRef.current({ q: normalizedQuery }, { replace: true });
+      setParamsRef.current({ q: normalizedQuery }, { replace: true, preventScrollReset: true });
       try {
         const data = await apiService.searchCubers(normalizedQuery, 20, controller.signal);
         setResults(data);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 import { apiService, LeaderboardRegion } from '../services/api';
@@ -35,48 +35,80 @@ function formatGeneratedAt(iso: string): string {
   }
 }
 
+function loadErrorMessage(err: unknown): string {
+  const userMsg =
+    err && typeof err === 'object' && 'userMessage' in err
+      ? (err as { userMessage?: string }).userMessage
+      : null;
+  return (
+    userMsg ??
+    (err && typeof err === 'object' && 'response' in err
+      ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
+        ((err as { response?: { status?: number } }).response?.status === 503
+          ? 'The leaderboard is empty right now. It fills after the next daily update.'
+          : 'The leaderboard could not be loaded.')
+      : 'The leaderboard could not be loaded.')
+  );
+}
+
 export function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardCacheResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selected, setSelected] = useState<string>(() => valueFromParams(searchParams));
+  // The URL is the only source of the region, so Back/Forward and the nav link
+  // ("/leaderboard" with no params) always match what is shown.
+  const selected = valueFromParams(searchParams);
   const [countries, setCountries] = useState<{ iso2: string; name: string }[]>([]);
 
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
 
+  // Only the latest request may update state: switching region quickly must not let
+  // a slower, older response replace the new region's rows.
   const loadData = useCallback(async (value: string, rows: number = PAGE_SIZE) => {
-    try {
-      if (rows === PAGE_SIZE) setLoading(true);
-      else setLoadingMore(true);
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    const isMore = rows > PAGE_SIZE;
+
+    setLoadMoreError(null);
+    if (isMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setLoadingMore(false);
       setError(null);
-      const result = await apiService.getLeaderboardTop100(rows, regionFromValue(value));
+    }
+
+    try {
+      const result = await apiService.getLeaderboardTop100(rows, regionFromValue(value), controller.signal);
+      if (controller.signal.aborted) return;
       setData(result);
       setLimit(rows);
     } catch (err: unknown) {
-      const userMsg =
-        err && typeof err === 'object' && 'userMessage' in err
-          ? (err as { userMessage?: string }).userMessage
-          : null;
-      const message =
-        userMsg ??
-        (err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
-            ((err as { response?: { status?: number } }).response?.status === 503
-              ? 'The leaderboard is empty right now. It fills after the next daily update.'
-              : 'The leaderboard could not be loaded.')
-          : 'The leaderboard could not be loaded.');
-      setError(message);
-      setData(null);
+      if (controller.signal.aborted) return;
+      if (isMore) {
+        // Keep the rows already on screen; only the extra page failed.
+        setLoadMoreError(loadErrorMessage(err));
+      } else {
+        setError(loadErrorMessage(err));
+        setData(null);
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadData(selected);
+    return () => requestRef.current?.abort();
   }, [loadData, selected]);
 
   useEffect(() => {
@@ -84,9 +116,8 @@ export function LeaderboardPage() {
   }, []);
 
   const handleRegionChange = (value: string) => {
-    setSelected(value);
     const region = regionFromValue(value);
-    setSearchParams(region ?? {});
+    setSearchParams(region ?? {}, { preventScrollReset: true });
   };
 
   const items: LeaderboardCacheItem[] = data?.items ?? [];
@@ -201,14 +232,19 @@ export function LeaderboardPage() {
       </div>
 
       {canLoadMore && (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-2">
+          {loadMoreError && (
+            <p role="alert" className="text-sm text-red-400">
+              {loadMoreError}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => loadData(selected, Math.min(limit + PAGE_SIZE, MAX_ROWS))}
             disabled={loadingMore}
             className="btn-secondary min-w-[10rem] disabled:opacity-60"
           >
-            {loadingMore ? 'Loading…' : 'Show more'}
+            {loadingMore ? 'Loading…' : loadMoreError ? 'Try again' : 'Show more'}
           </button>
         </div>
       )}

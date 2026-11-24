@@ -100,7 +100,7 @@ export function ComparePage() {
     setError(null);
     setData(null);
     setBreakdowns(null);
-    setSearchParams({ left: l, right: r }, { replace: true });
+    setSearchParams({ left: l, right: r }, { replace: true, preventScrollReset: true });
 
     try {
       const [result, lb, rb] = await Promise.all([
