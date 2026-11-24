@@ -30,7 +30,11 @@ const FALLBACK_TEMPLATE = `<!doctype html>
 async function getTemplate(): Promise<string> {
   if (template && Date.now() - template.fetchedAt < TEMPLATE_TTL_MS) return template.html;
   try {
-    const res = await fetch(`${getFrontendBaseUrl()}/index.html`, { headers: { Accept: 'text/html' } });
+    // A hanging frontend must not hang the crawler page: fall back after 5 s.
+    const res = await fetch(`${getFrontendBaseUrl()}/index.html`, {
+      headers: { Accept: 'text/html' },
+      signal: AbortSignal.timeout(5000),
+    });
     if (!res.ok) throw new Error(`index.html: ${res.status}`);
     const html = await res.text();
     if (!html.includes('<div id="root"></div>')) throw new Error('index.html has no empty #root');
@@ -106,9 +110,11 @@ export async function renderPage(meta: PageMeta): Promise<string> {
     <meta name="twitter:title" content="${escapeHtml(meta.title)}" />
     <meta name="twitter:description" content="${escapeHtml(meta.description)}" />${image}${jsonLd}
   </head>`;
-  html = html.replace(/\s*<\/head>/i, head);
+  // Function replacers: with a string, "$&", "$'" or "$`" inside a name would be
+  // read as replacement patterns and splice parts of the template into the page.
+  html = html.replace(/\s*<\/head>/i, () => head);
 
-  return html.replace('<div id="root"></div>', `<div id="root">${meta.bodyHtml}</div>`);
+  return html.replace('<div id="root"></div>', () => `<div id="root">${meta.bodyHtml}</div>`);
 }
 
 export const fmtInt = (n: number) => n.toLocaleString('en-US');

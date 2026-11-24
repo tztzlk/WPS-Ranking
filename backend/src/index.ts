@@ -90,7 +90,6 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use(ogMetaRoutes);
-app.options('*', cors());
 
 app.use('*', (_req, res) => {
   res.status(404).json({ error: 'Route not found' });

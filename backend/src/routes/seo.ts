@@ -25,8 +25,12 @@ const router = Router();
 /** Pages are rebuilt from the database at most every 10 minutes per URL. */
 const PAGE_CACHE_CONTROL = 'public, max-age=600, s-maxage=600, stale-while-revalidate=3600';
 const SITEMAP_CACHE_CONTROL = 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400';
-/** The sitemap protocol allows at most 50,000 URLs per file. */
-const PROFILES_PER_SITEMAP = 50_000;
+/**
+ * The sitemap protocol allows 50,000 URLs per file, but 50,000 profile URLs are
+ * ~5 MB uncompressed, over Vercel's 4.5 MB function response limit. 25,000 keeps
+ * each file near 2.5 MB even for clients that do not accept gzip.
+ */
+const PROFILES_PER_SITEMAP = 25_000;
 const LIST_SIZE = 100;
 const EVENT_COUNT = Object.keys(EVENT_WEIGHTS).length;
 const CONTINENTS_LIST = Object.values(CONTINENTS);

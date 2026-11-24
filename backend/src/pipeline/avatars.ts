@@ -21,9 +21,29 @@ interface WcaPersonsItem {
   person?: { wca_id?: string; avatar?: { thumb_url?: string; is_default?: boolean } };
 }
 
+const REQUEST_TIMEOUT_MS = 60_000;
+const ATTEMPTS = 3;
+const RETRY_DELAY_MS = 5_000;
+
+/** One batch, retried: the WCA API is slow and sometimes times out or returns 5xx. */
+async function fetchBatchWithRetry(ids: string[]): Promise<Map<string, string>> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fetchBatch(ids);
+    } catch (error) {
+      if (attempt >= ATTEMPTS) throw error;
+      console.warn(`[avatars] batch failed (attempt ${attempt}/${ATTEMPTS}), retrying:`, error);
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+    }
+  }
+}
+
 async function fetchBatch(ids: string[]): Promise<Map<string, string>> {
   const url = `${WCA_PERSONS_URL}?wca_ids=${ids.join(',')}&per_page=${ids.length}`;
-  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'wps-ranking-pipeline' } });
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json', 'User-Agent': 'wps-ranking-pipeline' },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`WCA persons request failed: ${res.status} ${res.statusText}`);
   const body = (await res.json()) as WcaPersonsItem[];
   const found = new Map<string, string>();
@@ -49,7 +69,7 @@ export async function refreshAvatars(client: Client): Promise<{ requested: numbe
   const avatars = new Map<string, string>();
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
     if (i > 0) await new Promise((r) => setTimeout(r, DELAY_BETWEEN_REQUESTS_MS));
-    for (const [id, url] of await fetchBatch(ids.slice(i, i + BATCH_SIZE))) avatars.set(id, url);
+    for (const [id, url] of await fetchBatchWithRetry(ids.slice(i, i + BATCH_SIZE))) avatars.set(id, url);
   }
 
   // All batches succeeded: replace the table in one transaction.

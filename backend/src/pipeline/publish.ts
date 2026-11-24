@@ -61,7 +61,18 @@ async function buildRanksAt(client: Client, table: string, date: string | null):
   );
 }
 
-export async function computeAndPublish(client: Client, exportDateIso: string): Promise<PublishResult> {
+/**
+ * The ranked count only grows from day to day (people get ranked, almost nobody is
+ * removed). A big drop means a truncated or malformed export: publishing it would
+ * replace the live tables and write a history row for everyone it lost.
+ */
+const MAX_RANKED_DROP = 0.1;
+
+export async function computeAndPublish(
+  client: Client,
+  exportDateIso: string,
+  options: { force?: boolean } = {},
+): Promise<PublishResult> {
   const day = exportDateIso.slice(0, 10);
 
   // 1. Compute into TEMP tables ------------------------------------------------
@@ -135,6 +146,16 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
   if (ranked === 0 || persons === 0) {
     throw new Error(`Refusing to publish an empty dataset (persons=${persons}, ranked=${ranked})`);
   }
+  const { rows: prevRows } = await client.query<{ value: string }>(
+    `SELECT value FROM meta WHERE key = 'totalRanked'`,
+  );
+  const previousRanked = Number(prevRows[0]?.value ?? 0);
+  if (!options.force && previousRanked > 0 && ranked < previousRanked * (1 - MAX_RANKED_DROP)) {
+    throw new Error(
+      `Refusing to publish: ${ranked} ranked people, down from ${previousRanked} (more than ${MAX_RANKED_DROP * 100}% fewer). ` +
+        'The export may be truncated; use --force if the drop is real.',
+    );
+  }
 
   // Rank on the previous export and ~a week ago, for rank changes / movers.
   // Bounded windows: after downtime a "daily" change against a months-old export is meaningless.
@@ -152,6 +173,7 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
   await buildRanksAt(client, 'stg_rank_7d', weekAgoDate);
 
   // 2. Publish atomically ------------------------------------------------------
+  let historyRowsWritten = 0;
   await client.query('BEGIN');
   try {
     // History: only people whose WPS differs from their latest stored value.
@@ -256,20 +278,21 @@ export async function computeAndPublish(client: Client, exportDateIso: string): 
     );
 
     await client.query('COMMIT');
-
-    await client.query(
-      'ANALYZE persons; ANALYZE leaderboard_entries; ANALYZE wps_breakdowns; ANALYZE countries; ANALYZE wps_history; ANALYZE rank_distribution;',
-    );
-
-    return {
-      persons,
-      ranked,
-      historyRowsWritten: history.rowCount ?? 0,
-      previousDate,
-      weekAgoDate,
-    };
+    historyRowsWritten = history.rowCount ?? 0;
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     throw error;
   }
+
+  // After COMMIT the data is live: a failed ANALYZE only means slower plans until
+  // autovacuum analyzes the tables, so it must not fail the run (or skip avatars).
+  try {
+    await client.query(
+      'ANALYZE persons; ANALYZE leaderboard_entries; ANALYZE wps_breakdowns; ANALYZE countries; ANALYZE wps_history; ANALYZE rank_distribution;',
+    );
+  } catch (error) {
+    console.warn('[publish] ANALYZE after publish failed:', error);
+  }
+
+  return { persons, ranked, historyRowsWritten, previousDate, weekAgoDate };
 }

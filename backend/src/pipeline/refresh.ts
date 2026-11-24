@@ -95,7 +95,7 @@ async function main(): Promise<void> {
     done();
 
     done = step('compute + publish');
-    const result = await computeAndPublish(client, exportDate);
+    const result = await computeAndPublish(client, exportDate, { force: args.force });
     done();
 
     console.log('[refresh] published', { exportDate, ...result });

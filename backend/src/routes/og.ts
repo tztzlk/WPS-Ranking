@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import React from 'react';
 import { getProfileByPersonId } from '../services/ogProfile';
+import { asyncRoute } from '../lib/asyncRoute';
 
 const router = Router();
 const WCA_ID_REGEX = /^\d{4}[A-Z]{4}\d{2}$/;
@@ -30,7 +31,7 @@ function setCached(personId: string, buffer: Buffer): void {
   ogImageCache.set(personId, { buffer, at: Date.now() });
 }
 
-router.get('/profile/:personId', async (req: Request, res: Response) => {
+router.get('/profile/:personId', asyncRoute(async (req: Request, res: Response) => {
   const personId = (req.params.personId ?? '').trim();
   if (!personId || !isValidWCAId(personId)) {
     res.status(400).json({ error: 'Invalid WCA ID format' });
@@ -307,6 +308,6 @@ router.get('/profile/:personId', async (req: Request, res: Response) => {
     console.error('OG image generation failed:', err);
     res.status(500).json({ error: 'Failed to generate image' });
   }
-});
+}));
 
 export { router as ogRoutes };
