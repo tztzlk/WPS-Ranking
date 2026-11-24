@@ -1,1 +1,39 @@
-{}
+{
+  "meta": {
+    "title": "WPS Ranking | All-around speedcubing leaderboard",
+    "description_one": "An all-around ranking of speedcubers. WPS turns official WCA world ranks in {{n}} event into one score. Find any cuber by name or WCA ID.",
+    "description_other": "An all-around ranking of speedcubers. WPS turns official WCA world ranks in {{n}} events into one score. Find any cuber by name or WCA ID."
+  },
+  "hero": {
+    "title": "All-around rankings for <hl>speedcubers</hl>",
+    "subtitle_one": "WPS turns your official WCA world ranks in {{n}} event into one score.",
+    "subtitle_other": "WPS turns your official WCA world ranks in {{n}} events into one score.",
+    "howWpsWorks": "How WPS works"
+  },
+  "search": {
+    "label": "Find a cuber",
+    "placeholder": "Name, surname or WCA ID",
+    "submit": "Find"
+  },
+  "stats": {
+    "ranked": "Ranked cubers",
+    "events": "Events scored",
+    "countries": "Countries"
+  },
+  "top": {
+    "title": "Top 5 in the world",
+    "loading": "Loading leaderboard",
+    "full": "Full leaderboard"
+  },
+  "movers": {
+    "title": "Biggest movers this week",
+    "text": "The largest changes in world rank over the last 7 days.",
+    "up": "Up",
+    "down": "Down",
+    "none": "Nobody moved this way in the last 7 days."
+  },
+  "errors": {
+    "load": "The leaderboard could not be loaded.",
+    "empty": "The leaderboard is empty right now. It fills after the next daily update."
+  }
+}

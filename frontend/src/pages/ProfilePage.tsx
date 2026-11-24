@@ -9,6 +9,9 @@ import { Avatar } from '../components/Avatar';
 import { useWcaAvatar } from '../hooks/useWcaAvatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { shareLink } from '../lib/shareLink';
+import { Trans, useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { useFormat, Format } from '../i18n/format';
 
 // The chart library (recharts) is the largest dependency; load it only on profiles.
 const WpsProgressChart = lazy(() =>
@@ -16,15 +19,17 @@ const WpsProgressChart = lazy(() =>
 );
 
 /** "top 0.01%" style share of the field at or above this rank. */
-function topPercent(rank: number, total: number): string {
+function topPercent(rank: number, total: number, t: TFunction<'profile'>, fmt: Format): string {
   const pct = (rank / total) * 100;
-  if (pct < 0.01) return 'top 0.01%';
-  if (pct < 1) return `top ${pct.toFixed(2)}%`;
-  if (pct < 10) return `top ${pct.toFixed(1)}%`;
-  return `top ${Math.round(pct)}%`;
+  if (pct < 0.01) return t('top', { pct: fmt.num(0.01, 2) });
+  if (pct < 1) return t('top', { pct: fmt.num(pct, 2) });
+  if (pct < 10) return t('top', { pct: fmt.num(pct, 1) });
+  return t('top', { pct: fmt.int(Math.round(pct)) });
 }
 
 export function ProfilePage() {
+  const { t } = useTranslation(['profile', 'common']);
+  const fmt = useFormat();
   const { wcaId } = useParams<{ wcaId: string }>();
   const [profile, setProfile] = useState<WPSProfile | null>(null);
   const [breakdown, setBreakdown] = useState<WpsBreakdownResponse | null>(null);
@@ -42,6 +47,9 @@ export function ProfilePage() {
     return () => {
       abortRef.current?.abort();
     };
+    // Reload only for a new WCA ID; loadProfile reads t for error texts, and a
+    // language switch must not refetch the profile.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wcaId]);
 
   const loadProfile = async (id: string) => {
@@ -83,18 +91,22 @@ export function ProfilePage() {
         err && typeof err === 'object' && 'userMessage' in err
           ? (err as { userMessage?: string }).userMessage
           : null;
-      const ax =
+      const status =
         err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } })
-          : null;
+          ? (err as { response?: { status?: number } }).response?.status
+          : undefined;
 
-      setError(userMsg ?? ax?.response?.data?.error ?? 'The profile could not be loaded.');
+      // API error texts are English: map the status to a translated message.
+      setError(
+        userMsg ??
+          (status === 404 ? t('errors.notFound') : status === 400 ? t('errors.invalidId') : t('errors.generic')),
+      );
     } finally {
       if (!stale()) setLoading(false);
     }
   };
 
-  const formatScore = (score: number) => score.toFixed(2);
+  const formatScore = (score: number) => fmt.num(score);
 
   const handleShareProfile = async () => {
     if (!profile) return;
@@ -109,17 +121,23 @@ export function ProfilePage() {
   };
 
   usePageMetadata({
-    title: profile ? `${profile.name} | WPS Ranking` : 'Profile | WPS Ranking',
+    title: profile ? t('meta.title', { name: fmt.person(profile.name) }) : t('meta.titleFallback'),
     description: profile
-      ? `${profile.name} ${profile.countryName ? `from ${profile.countryName} ` : ''}has a WPS score of ${profile.wpsScore.toFixed(2)}. View current rank, history, and score breakdown.`
-      : 'A speedcuber profile with WPS score, world and country rank, and history.',
+      ? profile.countryName || profile.countryIso2
+        ? t('meta.description', {
+            name: fmt.person(profile.name),
+            country: fmt.country(profile.countryIso2, profile.countryName),
+            score: fmt.num(profile.wpsScore),
+          })
+        : t('meta.descriptionNoCountry', { name: fmt.person(profile.name), score: fmt.num(profile.wpsScore) })
+      : t('meta.descriptionFallback'),
     canonicalPath: profile ? `/profile/${encodeURIComponent(profile.wcaId)}` : wcaId ? `/profile/${encodeURIComponent(wcaId)}` : '/profile',
     noindex: Boolean(error),
   });
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-6xl space-y-6" aria-busy="true" aria-label="Loading profile">
+      <div className="mx-auto max-w-6xl space-y-6" aria-busy="true" aria-label={t('loading')}>
         <div className="h-8 w-40 animate-pulse rounded bg-gray-800" />
         <div className="h-32 animate-pulse rounded-lg bg-gray-800" />
         <div className="grid grid-cols-3 gap-3 sm:gap-6">
@@ -135,9 +153,9 @@ export function ProfilePage() {
   if (error || !profile) {
     return (
       <div className="py-12 text-center">
-        <p className="mb-4 text-red-400">{error || 'No cuber with this WCA ID.'}</p>
+        <p className="mb-4 text-red-400">{error || t('errors.notFound')}</p>
         <Link to="/search" className="btn-primary">
-          Search cubers
+          {t('searchCubers')}
         </Link>
       </div>
     );
@@ -148,29 +166,33 @@ export function ProfilePage() {
   const countryRank = profile.countryRank != null && profile.countryRank > 0 ? profile.countryRank : null;
   const countryTotal = profile.countryTotal ?? 0;
   const eventsScored = breakdown?.events.length ?? null;
+  const countryName = fmt.country(profile.countryIso2, profile.countryName);
   const maxContribution = Math.max(0.01, ...(breakdown?.events.map((e) => e.eventScore) ?? []));
 
   const stats = [
     {
       icon: Globe2,
-      label: 'World rank',
-      value: globalRank ? `#${globalRank.toLocaleString('en-US')}` : '—',
-      detail: globalRank && total > 0 ? `${topPercent(globalRank, total)} of ${total.toLocaleString('en-US')}` : 'Not ranked',
+      label: t('stats.worldRank'),
+      value: globalRank ? `#${fmt.int(globalRank)}` : '—',
+      detail:
+        globalRank && total > 0
+          ? t('stats.worldDetail', { top: topPercent(globalRank, total, t, fmt), total: fmt.int(total) })
+          : t('stats.notRanked'),
     },
     {
       icon: Trophy,
-      label: 'Country rank',
-      value: countryRank ? `#${countryRank.toLocaleString('en-US')}` : '—',
+      label: t('stats.countryRank'),
+      value: countryRank ? `#${fmt.int(countryRank)}` : '—',
       detail:
         countryRank && countryTotal > 0
-          ? `${profile.countryName ?? 'country'} · of ${countryTotal.toLocaleString('en-US')}`
-          : profile.countryName ?? '—',
+          ? t('stats.countryDetail', { country: countryName || '—', total: fmt.int(countryTotal) })
+          : countryName || '—',
     },
     {
       icon: Layers,
-      label: 'Events scored',
+      label: t('stats.eventsScored'),
       value: eventsScored != null ? `${eventsScored}/${SCORED_EVENT_COUNT}` : '—',
-      detail: 'with a WCA result',
+      detail: t('stats.eventsDetail'),
     },
   ];
 
@@ -179,17 +201,17 @@ export function ProfilePage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link to="/leaderboard" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
-          Leaderboard
+          {t('common:nav.leaderboard')}
         </Link>
         <button
           type="button"
           onClick={handleShareProfile}
           className="inline-flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-600"
-          aria-label="Share profile card"
-          title="Share profile card"
+          aria-label={t('shareCard')}
+          title={t('shareCard')}
         >
           <Share2 className="h-4 w-4" />
-          {shareCopied ? 'Copied!' : 'Share'}
+          {shareCopied ? t('common:actions.copied') : t('common:actions.share')}
         </button>
       </div>
 
@@ -198,12 +220,12 @@ export function ProfilePage() {
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
             <Avatar name={profile.name} url={avatarUrl} className="h-16 w-16 text-xl sm:h-20 sm:w-20 sm:text-2xl" />
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-white sm:text-3xl">{profile.name}</h1>
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">{fmt.person(profile.name)}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
                 {profile.countryIso2 && (
                   <span className="inline-flex items-center gap-1.5">
-                    <CountryFlag iso2={profile.countryIso2} name={profile.countryName} />
-                    {profile.countryName ?? '—'}
+                    <CountryFlag iso2={profile.countryIso2} name={countryName} />
+                    {countryName || '—'}
                   </span>
                 )}
                 <a
@@ -211,7 +233,7 @@ export function ProfilePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-mono hover:text-white"
-                  title="Open WCA profile"
+                  title={t('openWca')}
                 >
                   {profile.wcaId}
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -224,7 +246,7 @@ export function ProfilePage() {
             <div className="text-sm text-gray-400">
               WPS
               {profile.lastUpdated && (
-                <span className="text-gray-400"> · {new Date(profile.lastUpdated).toLocaleDateString()}</span>
+                <span className="text-gray-400"> · {fmt.date(profile.lastUpdated)}</span>
               )}
             </div>
           </div>
@@ -255,7 +277,7 @@ export function ProfilePage() {
             aria-controls="wps-breakdown"
             className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-gray-300 transition-colors hover:bg-gray-700/50 hover:text-white"
           >
-            <span className="font-medium">{showBreakdown ? 'Hide WPS breakdown' : 'Show WPS breakdown'}</span>
+            <span className="font-medium">{showBreakdown ? t('breakdown.hide') : t('breakdown.show')}</span>
             {showBreakdown ? (
               <ChevronUp className="h-5 w-5 shrink-0 text-gray-400" />
             ) : (
@@ -265,23 +287,24 @@ export function ProfilePage() {
           {showBreakdown && (
             <div id="wps-breakdown" className="space-y-4 border-t border-gray-700 px-6 py-5">
               <p className="text-sm text-gray-300">
-                Each event scores the cuber&apos;s world rank against the number of people in that event&apos;s ranking,
-                times the event weight. Events marked single use the ranking by single, the others the ranking by
-                average. The contributions of all events add up to WPS.{' '}
-                <Link to="/about" className="text-green-400 underline underline-offset-2 hover:text-green-300">
-                  How WPS works
-                </Link>
+                <Trans
+                  t={t}
+                  i18nKey="breakdown.intro"
+                  components={{
+                    link: <Link to="/about" className="text-green-400 underline underline-offset-2 hover:text-green-300" />,
+                  }}
+                />
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-gray-600">
-                      <th scope="col" className="py-2 pr-4 font-medium text-gray-400">Event</th>
-                      <th scope="col" className="whitespace-nowrap py-2 pr-4 font-medium text-gray-400">World rank</th>
-                      <th scope="col" className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">Weight</th>
+                      <th scope="col" className="py-2 pr-4 font-medium text-gray-400">{t('breakdown.event')}</th>
+                      <th scope="col" className="whitespace-nowrap py-2 pr-4 font-medium text-gray-400">{t('breakdown.worldRank')}</th>
+                      <th scope="col" className="hidden py-2 pr-4 font-medium text-gray-400 sm:table-cell">{t('breakdown.weight')}</th>
                       <th scope="col" className="py-2 text-right font-medium text-gray-400 sm:text-left">
-                        <span className="sm:hidden">WPS</span>
-                        <span className="hidden sm:inline">Contribution</span>
+                        <span className="sm:hidden">{t('breakdown.wps')}</span>
+                        <span className="hidden sm:inline">{t('breakdown.contribution')}</span>
                       </th>
                     </tr>
                   </thead>
@@ -289,18 +312,18 @@ export function ProfilePage() {
                     {breakdown.events.map((row) => (
                       <tr key={row.eventId} className="border-b border-gray-700/50">
                         <td className="py-2 pr-4 text-white">
-                          {row.eventName}
+                          {fmt.event(row.eventId, row.eventName)}
                           {row.rankType === 'single' && <SingleTag />}
                         </td>
                         <td className="py-2 pr-4 text-gray-300">
-                          <span className="tabular-nums">#{row.worldRank.toLocaleString('en-US')}</span>
+                          <span className="tabular-nums">#{fmt.int(row.worldRank)}</span>
                           {row.participants > 0 && (
                             <span className="block whitespace-nowrap text-xs text-gray-400 sm:ml-1 sm:inline">
-                              of {row.participants.toLocaleString('en-US')}
+                              {t('breakdown.ofTotal', { total: fmt.int(row.participants) })}
                             </span>
                           )}
                         </td>
-                        <td className="hidden py-2 pr-4 tabular-nums text-gray-300 sm:table-cell">{row.weight.toFixed(2)}</td>
+                        <td className="hidden py-2 pr-4 tabular-nums text-gray-300 sm:table-cell">{fmt.num(row.weight)}</td>
                         <td className="py-2">
                           <div className="flex items-center justify-end gap-3 sm:justify-start">
                             <div className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-gray-700 sm:block" aria-hidden="true">
@@ -309,7 +332,7 @@ export function ProfilePage() {
                                 style={{ width: `${Math.min(100, (row.eventScore / maxContribution) * 100)}%` }}
                               />
                             </div>
-                            <span className="tabular-nums text-green-400">{row.eventScore.toFixed(2)}</span>
+                            <span className="tabular-nums text-green-400">{fmt.num(row.eventScore)}</span>
                           </div>
                         </td>
                       </tr>
@@ -318,25 +341,27 @@ export function ProfilePage() {
                   <tfoot>
                     <tr className="border-t-2 border-gray-600">
                       <th scope="row" className="py-3 pr-4 text-left font-medium text-white sm:hidden" colSpan={2}>
-                        Total WPS
+                        {t('breakdown.total')}
                       </th>
                       <th scope="row" className="hidden py-3 pr-4 text-left font-medium text-white sm:table-cell" colSpan={3}>
-                        Total WPS
+                        {t('breakdown.total')}
                       </th>
-                      <td className="py-3 text-right font-semibold tabular-nums text-green-400 sm:pl-[6.75rem] sm:text-left">{breakdown.wps.toFixed(2)}</td>
+                      <td className="py-3 text-right font-semibold tabular-nums text-green-400 sm:pl-[6.75rem] sm:text-left">{fmt.num(breakdown.wps)}</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-1 pt-2 text-sm text-gray-400">
                 <span>
-                  <span className="text-gray-400">Most valuable event:</span>{' '}
-                  <span className="text-white">{breakdown.events[0]?.eventName ?? '—'}</span>
+                  <span className="text-gray-400">{t('breakdown.mostValuable')}</span>{' '}
+                  <span className="text-white">
+                    {breakdown.events[0] ? fmt.event(breakdown.events[0].eventId, breakdown.events[0].eventName) : '—'}
+                  </span>
                 </span>
                 <span>
-                  <span className="text-gray-400">Best world rank:</span>{' '}
+                  <span className="text-gray-400">{t('breakdown.bestRank')}</span>{' '}
                   <span className="text-white">
-                    #{Math.min(...breakdown.events.map((event) => event.worldRank)).toLocaleString()}
+                    #{fmt.int(Math.min(...breakdown.events.map((event) => event.worldRank)))}
                   </span>
                 </span>
               </div>
@@ -346,7 +371,7 @@ export function ProfilePage() {
       )}
 
       {breakdown?.potential && breakdown.typicalShare != null && (
-        <WpsPotential name={profile.name} typicalShare={breakdown.typicalShare} items={breakdown.potential} />
+        <WpsPotential name={fmt.person(profile.name)} typicalShare={breakdown.typicalShare} items={breakdown.potential} />
       )}
     </div>
   );

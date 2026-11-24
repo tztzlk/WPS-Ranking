@@ -1,1 +1,72 @@
-{}
+{
+  "meta": {
+    "title": "{{name}} | WPS Ranking",
+    "titleFallback": "Profile | WPS Ranking",
+    "description": "{{name}} from {{country}} has a WPS score of {{score}}. View current rank, history, and score breakdown.",
+    "descriptionNoCountry": "{{name}} has a WPS score of {{score}}. View current rank, history, and score breakdown.",
+    "descriptionFallback": "A speedcuber profile with WPS score, world and country rank, and history."
+  },
+  "loading": "Loading profile",
+  "errors": {
+    "notFound": "No cuber with this WCA ID.",
+    "invalidId": "This is not a valid WCA ID.",
+    "generic": "The profile could not be loaded."
+  },
+  "searchCubers": "Search cubers",
+  "shareCard": "Share profile card",
+  "openWca": "Open WCA profile",
+  "top": "top {{pct}}%",
+  "stats": {
+    "worldRank": "World rank",
+    "countryRank": "Country rank",
+    "eventsScored": "Events scored",
+    "worldDetail": "{{top}} of {{total}}",
+    "countryDetail": "{{country}} · of {{total}}",
+    "notRanked": "Not ranked",
+    "eventsDetail": "with a WCA result"
+  },
+  "breakdown": {
+    "show": "Show WPS breakdown",
+    "hide": "Hide WPS breakdown",
+    "intro": "Each event scores the cuber's world rank against the number of people in that event's ranking, times the event weight. Events marked single use the ranking by single, the others the ranking by average. The contributions of all events add up to WPS. <link>How WPS works</link>",
+    "event": "Event",
+    "worldRank": "World rank",
+    "weight": "Weight",
+    "wps": "WPS",
+    "contribution": "Contribution",
+    "ofTotal": "of {{total}}",
+    "total": "Total WPS",
+    "mostValuable": "Most valuable event:",
+    "bestRank": "Best world rank:"
+  },
+  "potential": {
+    "title": "Where WPS can grow the most",
+    "intro": "{{name}}'s median result across their events is in the {{top}} of the field. Below is how much WPS each event adds at that level.",
+    "event": "Event",
+    "now": "Now",
+    "target": "Target",
+    "gain": "Gain",
+    "noResult": "No result",
+    "fromTo": "{{from}} to {{to}}",
+    "note": "Target is the world rank at the {{top}} of the event's ranking. Gains are in WPS points."
+  },
+  "singleTagTitle": "Scored by the WCA ranking by single",
+  "chart": {
+    "title": "WPS history",
+    "loadError": "The history could not be loaded. Refresh the page to try again.",
+    "empty": "No history for the last 180 days.",
+    "needTwoDays": "The chart needs at least two days of data. A new point is added after each daily update.",
+    "notEnough": "Not enough data for this range yet. Pick a longer range.",
+    "range": {
+      "7d": "7D",
+      "30d": "30D",
+      "90d": "90D",
+      "all": "All"
+    },
+    "wps": "WPS",
+    "rank": "Rank",
+    "tooltipWps": "WPS: {{value}}",
+    "tooltipWorld": "World rank: {{value}}",
+    "tooltipCountry": "Country rank: {{value}}"
+  }
+}

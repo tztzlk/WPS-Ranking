@@ -5,6 +5,8 @@ import { apiService, LeaderboardRegion } from '../services/api';
 import { CONTINENTS, LeaderboardCacheResponse, LeaderboardCacheItem, SCORED_EVENT_COUNT } from '../types';
 import { RankingList } from '../components/RankingList';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { useTranslation } from 'react-i18next';
+import { useFormat } from '../i18n/format';
 
 /** Select values: 'ALL', 'continent:EU' or 'country:KZ'. */
 const ALL = 'ALL';
@@ -26,32 +28,22 @@ function valueFromParams(params: URLSearchParams): string {
   return ALL;
 }
 
-function formatGeneratedAt(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
-
-function loadErrorMessage(err: unknown): string {
+/** Translated message for a failed load; API error texts are English, so the status picks it. */
+function loadErrorMessage(err: unknown, t: (key: 'errors.empty' | 'errors.load') => string): string {
   const userMsg =
     err && typeof err === 'object' && 'userMessage' in err
       ? (err as { userMessage?: string }).userMessage
       : null;
-  return (
-    userMsg ??
-    (err && typeof err === 'object' && 'response' in err
-      ? (err as { response?: { data?: { error?: string }; status?: number } }).response?.data?.error ??
-        ((err as { response?: { status?: number } }).response?.status === 503
-          ? 'The leaderboard is empty right now. It fills after the next daily update.'
-          : 'The leaderboard could not be loaded.')
-      : 'The leaderboard could not be loaded.')
-  );
+  const status =
+    err && typeof err === 'object' && 'response' in err
+      ? (err as { response?: { status?: number } }).response?.status
+      : undefined;
+  return userMsg ?? (status === 503 ? t('errors.empty') : t('errors.load'));
 }
 
 export function LeaderboardPage() {
+  const { t } = useTranslation(['leaderboard', 'common']);
+  const fmt = useFormat();
   const [data, setData] = useState<LeaderboardCacheResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,9 +84,9 @@ export function LeaderboardPage() {
       if (controller.signal.aborted) return;
       if (isMore) {
         // Keep the rows already on screen; only the extra page failed.
-        setLoadMoreError(loadErrorMessage(err));
+        setLoadMoreError(loadErrorMessage(err, t));
       } else {
-        setError(loadErrorMessage(err));
+        setError(loadErrorMessage(err, t));
         setData(null);
       }
     } finally {
@@ -104,6 +96,8 @@ export function LeaderboardPage() {
         setLoadingMore(false);
       }
     }
+    // t only changes with the language; the latest one is read when a request fails.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -126,16 +120,20 @@ export function LeaderboardPage() {
   const isFiltered = region !== null;
   const regionName =
     region && 'continent' in region
-      ? CONTINENTS.find((c) => c.code === region.continent)?.name ?? region.continent
+      ? fmt.continent(region.continent, CONTINENTS.find((c) => c.code === region.continent)?.name)
       : region
-        ? countries.find((c) => c.iso2 === region.country)?.name ?? data?.countryName ?? region.country
-        : 'World';
-  const pageTitle = `${regionName} leaderboard`;
+        ? fmt.country(region.country, countries.find((c) => c.iso2 === region.country)?.name ?? data?.countryName)
+        : t('world');
+  const pageTitle = region ? t('title', { region: regionName }) : t('titleWorld');
+  // Country options by name in the current language.
+  const countryOptions = countries
+    .map((c) => ({ iso2: c.iso2, name: fmt.country(c.iso2, c.name) }))
+    .sort((a, b) => a.name.localeCompare(b.name, fmt.locale));
   // The API's totalRanked is the global count, so it is only shown unfiltered.
   const totalRanked = isFiltered ? undefined : data?.totalRanked;
   const subtitle = [
-    generatedAt ? `Updated ${formatGeneratedAt(generatedAt)}` : null,
-    totalRanked ? `${totalRanked.toLocaleString('en-US')} ranked cubers` : null,
+    generatedAt ? t('updated', { date: fmt.dateTime(generatedAt) }) : null,
+    totalRanked ? t('rankedCount', { count: totalRanked, n: fmt.int(totalRanked) }) : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -144,10 +142,10 @@ export function LeaderboardPage() {
   const canLoadMore = items.length >= limit && limit < MAX_ROWS;
 
   usePageMetadata({
-    title: `${pageTitle} | WPS Ranking`,
+    title: t('meta.title', { title: pageTitle }),
     description: isFiltered
-      ? `The top speedcubers from ${regionName} by WPS, an all-around score from official WCA ranks.`
-      : `The top speedcubers in the world by WPS, an all-around score from official WCA ranks in ${SCORED_EVENT_COUNT} events.`,
+      ? t('meta.descriptionRegion', { region: regionName })
+      : t('meta.description', { count: SCORED_EVENT_COUNT, n: fmt.int(SCORED_EVENT_COUNT) }),
     canonicalPath: region ? `/leaderboard?${new URLSearchParams(region).toString()}` : '/leaderboard',
   });
 
@@ -155,7 +153,7 @@ export function LeaderboardPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-white">{pageTitle}</h1>
-        <div className="card space-y-3 p-4" aria-busy="true" aria-label="Loading leaderboard">
+        <div className="card space-y-3 p-4" aria-busy="true" aria-label={t('loading')}>
           {Array.from({ length: 10 }, (_, i) => (
             <div key={i} className="h-10 animate-pulse rounded bg-gray-700/50" />
           ))}
@@ -169,9 +167,9 @@ export function LeaderboardPage() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-white">{pageTitle}</h1>
         <div className="card py-12 text-center">
-          <p className="text-red-400">{error ?? 'Failed to load data'}</p>
+          <p className="text-red-400">{error ?? t('errors.load')}</p>
           <button type="button" onClick={() => loadData(selected)} className="btn-primary mt-4">
-            Try again
+            {t('common:actions.tryAgain')}
           </button>
         </div>
       </div>
@@ -190,7 +188,7 @@ export function LeaderboardPage() {
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="region-filter" className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Region
+            {t('filter.label')}
           </label>
           <select
             id="region-filter"
@@ -198,20 +196,20 @@ export function LeaderboardPage() {
             onChange={(e) => handleRegionChange(e.target.value)}
             className="input-field w-full md:w-64"
           >
-            <option value={ALL}>World</option>
-            <optgroup label="Continents">
+            <option value={ALL}>{t('world')}</option>
+            <optgroup label={t('filter.continents')}>
               {CONTINENTS.map((c) => (
                 <option key={c.code} value={`continent:${c.code}`}>
-                  {c.name}
+                  {fmt.continent(c.code, c.name)}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Countries">
+            <optgroup label={t('filter.countries')}>
               {/* Keeps a ?country= selection visible while the list loads. */}
               {region && 'country' in region && !countries.some((c) => c.iso2 === region.country) && (
                 <option value={selected}>{regionName}</option>
               )}
-              {countries.map((c) => (
+              {countryOptions.map((c) => (
                 <option key={c.iso2} value={`country:${c.iso2}`}>
                   {c.name}
                 </option>
@@ -224,7 +222,7 @@ export function LeaderboardPage() {
       <div className="card overflow-hidden p-0">
         {items.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
-            No ranked cubers found{isFiltered ? ` from ${regionName}` : ''}
+            {isFiltered ? t('emptyRegion', { region: regionName }) : t('empty')}
           </div>
         ) : (
           <RankingList items={items} showChange={hasChanges} />
@@ -244,7 +242,7 @@ export function LeaderboardPage() {
             disabled={loadingMore}
             className="btn-secondary min-w-[10rem] disabled:opacity-60"
           >
-            {loadingMore ? 'Loading…' : loadMoreError ? 'Try again' : 'Show more'}
+            {loadingMore ? t('common:actions.loading') : loadMoreError ? t('common:actions.tryAgain') : t('common:actions.showMore')}
           </button>
         </div>
       )}

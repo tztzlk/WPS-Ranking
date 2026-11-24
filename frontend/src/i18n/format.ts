@@ -18,7 +18,8 @@ export function useFormat() {
     const fixed = new Map<number, Intl.NumberFormat>();
     let regions: Intl.DisplayNames | null = null;
     try {
-      regions = new Intl.DisplayNames([locale], { type: 'region' });
+      // Short forms where CLDR has them ("США", not "Соединенные Штаты"), to fit table columns.
+      regions = new Intl.DisplayNames([locale], { type: 'region', style: 'short' });
     } catch {
       /* old browser: keep the API's English names */
     }

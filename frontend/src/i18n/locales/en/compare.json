@@ -1,1 +1,41 @@
-{}
+{
+  "meta": {
+    "title": "Compare Cubers | WPS Ranking",
+    "description": "Compare two speedcubers by WPS, world rank, country rank, and the WPS each event adds."
+  },
+  "title": "Compare <accent>cubers</accent>",
+  "subtitle": "Enter two WCA IDs to compare their WPS and ranks.",
+  "form": {
+    "first": "First cuber",
+    "second": "Second cuber",
+    "placeholder": "e.g. {{id}}",
+    "submit": "Compare",
+    "submitting": "Comparing…"
+  },
+  "errors": {
+    "missing": "Enter two WCA IDs.",
+    "firstInvalid": "The first WCA ID should look like {{example}}.",
+    "secondInvalid": "The second WCA ID should look like {{example}}.",
+    "same": "Enter two different WCA IDs.",
+    "notFound": "One of these WCA IDs was not found.",
+    "invalidId": "One of these is not a valid WCA ID.",
+    "generic": "The comparison could not be loaded."
+  },
+  "tie": "Both cubers have the same WPS.",
+  "leads": "<name>{{name}}</name> leads by <diff>{{diff}} WPS</diff>",
+  "card": {
+    "worldRank": "World rank",
+    "countryRank": "Country rank",
+    "worldRankValue": "#{{rank}} of {{total}}",
+    "countryRankValue": "#{{rank}} in {{country}}",
+    "countryFallback": "country",
+    "openProfile": "Open profile"
+  },
+  "events": {
+    "title": "WPS by event",
+    "summary_one": "Each bar is the WPS an event adds. {{left}} gains more in {{n}} event, {{right}} in {{m}}.",
+    "summary_other": "Each bar is the WPS an event adds. {{left}} gains more in {{n}} events, {{right}} in {{m}}.",
+    "noResult": "No result",
+    "total": "Total WPS"
+  }
+}

@@ -1,1 +1,28 @@
-{}
+{
+  "meta": {
+    "title": "Country ranking | WPS Ranking",
+    "description_one": "Countries ranked by the WPS of their {{n}} best speedcuber.",
+    "description_other": "Countries ranked by the average WPS of their {{n}} best speedcubers."
+  },
+  "title": "Country ranking",
+  "titleContinent": "Country ranking: {{continent}}",
+  "intro_one": "A country's score is the WPS of its {{n}} best cuber. If a country has fewer than {{n}} ranked cuber, the empty place counts as 0.",
+  "intro_other": "A country's score is the average WPS of its {{n}} best cubers. If a country has fewer than {{n}} ranked cubers, each empty place counts as 0.",
+  "filter": {
+    "label": "Continent",
+    "all": "All continents"
+  },
+  "loading": "Loading country ranking",
+  "columns": {
+    "best": "Best cuber",
+    "ranked": "Ranked cubers",
+    "score": "Score"
+  },
+  "rankedShort_one": "{{n}} ranked",
+  "rankedShort_other": "{{n}} ranked",
+  "bestShort": "best: {{name}}",
+  "hint": "Select a country to open its leaderboard.",
+  "errors": {
+    "load": "The country ranking could not be loaded."
+  }
+}

@@ -1,1 +1,41 @@
-{}
+{
+  "translationNote": "",
+  "meta": {
+    "title": "Legal, privacy and data | WPS Ranking",
+    "description": "Where the WPS Ranking data comes from, the WCA attribution, what personal data the site shows and stores, and how to ask for a change."
+  },
+  "title": "Legal, privacy and data",
+  "lastUpdated": "Last updated {{date}}.",
+  "data": {
+    "title": "Data source",
+    "intro": "All competition results on this site come from the public <link>WCA results export</link>. The WCA allows anyone to republish this data if they show the following notice:",
+    "notice": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link>.",
+    "noticeDated": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link> as of {{date}}.",
+    "calculated": "WPS scores, WPS ranks and the country ranking are calculated by this site. They are not official WCA rankings."
+  },
+  "disclaimer": {
+    "title": "Disclaimer",
+    "independent": "WPS Ranking is an independent, non-commercial project. It is not affiliated with, endorsed by or sponsored by the World Cube Association.",
+    "asIs": "The site is provided as is, without any warranty. The data can be out of date or contain errors, and the site can be unavailable at any time. Do not use it as the official source of any result or record. For official results, use the <link>WCA website</link>."
+  },
+  "privacy": {
+    "title": "Privacy",
+    "peopleTitle": "People in the rankings",
+    "people1": "For every person in the WCA results export, the site shows their name, WCA ID, country, WCA world ranks and the scores calculated from them. All of this is already public on the WCA website. Profile photos are the photos people uploaded to their WCA account; the site stores only the link to the photo and loads the image from WCA servers.",
+    "people2": "The data is refreshed every day from the WCA. If you change or remove your photo on the WCA website, or the WCA changes or removes your data, this site shows the change after its next daily update.",
+    "visitorsTitle": "Visitors",
+    "visitors1": "The site has no user accounts and no advertising, and it does not set cookies. The browser keeps your language choice in local storage and one technical flag in session storage to recover from a failed page load.",
+    "visitors2": "To count visits, the site uses Vercel Web Analytics. It records the page, the referring site, the country and the browser and device type. It does not use cookies, and it does not store IP addresses or recognise the same visitor on a later day.",
+    "visitors3": "The site is hosted on Vercel, and its database runs on Supabase. Like any web host, Vercel records standard request logs, including IP addresses, to run and protect the service. Profile photos load from WCA servers, so your browser also connects to the WCA when a page shows a photo.",
+    "visitors4": "Donations go through Ko-fi. This site does not receive or store payment details; Ko-fi's own privacy policy applies there."
+  },
+  "contact": {
+    "title": "Requests and contact",
+    "requests": "To ask about your data, request a correction or removal, or report a problem with this page, email <mail>{{email}}</mail>. We reply within 30 days. Errors in competition results themselves can only be fixed by the WCA.",
+    "github": "Bugs and ideas for the site are welcome on <link>GitHub</link>. GitHub issues are public, so do not post personal requests there."
+  },
+  "changes": {
+    "title": "Changes to this page",
+    "text": "When this page changes, the date at the top changes with it."
+  }
+}

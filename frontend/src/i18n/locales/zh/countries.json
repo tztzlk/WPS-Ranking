@@ -1,1 +1,25 @@
-{}
+{
+  "meta": {
+    "title": "国家和地区排名 | WPS Ranking",
+    "description_other": "按最佳 {{n}} 名魔方选手的平均 WPS 对国家和地区进行排名。"
+  },
+  "title": "国家和地区排名",
+  "titleContinent": "国家和地区排名：{{continent}}",
+  "intro_other": "国家或地区的分数是其最佳 {{n}} 名选手的平均 WPS。如果上榜选手不足 {{n}} 名，空缺位置按 0 计算。",
+  "filter": {
+    "label": "大洲",
+    "all": "所有大洲"
+  },
+  "loading": "国家和地区排名加载中",
+  "columns": {
+    "best": "最佳选手",
+    "ranked": "上榜选手",
+    "score": "分数"
+  },
+  "rankedShort_other": "{{n}} 名上榜",
+  "bestShort": "最佳：{{name}}",
+  "hint": "点击国家或地区查看其排行榜。",
+  "errors": {
+    "load": "无法加载国家和地区排名。"
+  }
+}

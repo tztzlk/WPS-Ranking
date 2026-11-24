@@ -1,10 +1,13 @@
 import { usePageMetadata } from '../hooks/usePageMetadata';
 import { useDataDate } from '../hooks/useDataDate';
+import { Trans, useTranslation } from 'react-i18next';
+import { useFormat } from '../i18n/format';
 
 // TODO: placeholder address. Replace with the project's real contact email.
 export const CONTACT_EMAIL = 'contact@example.com';
 
-const LAST_UPDATED = 'November 20, 2026';
+/** ISO date; shown in the reader's language. */
+const LAST_UPDATED = '2026-11-20';
 const GITHUB_REPO_URL = 'https://github.com/tztzlk/WPS-Ranking';
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -18,7 +21,8 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 const linkClass = 'text-green-400 underline underline-offset-2 hover:text-green-300';
 
-function External({ href, children }: { href: string; children: React.ReactNode }) {
+/** Link to an external site. `children` is optional so it can be a <Trans> component, which fills it in. */
+function External({ href, children }: { href: string; children?: React.ReactNode }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>
       {children}
@@ -27,103 +31,84 @@ function External({ href, children }: { href: string; children: React.ReactNode 
 }
 
 export function LegalPage() {
-  const dataDate = useDataDate();
+  const { t } = useTranslation('legal');
+  const fmt = useFormat();
+  const dataIso = useDataDate();
+  const dataDate = dataIso ? fmt.date(dataIso, 'long') : null;
+  const translationNote = t('translationNote');
 
   usePageMetadata({
-    title: 'Legal, privacy and data | WPS Ranking',
-    description:
-      'Where the WPS Ranking data comes from, the WCA attribution, what personal data the site shows and stores, and how to ask for a change.',
+    title: t('meta.title'),
+    description: t('meta.description'),
     canonicalPath: '/legal',
   });
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
-        <h1 className="text-3xl font-bold text-white">Legal, privacy and data</h1>
-        <p className="mt-2 text-sm text-gray-400">Last updated {LAST_UPDATED}.</p>
+        <h1 className="text-3xl font-bold text-white">{t('title')}</h1>
+        <p className="mt-2 text-sm text-gray-400">{t('lastUpdated', { date: fmt.date(LAST_UPDATED, 'long') })}</p>
+        {translationNote && <p className="mt-2 text-sm italic text-gray-400">{translationNote}</p>}
       </header>
 
-      <Section id="data" title="Data source">
+      <Section id="data" title={t('data.title')}>
         <p>
-          All competition results on this site come from the public{' '}
-          <External href="https://www.worldcubeassociation.org/export/results">WCA results export</External>. The WCA
-          allows anyone to republish this data if they show the following notice:
+          <Trans
+            t={t}
+            i18nKey="data.intro"
+            components={{ link: <External href="https://www.worldcubeassociation.org/export/results" /> }}
+          />
         </p>
         <blockquote className="border-l-2 border-green-500 pl-4 text-sm text-gray-400">
-          This information is based on competition results owned and maintained by the World Cube Association,
-          published at <External href="https://www.worldcubeassociation.org/results/rankings/333/single">worldcubeassociation.org/results</External>
-          {dataDate ? ` as of ${dataDate}` : ''}.
+          <Trans
+            t={t}
+            i18nKey={dataDate ? 'data.noticeDated' : 'data.notice'}
+            values={{ date: dataDate }}
+            components={{ link: <External href="https://www.worldcubeassociation.org/results/rankings/333/single" /> }}
+          />
         </blockquote>
+        <p>{t('data.calculated')}</p>
+      </Section>
+
+      <Section id="disclaimer" title={t('disclaimer.title')}>
+        <p>{t('disclaimer.independent')}</p>
         <p>
-          WPS scores, WPS ranks and the country ranking are calculated by this site. They are not official WCA
-          rankings.
+          <Trans
+            t={t}
+            i18nKey="disclaimer.asIs"
+            components={{ link: <External href="https://www.worldcubeassociation.org/results/rankings/333/single" /> }}
+          />
         </p>
       </Section>
 
-      <Section id="disclaimer" title="Disclaimer">
+      <Section id="privacy" title={t('privacy.title')}>
+        <h3 className="font-semibold text-white">{t('privacy.peopleTitle')}</h3>
+        <p>{t('privacy.people1')}</p>
+        <p>{t('privacy.people2')}</p>
+
+        <h3 className="pt-2 font-semibold text-white">{t('privacy.visitorsTitle')}</h3>
+        <p>{t('privacy.visitors1')}</p>
+        <p>{t('privacy.visitors2')}</p>
+        <p>{t('privacy.visitors3')}</p>
+        <p>{t('privacy.visitors4')}</p>
+      </Section>
+
+      <Section id="contact" title={t('contact.title')}>
         <p>
-          WPS Ranking is an independent, non-commercial project. It is not affiliated with, endorsed by or
-          sponsored by the World Cube Association.
+          <Trans
+            t={t}
+            i18nKey="contact.requests"
+            values={{ email: CONTACT_EMAIL }}
+            components={{ mail: <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass} /> }}
+          />
         </p>
         <p>
-          The site is provided as is, without any warranty. The data can be out of date or contain errors, and the
-          site can be unavailable at any time. Do not use it as the official source of any result or record. For
-          official results, use the{' '}
-          <External href="https://www.worldcubeassociation.org/results/rankings/333/single">WCA website</External>.
+          <Trans t={t} i18nKey="contact.github" components={{ link: <External href={`${GITHUB_REPO_URL}/issues`} /> }} />
         </p>
       </Section>
 
-      <Section id="privacy" title="Privacy">
-        <h3 className="font-semibold text-white">People in the rankings</h3>
-        <p>
-          For every person in the WCA results export, the site shows their name, WCA ID, country, WCA world ranks
-          and the scores calculated from them. All of this is already public on the WCA website. Profile photos
-          are the photos people uploaded to their WCA account; the site stores only the link to the photo and
-          loads the image from WCA servers.
-        </p>
-        <p>
-          The data is refreshed every day from the WCA. If you change or remove your photo on the WCA website, or
-          the WCA changes or removes your data, this site shows the change after its next daily update.
-        </p>
-
-        <h3 className="pt-2 font-semibold text-white">Visitors</h3>
-        <p>
-          The site has no user accounts and no advertising, and it does not set cookies. The browser keeps one
-          technical flag in session storage to recover from a failed page load.
-        </p>
-        <p>
-          To count visits, the site uses Vercel Web Analytics. It records the page, the referring site, the
-          country and the browser and device type. It does not use cookies, and it does not store IP addresses or
-          recognise the same visitor on a later day.
-        </p>
-        <p>
-          The site is hosted on Vercel, and its database runs on Supabase. Like any web host, Vercel records
-          standard request logs, including IP addresses, to run and protect the service. Profile photos load from
-          WCA servers, so your browser also connects to the WCA when a page shows a photo.
-        </p>
-        <p>
-          Donations go through Ko-fi. This site does not receive or store payment details; Ko-fi&apos;s own privacy
-          policy applies there.
-        </p>
-      </Section>
-
-      <Section id="contact" title="Requests and contact">
-        <p>
-          To ask about your data, request a correction or removal, or report a problem with this page, email{' '}
-          <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
-            {CONTACT_EMAIL}
-          </a>
-          . We reply within 30 days. Errors in competition results themselves can only be fixed by the WCA.
-        </p>
-        <p>
-          Bugs and ideas for the site are welcome on{' '}
-          <External href={`${GITHUB_REPO_URL}/issues`}>GitHub</External>. GitHub issues are public, so do not post
-          personal requests there.
-        </p>
-      </Section>
-
-      <Section id="changes" title="Changes to this page">
-        <p>When this page changes, the date at the top changes with it.</p>
+      <Section id="changes" title={t('changes.title')}>
+        <p>{t('changes.text')}</p>
       </Section>
     </div>
   );

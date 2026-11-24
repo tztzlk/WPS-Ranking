@@ -8,7 +8,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import type { ProfileHistoryItem } from '../types';
+import { useFormat } from '../i18n/format';
 
 interface WpsProgressChartProps {
   data: ProfileHistoryItem[];
@@ -18,19 +20,12 @@ interface WpsProgressChartProps {
 type ChartMode = 'wps' | 'rank';
 type RangeMode = '7d' | '30d' | '90d' | 'all';
 
-const RANGE_OPTIONS: Array<{ value: RangeMode; label: string; days: number | null }> = [
-  { value: '7d', label: '7D', days: 7 },
-  { value: '30d', label: '30D', days: 30 },
-  { value: '90d', label: '90D', days: 90 },
-  { value: 'all', label: 'All', days: null },
+const RANGE_OPTIONS: Array<{ value: RangeMode; days: number | null }> = [
+  { value: '7d', days: 7 },
+  { value: '30d', days: 30 },
+  { value: '90d', days: 90 },
+  { value: 'all', days: null },
 ];
-
-const formatDate = (dateStr: string) =>
-  new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 
 function getWpsDomain(data: ProfileHistoryItem[]): [number, number] {
   const values = data
@@ -102,7 +97,13 @@ function ToggleGroup<T extends string>({
 }
 
 export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
+  const { t } = useTranslation('profile');
+  const fmt = useFormat();
   const [mode, setMode] = useState<ChartMode>('wps');
+  // History dates are calendar days (YYYY-MM-DD): format them in UTC so no time zone shifts the day.
+  const formatDate = (dateStr: string) => fmt.date(`${dateStr}T00:00:00Z`);
+  const formatShortDate = (dateStr: string) =>
+    new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(fmt.locale, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   const [range, setRange] = useState<RangeMode>('30d');
 
   const filteredData = filterHistoryByRange(data, range);
@@ -113,7 +114,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (loadError) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        The history could not be loaded. Refresh the page to try again.
+        {t('chart.loadError')}
       </div>
     );
   }
@@ -121,7 +122,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (data.length === 0) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        No history for the last 180 days.
+        {t('chart.empty')}
       </div>
     );
   }
@@ -129,7 +130,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   if (data.length === 1) {
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-6 py-8 text-center text-gray-400">
-        The chart needs at least two days of data. A new point is added after each daily update.
+        {t('chart.needTwoDays')}
       </div>
     );
   }
@@ -137,15 +138,15 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   const controls = (
     <div className="flex flex-wrap items-center gap-3">
       <ToggleGroup
-        options={RANGE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+        options={RANGE_OPTIONS.map((option) => ({ value: option.value, label: t(`chart.range.${option.value}`) }))}
         value={range}
         onChange={setRange}
         activeClassName="bg-gray-200 text-gray-900"
       />
       <ToggleGroup
         options={[
-          { value: 'wps', label: 'WPS' },
-          { value: 'rank', label: 'Rank' },
+          { value: 'wps', label: t('chart.wps') },
+          { value: 'rank', label: t('chart.rank') },
         ]}
         value={mode}
         onChange={setMode}
@@ -158,11 +159,11 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
     return (
       <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
         <div className="flex flex-col gap-4 border-b border-gray-700 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <h3 className="text-lg font-semibold text-white">WPS history</h3>
+          <h3 className="text-lg font-semibold text-white">{t('chart.title')}</h3>
           {controls}
         </div>
         <div className="px-6 py-8 text-center text-gray-400">
-          Not enough data for this range yet. Pick a longer range.
+          {t('chart.notEnough')}
         </div>
       </div>
     );
@@ -175,10 +176,10 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
     return (
       <div className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm shadow-lg">
         <div className="text-gray-300">{formatDate(point.date)}</div>
-        <div className="mt-1 text-white">WPS: {point.wps.toFixed(2)}</div>
-        <div className="text-gray-400">World rank: #{point.globalRank.toLocaleString()}</div>
+        <div className="mt-1 text-white">{t('chart.tooltipWps', { value: fmt.num(point.wps) })}</div>
+        <div className="text-gray-400">{t('chart.tooltipWorld', { value: `#${fmt.int(point.globalRank)}` })}</div>
         <div className="text-gray-400">
-          Country rank: {point.countryRank != null ? `#${point.countryRank.toLocaleString()}` : '—'}
+          {t('chart.tooltipCountry', { value: point.countryRank != null ? `#${fmt.int(point.countryRank)}` : '—' })}
         </div>
       </div>
     );
@@ -187,7 +188,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
       <div className="flex flex-col gap-4 border-b border-gray-700 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <h3 className="text-lg font-semibold text-white">WPS history</h3>
+        <h3 className="text-lg font-semibold text-white">{t('chart.title')}</h3>
         {controls}
       </div>
       <div className="h-72 p-4">
@@ -197,12 +198,7 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
             <XAxis
               dataKey="date"
               tick={{ fill: '#9ca3af', fontSize: 11 }}
-              tickFormatter={(value) =>
-                new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })
-              }
+              tickFormatter={(value: string) => formatShortDate(value)}
               stroke="#4b5563"
             />
             <YAxis
@@ -214,8 +210,9 @@ export function WpsProgressChart({ data, loadError }: WpsProgressChartProps) {
               tick={{ fill: '#9ca3af', fontSize: 11 }}
               tickFormatter={
                 mode === 'wps'
-                  ? (value: number) => value.toFixed(1)
-                  : (value: number) => `#${Number(value).toLocaleString()}`
+                  ? // A narrow range (e.g. 63.2–63.6 in 6 ticks) needs 2 decimals, or ticks repeat.
+                    (value: number) => fmt.num(value, wpsDomain[1] - wpsDomain[0] < 1 ? 2 : 1)
+                  : (value: number) => `#${fmt.int(Number(value))}`
               }
               stroke="#4b5563"
             />

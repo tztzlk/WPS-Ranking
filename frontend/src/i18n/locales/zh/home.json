@@ -1,1 +1,37 @@
-{}
+{
+  "meta": {
+    "title": "WPS Ranking | 魔方全能排行榜",
+    "description_other": "魔方选手全能排名。WPS 将 {{n}} 个项目的 WCA 官方世界排名合成为一个分数。可按姓名或 WCA ID 查找任何选手。"
+  },
+  "hero": {
+    "title": "<hl>魔方选手</hl>全能排名",
+    "subtitle_other": "WPS 将你在 {{n}} 个项目中的 WCA 官方世界排名合成为一个分数。",
+    "howWpsWorks": "WPS 如何计算"
+  },
+  "search": {
+    "label": "查找选手",
+    "placeholder": "姓名或 WCA ID",
+    "submit": "查找"
+  },
+  "stats": {
+    "ranked": "上榜选手",
+    "events": "计分项目",
+    "countries": "国家和地区"
+  },
+  "top": {
+    "title": "世界前 5 名",
+    "loading": "排行榜加载中",
+    "full": "完整排行榜"
+  },
+  "movers": {
+    "title": "本周排名变化最大",
+    "text": "过去 7 天世界排名变化最大的选手。",
+    "up": "上升",
+    "down": "下降",
+    "none": "过去 7 天没有选手朝这个方向变化。"
+  },
+  "errors": {
+    "load": "无法加载排行榜。",
+    "empty": "排行榜暂时为空，下次每日更新后会填充。"
+  }
+}

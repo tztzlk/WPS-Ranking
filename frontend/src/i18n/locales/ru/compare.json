@@ -1,1 +1,43 @@
-{}
+{
+  "meta": {
+    "title": "Сравнение куберов | WPS Ranking",
+    "description": "Сравните двух спидкуберов по WPS, месту в мире и в стране и по тому, сколько WPS даёт каждая дисциплина."
+  },
+  "title": "Сравнение <accent>куберов</accent>",
+  "subtitle": "Введите два WCA ID, чтобы сравнить их WPS и места.",
+  "form": {
+    "first": "Первый кубер",
+    "second": "Второй кубер",
+    "placeholder": "например, {{id}}",
+    "submit": "Сравнить",
+    "submitting": "Сравниваем…"
+  },
+  "errors": {
+    "missing": "Введите два WCA ID.",
+    "firstInvalid": "Первый WCA ID должен выглядеть как {{example}}.",
+    "secondInvalid": "Второй WCA ID должен выглядеть как {{example}}.",
+    "same": "Введите два разных WCA ID.",
+    "notFound": "Один из этих WCA ID не найден.",
+    "invalidId": "Один из них не похож на WCA ID.",
+    "generic": "Не удалось загрузить сравнение."
+  },
+  "tie": "У обоих куберов одинаковый WPS.",
+  "leads": "<name>{{name}}</name> впереди на <diff>{{diff}} WPS</diff>",
+  "card": {
+    "worldRank": "Место в мире",
+    "countryRank": "Место в стране",
+    "worldRankValue": "#{{rank}} из {{total}}",
+    "countryRankValue": "#{{rank}} · {{country}}",
+    "countryFallback": "страна",
+    "openProfile": "Открыть профиль"
+  },
+  "events": {
+    "title": "WPS по дисциплинам",
+    "summary_one": "Каждая полоса — сколько WPS даёт дисциплина. {{left}} получает больше в {{n}} дисциплине, {{right}} — в {{m}}.",
+    "summary_few": "Каждая полоса — сколько WPS даёт дисциплина. {{left}} получает больше в {{n}} дисциплинах, {{right}} — в {{m}}.",
+    "summary_many": "Каждая полоса — сколько WPS даёт дисциплина. {{left}} получает больше в {{n}} дисциплинах, {{right}} — в {{m}}.",
+    "summary_other": "Каждая полоса — сколько WPS даёт дисциплина. {{left}} получает больше в {{n}} дисциплинах, {{right}} — в {{m}}.",
+    "noResult": "Нет результата",
+    "total": "Итого WPS"
+  }
+}

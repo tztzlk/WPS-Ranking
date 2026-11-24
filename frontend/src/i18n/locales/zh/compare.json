@@ -1,1 +1,40 @@
-{}
+{
+  "meta": {
+    "title": "选手对比 | WPS Ranking",
+    "description": "从 WPS、世界排名、国家/地区排名以及各项目贡献的 WPS 对比两位魔方选手。"
+  },
+  "title": "<accent>选手</accent>对比",
+  "subtitle": "输入两个 WCA ID，对比他们的 WPS 和排名。",
+  "form": {
+    "first": "第一位选手",
+    "second": "第二位选手",
+    "placeholder": "例如 {{id}}",
+    "submit": "对比",
+    "submitting": "对比中…"
+  },
+  "errors": {
+    "missing": "请输入两个 WCA ID。",
+    "firstInvalid": "第一个 WCA ID 的格式应类似 {{example}}。",
+    "secondInvalid": "第二个 WCA ID 的格式应类似 {{example}}。",
+    "same": "请输入两个不同的 WCA ID。",
+    "notFound": "其中一个 WCA ID 不存在。",
+    "invalidId": "其中一个不是有效的 WCA ID。",
+    "generic": "无法加载对比结果。"
+  },
+  "tie": "两位选手的 WPS 相同。",
+  "leads": "<name>{{name}}</name> 领先 <diff>{{diff}} WPS</diff>",
+  "card": {
+    "worldRank": "世界排名",
+    "countryRank": "国家/地区排名",
+    "worldRankValue": "#{{rank}}，共 {{total}} 人",
+    "countryRankValue": "{{country}} #{{rank}}",
+    "countryFallback": "国家/地区",
+    "openProfile": "查看选手资料"
+  },
+  "events": {
+    "title": "各项目 WPS",
+    "summary_other": "每条柱表示该项目带来的 WPS。{{left}} 在 {{n}} 个项目中得分更高，{{right}} 在 {{m}} 个项目中更高。",
+    "noResult": "暂无成绩",
+    "total": "WPS 总分"
+  }
+}

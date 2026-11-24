@@ -1,1 +1,33 @@
-{}
+{
+  "meta": {
+    "title": "Search Cubers | WPS Ranking",
+    "description": "Search speedcubers by name, WCA ID, or country and open their WPS ranking profiles."
+  },
+  "title": "Search <hl>cubers</hl>",
+  "subtitle": "Find a cuber by name, surname, WCA ID, or country code",
+  "label": "Search cubers",
+  "placeholder": "e.g. Garrett, 2017GARR05, KZ",
+  "tooShort_one": "Type at least {{n}} character.",
+  "tooShort_other": "Type at least {{n}} characters.",
+  "noResults": {
+    "title": "No cubers found for “{{query}}”",
+    "text": "Check the spelling, or try a surname or a WCA ID."
+  },
+  "results": {
+    "top": "Top {{n}} matches by WPS",
+    "count_one": "{{n}} match",
+    "count_other": "{{n}} matches"
+  },
+  "tips": {
+    "title": "Search tips",
+    "name": "Name",
+    "nameText": "Start of a first name or surname: “Luke”, “Garrett”.",
+    "wcaId": "WCA ID",
+    "wcaIdText": "The full ID, e.g. 2017GARR05, finds exactly that cuber.",
+    "country": "Country",
+    "countryText": "A two-letter code like KZ or US lists that country’s top cubers."
+  },
+  "errors": {
+    "failed": "Search failed. Please try again."
+  }
+}

@@ -5,6 +5,8 @@ import { apiService } from '../services/api';
 import { LeaderboardCacheItem, SCORED_EVENT_COUNT } from '../types';
 import { RankingList } from '../components/RankingList';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { Trans, useTranslation } from 'react-i18next';
+import { useFormat } from '../i18n/format';
 
 function WeeklyMoversList({
   title,
@@ -16,6 +18,8 @@ function WeeklyMoversList({
   direction: 'up' | 'down';
 }) {
   const isUp = direction === 'up';
+  const { t } = useTranslation(['home', 'common']);
+  const fmt = useFormat();
 
   return (
     <div className="rounded-lg border border-gray-700 bg-gray-800/40 p-4">
@@ -23,7 +27,7 @@ function WeeklyMoversList({
         {title}
       </h3>
       {items.length === 0 ? (
-        <p className="text-sm text-gray-400">Nobody moved this way in the last 7 days.</p>
+        <p className="text-sm text-gray-400">{t('movers.none')}</p>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
@@ -35,9 +39,9 @@ function WeeklyMoversList({
               <div className="min-w-0">
                 <div className={`font-mono ${isUp ? 'text-green-400' : 'text-red-400'}`}>
                   {isUp ? '+' : '-'}
-                  {Math.abs(item.rankChange ?? 0)}
+                  {fmt.int(Math.abs(item.rankChange ?? 0))}
                 </div>
-                <div className="truncate font-medium text-gray-200">{item.name}</div>
+                <div className="truncate font-medium text-gray-200">{fmt.person(item.name)}</div>
               </div>
               <div className="shrink-0 text-xs text-gray-400">{item.personId}</div>
             </Link>
@@ -58,9 +62,13 @@ export function HomePage() {
   const [totalCountries, setTotalCountries] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation(['home', 'common']);
+  const fmt = useFormat();
 
+  // Load once on mount; loadLeaderboard only reads the latest t when a request fails.
   useEffect(() => {
     loadLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadLeaderboard = async () => {
@@ -78,22 +86,21 @@ export function HomePage() {
         err && typeof err === 'object' && 'userMessage' in err
           ? (err as { userMessage?: string }).userMessage
           : null;
-      const ax =
+      const status =
         err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } })
-          : null;
-      setError(userMsg ?? ax?.response?.data?.error ?? 'The leaderboard could not be loaded.');
+          ? (err as { response?: { status?: number } }).response?.status
+          : undefined;
+      setError(userMsg ?? (status === 503 ? t('errors.empty') : t('errors.load')));
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCount = (n: number | null) => (n ? n.toLocaleString('en-US') : '—');
+  const formatCount = (n: number | null) => (n ? fmt.int(n) : '—');
 
   usePageMetadata({
-    title: 'WPS Ranking | All-around speedcubing leaderboard',
-    description:
-      'An all-around ranking of speedcubers. WPS turns official WCA world ranks in 17 events into one score. Find any cuber by name or WCA ID.',
+    title: t('meta.title'),
+    description: t('meta.description', { count: SCORED_EVENT_COUNT, n: fmt.int(SCORED_EVENT_COUNT) }),
     canonicalPath: '/',
   });
 
@@ -101,10 +108,10 @@ export function HomePage() {
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold leading-tight text-white md:text-6xl">
-          All-around rankings for <span className="text-green-400">speedcubers</span>
+          <Trans t={t} i18nKey="hero.title" components={{ hl: <span className="text-green-400" /> }} />
         </h1>
         <p className="mx-auto mb-6 max-w-2xl text-lg text-gray-300 md:text-xl">
-          WPS turns your official WCA world ranks in 17 events into one score.
+          {t('hero.subtitle', { count: SCORED_EVENT_COUNT, n: fmt.int(SCORED_EVENT_COUNT) })}
         </p>
         <form
           role="search"
@@ -116,7 +123,7 @@ export function HomePage() {
           }}
         >
           <label htmlFor="home-search" className="sr-only">
-            Find a cuber
+            {t('search.label')}
           </label>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -125,26 +132,26 @@ export function HomePage() {
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Name, surname or WCA ID"
+              placeholder={t('search.placeholder')}
               autoComplete="off"
               className="input-field w-full py-3 pl-10"
             />
           </div>
           <button type="submit" className="btn-primary px-5">
-            Find
+            {t('search.submit')}
           </button>
         </form>
         <Link to="/about" className="mt-4 inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white">
-          How WPS works
+          {t('hero.howWpsWorks')}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
         {[
-          { icon: Users, value: formatCount(totalRanked), label: 'Ranked cubers' },
-          { icon: Layers, value: String(SCORED_EVENT_COUNT), label: 'Events scored' },
-          { icon: Trophy, value: formatCount(totalCountries), label: 'Countries' },
+          { icon: Users, value: formatCount(totalRanked), label: t('stats.ranked') },
+          { icon: Layers, value: fmt.int(SCORED_EVENT_COUNT), label: t('stats.events') },
+          { icon: Trophy, value: formatCount(totalCountries), label: t('stats.countries') },
         ].map(({ icon: Icon, value, label }) => (
           <div key={label} className="card flex flex-col items-center px-2 py-4 text-center sm:p-6">
             <Icon className="mb-2 h-6 w-6 text-green-400 sm:h-8 sm:w-8" aria-hidden="true" />
@@ -157,12 +164,12 @@ export function HomePage() {
       <div className="card">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Top 5 in the world</h2>
+            <h2 className="text-2xl font-bold text-white">{t('top.title')}</h2>
           </div>
         </div>
 
         {loading ? (
-          <div className="space-y-3" aria-busy="true" aria-label="Loading leaderboard">
+          <div className="space-y-3" aria-busy="true" aria-label={t('top.loading')}>
             {Array.from({ length: 5 }, (_, i) => (
               <div key={i} className="h-12 animate-pulse rounded bg-gray-700/50" />
             ))}
@@ -171,7 +178,7 @@ export function HomePage() {
           <div className="py-12 text-center">
             <p className="text-red-400">{error}</p>
             <button type="button" onClick={() => loadLeaderboard()} className="btn-primary mt-4">
-              Try again
+              {t('common:actions.tryAgain')}
             </button>
           </div>
         ) : (
@@ -183,7 +190,7 @@ export function HomePage() {
             <div className="mt-6 flex flex-col items-center gap-2">
               <Link to="/leaderboard" className="btn-primary flex w-full items-center justify-center space-x-2 sm:w-auto">
                 <TrendingUp className="h-5 w-5" />
-                <span>Full leaderboard</span>
+                <span>{t('top.full')}</span>
               </Link>
             </div>
 
@@ -191,14 +198,14 @@ export function HomePage() {
             <div className="mt-8 border-t border-gray-700 pt-6">
               <div className="mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-400" />
-                <h3 className="text-xl font-semibold text-white">Biggest movers this week</h3>
+                <h3 className="text-xl font-semibold text-white">{t('movers.title')}</h3>
               </div>
               <p className="mb-4 max-w-3xl text-sm text-gray-400">
-                The largest changes in world rank over the last 7 days.
+                {t('movers.text')}
               </p>
               <div className="grid gap-4 md:grid-cols-2">
-                <WeeklyMoversList title="Up" items={biggestMoversUp} direction="up" />
-                <WeeklyMoversList title="Down" items={biggestMoversDown} direction="down" />
+                <WeeklyMoversList title={t('movers.up')} items={biggestMoversUp} direction="up" />
+                <WeeklyMoversList title={t('movers.down')} items={biggestMoversDown} direction="down" />
               </div>
             </div>
             )}

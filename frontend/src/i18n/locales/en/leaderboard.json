@@ -1,1 +1,26 @@
-{}
+{
+  "meta": {
+    "title": "{{title}} | WPS Ranking",
+    "description_one": "The top speedcubers in the world by WPS, an all-around score from official WCA ranks in {{n}} event.",
+    "description_other": "The top speedcubers in the world by WPS, an all-around score from official WCA ranks in {{n}} events.",
+    "descriptionRegion": "The top speedcubers from {{region}} by WPS, an all-around score from official WCA ranks."
+  },
+  "world": "World",
+  "titleWorld": "World leaderboard",
+  "title": "{{region}} leaderboard",
+  "updated": "Updated {{date}}",
+  "rankedCount_one": "{{n}} ranked cuber",
+  "rankedCount_other": "{{n}} ranked cubers",
+  "loading": "Loading leaderboard",
+  "filter": {
+    "label": "Region",
+    "continents": "Continents",
+    "countries": "Countries"
+  },
+  "empty": "No ranked cubers found",
+  "emptyRegion": "No ranked cubers found from {{region}}",
+  "errors": {
+    "load": "The leaderboard could not be loaded.",
+    "empty": "The leaderboard is empty right now. It fills after the next daily update."
+  }
+}

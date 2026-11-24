@@ -1,1 +1,41 @@
-{}
+{
+  "translationNote": "本页为翻译版本。如与英文版本有出入，以英文版本为准。",
+  "meta": {
+    "title": "法律、隐私与数据 | WPS Ranking",
+    "description": "WPS Ranking 的数据来源、WCA 署名声明、本站展示和存储哪些个人数据，以及如何申请修改。"
+  },
+  "title": "法律、隐私与数据",
+  "lastUpdated": "最后更新：{{date}}。",
+  "data": {
+    "title": "数据来源",
+    "intro": "本站所有比赛成绩均来自公开的 <link>WCA 成绩导出</link>。WCA 允许任何人转载这些数据，但须附上以下声明：",
+    "notice": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link>.",
+    "noticeDated": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link> as of {{date}}.",
+    "calculated": "WPS 分数、WPS 排名和国家/地区排名由本站计算，并非 WCA 官方排名。"
+  },
+  "disclaimer": {
+    "title": "免责声明",
+    "independent": "WPS Ranking 是一个独立的非商业项目，与世界魔方协会（WCA）无关，也未获得其认可或赞助。",
+    "asIs": "本站按“现状”提供，不作任何保证。数据可能过时或有误，网站也可能随时无法访问。请勿将其作为任何成绩或纪录的官方来源。官方成绩请以 <link>WCA 网站</link>为准。"
+  },
+  "privacy": {
+    "title": "隐私",
+    "peopleTitle": "排名中的选手",
+    "people1": "对于 WCA 成绩导出中的每一位选手，本站会展示其姓名、WCA ID、国家/地区、WCA 世界排名以及据此计算的分数。这些信息都已在 WCA 网站上公开。头像是选手上传到其 WCA 账户的照片；本站只保存照片链接，图片本身从 WCA 服务器加载。",
+    "people2": "数据每天从 WCA 更新。如果你在 WCA 网站上更换或删除了照片，或者 WCA 修改或删除了你的数据，本站会在下一次每日更新后显示这些变化。",
+    "visitorsTitle": "访问者",
+    "visitors1": "本站没有用户账户，没有广告，也不使用 cookie。浏览器会在 local storage 中保存你选择的语言，并在 session storage 中保存一个技术标记，用于在页面加载失败后恢复。",
+    "visitors2": "本站使用 Vercel Web Analytics 统计访问量。它会记录访问的页面、来源网站、国家/地区以及浏览器和设备类型。它不使用 cookie，不保存 IP 地址，也不会在之后的日子里识别同一位访问者。",
+    "visitors3": "本站托管在 Vercel 上，数据库运行在 Supabase 上。与任何网站托管服务一样，Vercel 会记录标准的请求日志（包括 IP 地址），用于运行和保护服务。头像从 WCA 服务器加载，因此当页面显示照片时，你的浏览器也会连接 WCA。",
+    "visitors4": "捐助通过 Ko-fi 进行。本站不会接收或保存付款信息；相关事宜适用 Ko-fi 自己的隐私政策。"
+  },
+  "contact": {
+    "title": "请求与联系",
+    "requests": "如需查询你的数据、申请更正或删除，或报告本页面的问题，请发送邮件至 <mail>{{email}}</mail>。我们会在 30 天内回复。比赛成绩本身的错误只能由 WCA 更正。",
+    "github": "欢迎在 <link>GitHub</link> 上提交本站的问题和建议。GitHub 上的 issue 是公开的，请不要在那里发布个人请求。"
+  },
+  "changes": {
+    "title": "本页面的变更",
+    "text": "本页面更新时，顶部的日期也会随之更新。"
+  }
+}

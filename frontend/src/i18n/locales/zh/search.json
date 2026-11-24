@@ -1,1 +1,31 @@
-{}
+{
+  "meta": {
+    "title": "搜索选手 | WPS Ranking",
+    "description": "按姓名、WCA ID 或国家/地区搜索魔方选手，查看他们的 WPS 排名资料。"
+  },
+  "title": "搜索<hl>选手</hl>",
+  "subtitle": "按名字、姓氏、WCA ID 或国家/地区代码查找选手",
+  "label": "搜索选手",
+  "placeholder": "例如 Wang、2017GARR05、CN",
+  "tooShort_other": "请至少输入 {{n}} 个字符。",
+  "noResults": {
+    "title": "没有找到与“{{query}}”匹配的选手",
+    "text": "请检查拼写，或尝试用姓氏、拼音或 WCA ID 搜索。"
+  },
+  "results": {
+    "top": "WPS 最高的前 {{n}} 个结果",
+    "count_other": "{{n}} 个结果"
+  },
+  "tips": {
+    "title": "搜索提示",
+    "name": "姓名",
+    "nameText": "输入名字或姓氏的开头（拼音），或 WCA 上登记的中文名，例如“Yiheng”、“Wang”、“王艺衡”。",
+    "wcaId": "WCA ID",
+    "wcaIdText": "输入完整 ID（例如 2017GARR05）可精确找到该选手。",
+    "country": "国家/地区",
+    "countryText": "输入两位代码（例如 CN 或 US）可列出该国家或地区的顶尖选手。"
+  },
+  "errors": {
+    "failed": "搜索失败，请重试。"
+  }
+}

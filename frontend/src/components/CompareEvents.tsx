@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import { EVENT_NAMES, WpsBreakdownResponse } from '../types';
 import { SingleTag } from './WpsPotential';
+import { useFormat } from '../i18n/format';
 
 interface Side {
   name: string;
@@ -16,6 +18,10 @@ function firstName(name: string): string {
  * shows who gains more WPS from that event.
  */
 export function CompareEvents({ left, right }: { left: Side; right: Side }) {
+  const { t } = useTranslation('compare');
+  const fmt = useFormat();
+  const leftName = fmt.person(left.name);
+  const rightName = fmt.person(right.name);
   const byEvent = (b: WpsBreakdownResponse) => new Map(b.events.map((e) => [e.eventId, e]));
   const l = byEvent(left.breakdown);
   const r = byEvent(right.breakdown);
@@ -25,7 +31,7 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
       const re = r.get(eventId);
       return {
         eventId,
-        name: le?.eventName ?? re?.eventName ?? EVENT_NAMES[eventId] ?? eventId,
+        name: fmt.event(eventId, le?.eventName ?? re?.eventName ?? EVENT_NAMES[eventId]),
         single: (le ?? re)?.rankType === 'single',
         left: le?.eventScore ?? 0,
         right: re?.eventScore ?? 0,
@@ -37,10 +43,10 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
   const max = Math.max(0.01, ...rows.map((row) => Math.max(row.left, row.right)));
   const leftWins = rows.filter((row) => row.left > row.right).length;
   const rightWins = rows.filter((row) => row.right > row.left).length;
-  const leftLabel = firstName(left.name);
-  const rightLabel = firstName(right.name) === leftLabel ? right.name : firstName(right.name);
+  const leftLabel = firstName(leftName);
+  const rightLabel = firstName(rightName) === leftLabel ? rightName : firstName(rightName);
 
-  const rank = (n: number | null) => (n ? `#${n.toLocaleString('en-US')}` : 'No result');
+  const rank = (n: number | null) => (n ? `#${fmt.int(n)}` : t('events.noResult'));
   const bar = (value: number, winner: boolean, side: 'left' | 'right') => (
     <div className={`flex h-2.5 overflow-hidden rounded-full bg-gray-700/60 ${side === 'left' ? 'justify-end' : ''}`}>
       <div
@@ -52,10 +58,15 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
 
   return (
     <section className="card">
-      <h2 className="mb-1 text-lg font-semibold text-white">WPS by event</h2>
+      <h2 className="mb-1 text-lg font-semibold text-white">{t('events.title')}</h2>
       <p className="mb-4 text-sm text-gray-400">
-        Each bar is the WPS an event adds. {left.name} gains more in {leftWins} event{leftWins === 1 ? '' : 's'},{' '}
-        {right.name} in {rightWins}.
+        {t('events.summary', {
+          count: leftWins,
+          left: leftName,
+          right: rightName,
+          n: fmt.int(leftWins),
+          m: fmt.int(rightWins),
+        })}
       </p>
 
       <div className="mb-2 grid grid-cols-2 gap-4 text-xs font-medium uppercase tracking-wide text-gray-400">
@@ -70,7 +81,7 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
               <span
                 className={`w-16 shrink-0 tabular-nums ${row.left > row.right ? 'font-semibold text-green-400' : 'text-gray-400'}`}
               >
-                {row.left.toFixed(2)}
+                {fmt.num(row.left)}
               </span>
               <span className="min-w-0 truncate text-center text-white">
                 {row.name}
@@ -83,7 +94,7 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
               <span
                 className={`w-16 shrink-0 text-right tabular-nums ${row.right > row.left ? 'font-semibold text-green-400' : 'text-gray-400'}`}
               >
-                {row.right.toFixed(2)}
+                {fmt.num(row.right)}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1">
@@ -99,9 +110,9 @@ export function CompareEvents({ left, right }: { left: Side; right: Side }) {
       </ul>
 
       <div className="mt-4 flex items-baseline justify-between border-t border-gray-700 pt-3 text-sm">
-        <span className="font-semibold tabular-nums text-white">{left.breakdown.wps.toFixed(2)}</span>
-        <span className="text-gray-400">Total WPS</span>
-        <span className="font-semibold tabular-nums text-white">{right.breakdown.wps.toFixed(2)}</span>
+        <span className="font-semibold tabular-nums text-white">{fmt.num(left.breakdown.wps)}</span>
+        <span className="text-gray-400">{t('events.total')}</span>
+        <span className="font-semibold tabular-nums text-white">{fmt.num(right.breakdown.wps)}</span>
       </div>
     </section>
   );

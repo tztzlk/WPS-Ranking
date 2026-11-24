@@ -7,6 +7,8 @@ import { CountryFlag } from '../components/CountryFlag';
 import { RankBadge } from '../components/RankingList';
 import { Avatar } from '../components/Avatar';
 import { usePageMetadata } from '../hooks/usePageMetadata';
+import { useTranslation } from 'react-i18next';
+import { useFormat } from '../i18n/format';
 
 const ALL = 'ALL';
 const GRID =
@@ -17,6 +19,8 @@ export function CountriesPage() {
   const [error, setError] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const continent = (searchParams.get('continent') ?? ALL).toUpperCase();
+  const { t } = useTranslation(['countries', 'common']);
+  const fmt = useFormat();
 
   const load = () => {
     setError(false);
@@ -25,7 +29,8 @@ export function CountriesPage() {
   useEffect(load, []);
 
   const teamSize = data?.teamSize ?? 10;
-  const continentName = CONTINENTS.find((c) => c.code === continent)?.name;
+  const continentEntry = CONTINENTS.find((c) => c.code === continent);
+  const continentName = continentEntry ? fmt.continent(continentEntry.code, continentEntry.name) : undefined;
   const filtered = (data?.items ?? []).filter((c) => continent === ALL || c.continent === continent);
   // Within a continent, rank among its countries (equal scores share a rank).
   const items = filtered.map((c, i) => ({
@@ -35,8 +40,8 @@ export function CountriesPage() {
   for (let i = 1; i < items.length; i++) if (items[i].shownRank === -1) items[i].shownRank = items[i - 1].shownRank;
 
   usePageMetadata({
-    title: 'Country ranking | WPS Ranking',
-    description: `Countries ranked by the average WPS of their ${teamSize} best speedcubers.`,
+    title: t('meta.title'),
+    description: t('meta.description', { count: teamSize, n: fmt.int(teamSize) }),
     canonicalPath: '/countries',
   });
 
@@ -46,16 +51,15 @@ export function CountriesPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white sm:text-3xl">
             <Flag className="h-7 w-7 shrink-0 text-green-400 sm:h-8 sm:w-8" />
-            {continentName ? `Country ranking: ${continentName}` : 'Country ranking'}
+            {continentName ? t('titleContinent', { continent: continentName }) : t('title')}
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-gray-400">
-            A country&apos;s score is the average WPS of its {teamSize} best cubers. If a country has fewer than{' '}
-            {teamSize} ranked cubers, each empty place counts as 0.
+            {t('intro', { count: teamSize, n: fmt.int(teamSize) })}
           </p>
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="continent-filter" className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Continent
+            {t('filter.label')}
           </label>
           <select
             id="continent-filter"
@@ -63,10 +67,10 @@ export function CountriesPage() {
             onChange={(e) => setSearchParams(e.target.value === ALL ? {} : { continent: e.target.value }, { preventScrollReset: true })}
             className="input-field w-full md:w-56"
           >
-            <option value={ALL}>All continents</option>
+            <option value={ALL}>{t('filter.all')}</option>
             {CONTINENTS.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.name}
+                {fmt.continent(c.code, c.name)}
               </option>
             ))}
           </select>
@@ -76,13 +80,13 @@ export function CountriesPage() {
       <div className="card overflow-hidden p-0">
         {error ? (
           <div className="py-12 text-center">
-            <p className="text-red-400">The country ranking could not be loaded.</p>
+            <p className="text-red-400">{t('errors.load')}</p>
             <button type="button" onClick={load} className="btn-primary mt-4">
-              Try again
+              {t('common:actions.tryAgain')}
             </button>
           </div>
         ) : !data ? (
-          <div className="space-y-3 p-4" aria-busy="true" aria-label="Loading country ranking">
+          <div className="space-y-3 p-4" aria-busy="true" aria-label={t('loading')}>
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="h-10 animate-pulse rounded bg-gray-700/50" />
             ))}
@@ -93,19 +97,19 @@ export function CountriesPage() {
               aria-hidden="true"
               className={`${GRID} border-b border-gray-700 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-400`}
             >
-              <span>Rank</span>
-              <span>Country</span>
+              <span>{t('common:ranking.rank')}</span>
+              <span>{t('common:ranking.country')}</span>
               <span className="hidden md:block">
-                Best cuber
+                {t('columns.best')}
               </span>
               <span className="hidden text-right md:block">
-                Ranked cubers
+                {t('columns.ranked')}
               </span>
               <span className="text-right">
-                Score
+                {t('columns.score')}
               </span>
             </div>
-            <ol aria-label="Country ranking">
+            <ol aria-label={t('title')}>
               {items.map((c) => (
                 <li key={c.iso2} className="border-b border-gray-700/60 last:border-b-0">
                   <Link
@@ -117,12 +121,12 @@ export function CountriesPage() {
                     </span>
                     <span className="min-w-0">
                       <span className="flex items-center gap-2">
-                        <CountryFlag iso2={c.iso2} name={c.name} />
-                        <span className="truncate font-medium text-white group-hover:text-green-300">{c.name}</span>
+                        <CountryFlag iso2={c.iso2} name={fmt.country(c.iso2, c.name)} />
+                        <span className="truncate font-medium text-white group-hover:text-green-300">{fmt.country(c.iso2, c.name)}</span>
                       </span>
                       <span className="block text-xs text-gray-400 md:hidden">
-                        {c.rankedCount.toLocaleString('en-US')} ranked
-                        {c.best ? ` · best: ${c.best.name}` : ''}
+                        {t('rankedShort', { count: c.rankedCount, n: fmt.int(c.rankedCount) })}
+                        {c.best ? ` · ${t('bestShort', { name: fmt.person(c.best.name) })}` : ''}
                       </span>
                     </span>
                     <span className="hidden min-w-0 items-center gap-3 text-gray-300 md:flex">
@@ -130,8 +134,8 @@ export function CountriesPage() {
                         <>
                           <Avatar name={c.best.name} url={c.best.avatarUrl} />
                           <span className="min-w-0">
-                            <span className="block truncate">{c.best.name}</span>
-                            <span className="block text-xs tabular-nums text-gray-400">{c.best.wps.toFixed(2)} WPS</span>
+                            <span className="block truncate">{fmt.person(c.best.name)}</span>
+                            <span className="block text-xs tabular-nums text-gray-400">{fmt.num(c.best.wps)} WPS</span>
                           </span>
                         </>
                       ) : (
@@ -139,10 +143,10 @@ export function CountriesPage() {
                       )}
                     </span>
                     <span className="hidden text-right tabular-nums text-gray-400 md:block">
-                      {c.rankedCount.toLocaleString('en-US')}
+                      {fmt.int(c.rankedCount)}
                     </span>
                     <span className="flex items-center justify-end gap-1">
-                      <span className="font-semibold tabular-nums text-green-400">{c.teamScore.toFixed(2)}</span>
+                      <span className="font-semibold tabular-nums text-green-400">{fmt.num(c.teamScore)}</span>
                       <ChevronRight className="hidden h-4 w-4 text-gray-600 group-hover:text-gray-400 md:block" aria-hidden="true" />
                     </span>
                   </Link>
@@ -153,7 +157,7 @@ export function CountriesPage() {
         )}
       </div>
       {data && (
-        <p className="text-center text-sm text-gray-400">Select a country to open its leaderboard.</p>
+        <p className="text-center text-sm text-gray-400">{t('hint')}</p>
       )}
     </div>
   );

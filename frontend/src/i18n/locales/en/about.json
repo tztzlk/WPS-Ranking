@@ -1,1 +1,73 @@
-{}
+{
+  "meta": {
+    "title": "How WPS works | WPS Ranking",
+    "description_one": "How the WPS score is calculated from official WCA world ranks in {{n}} event, how event weights are chosen, and where the data comes from.",
+    "description_other": "How the WPS score is calculated from official WCA world ranks in {{n}} events, how event weights are chosen, and where the data comes from."
+  },
+  "hero": {
+    "eyebrow": "About",
+    "title": "How <hl>WPS</hl> works",
+    "text_one": "WPS gives every cuber one score from 0 to 100. It is based on their official WCA world ranks in {{n}} event. A high rank in a big event counts more than the same rank in a small one.",
+    "text_other": "WPS gives every cuber one score from 0 to 100. It is based on their official WCA world ranks in {{n}} events. A high rank in a big event counts more than the same rank in a small one.",
+    "feedback": "Send feedback",
+    "source": "Source code"
+  },
+  "formula": {
+    "title": "The formula",
+    "step1": "For each event, your world rank is compared with the number of people in that event's ranking. World #1 gets the full event weight. Last place gets 0.",
+    "step2": "The scores of all your events are added up.",
+    "step3": "The total is divided by the maximum possible score, {{max}}, and multiplied by 100. A WPS of 100 would mean world #1 in every event.",
+    "legend": "R<sub>e</sub> is your world rank in event e, N<sub>e</sub> is the number of people in that ranking, and w<sub>e</sub> is the event weight. ln is the natural logarithm.",
+    "log": "The logarithm makes a climb near the top worth more than the same climb near the bottom. In 3x3, going from #20 to #10 adds 0.72 WPS. Going from #20,010 to #20,000 adds less than 0.01 WPS."
+  },
+  "measures": {
+    "title": "What WPS measures",
+    "does": "It measures",
+    "does1": "How high you rank across all the events you compete in.",
+    "does2": "Consistency. Most events use the ranking by average, so one lucky solve does not count.",
+    "doesNot": "It does not measure",
+    "not1": "Records or career peaks. WPS uses current ranks.",
+    "not2": "Strength in one event alone. The world #1 in 3x3 ranks below many all-rounders because they compete in fewer events.",
+    "not3": "Entering events. A result near the bottom of an event adds almost nothing."
+  },
+  "others": {
+    "title": "WPS, Kinch ranks and Sum of Ranks",
+    "intro": "Kinch ranks and Sum of Ranks are two other all-around rankings that cubers use. Each one answers a different question.",
+    "sorTerm": "Sum of Ranks",
+    "sorText": "Adds up your world ranks in every event. An event without a result counts as last place. Lower is better. Rank #500 in 3x3 counts the same as #500 in 5x5 Blindfolded, although 3x3 has about 250 times as many ranked people.",
+    "kinchTerm": "Kinch ranks",
+    "kinchText": "Compares your personal record with the world record in each event and averages the scores over all events. A missing event counts as 0. The score depends on how fast the current record holder is.",
+    "wpsTerm": "WPS",
+    "wpsText": "Uses world ranks, like Sum of Ranks. Each rank is compared with the number of people in the event, and events with more competitors have a higher weight. A missing event adds 0, like in Kinch ranks."
+  },
+  "single": {
+    "title": "Average or single",
+    "text": "Most events use the WCA ranking by average. 3x3, 4x4 and 5x5 Blindfolded, Multi-Blind and Fewest Moves use the ranking by single. In these events most competitors never get an average. An average takes three successful blindfolded solves in one round, and Multi-Blind has no average at all. By single, 3x3 Blindfolded has about three times as many ranked people as by average."
+  },
+  "weights": {
+    "title": "Event weights",
+    "intro": "A weight follows how many people compete in the event. 3x3 has the most competitors and weight 1. 5x5 Blindfolded has the fewest and weight 0.1.",
+    "error": "The weights could not be loaded. Refresh the page to try again.",
+    "event": "Event",
+    "competitors": "Competitors",
+    "weight": "Weight"
+  },
+  "data": {
+    "title": "Data and updates",
+    "source": "Rankings come from the official <link>WCA results export</link>. Every day at 02:00 UTC a job checks for a new export and recalculates all rankings.",
+    "current": "The current data is from {{date}}.",
+    "independent": "WPS Ranking is an independent project and is not affiliated with the WCA.",
+    "notice": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link>.",
+    "noticeDated": "This information is based on competition results owned and maintained by the World Cube Association, published at <link>worldcubeassociation.org/results</link> as of {{date}}.",
+    "idea": "The idea of a weighted all-around ranking comes from STUCUBE's video <link>When You're The Best In The World But No One Cares</link>. The formula on this site is a modified version."
+  },
+  "feedback": {
+    "title": "Feedback",
+    "text": "Found wrong data or a bug, or have an idea? Open an issue on GitHub.",
+    "seeIssues": "See open issues"
+  },
+  "support": {
+    "title": "Support the project",
+    "text": "The site runs on free hosting. Donations on Ko-fi pay for development time."
+  }
+}

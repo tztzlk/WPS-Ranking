@@ -1,1 +1,72 @@
-{}
+{
+  "meta": {
+    "title": "{{name}} | WPS Ranking",
+    "titleFallback": "选手资料 | WPS Ranking",
+    "description": "{{name}}（{{country}}）的 WPS 为 {{score}}。查看当前排名、历史走势和各项目得分明细。",
+    "descriptionNoCountry": "{{name}} 的 WPS 为 {{score}}。查看当前排名、历史走势和各项目得分明细。",
+    "descriptionFallback": "魔方选手资料：WPS 得分、世界及国家/地区排名和历史走势。"
+  },
+  "loading": "正在加载选手资料",
+  "errors": {
+    "notFound": "没有找到该 WCA ID 对应的选手。",
+    "invalidId": "这不是有效的 WCA ID。",
+    "generic": "无法加载选手资料。"
+  },
+  "searchCubers": "搜索选手",
+  "shareCard": "分享选手资料",
+  "openWca": "在 WCA 网站查看",
+  "top": "前 {{pct}}%",
+  "stats": {
+    "worldRank": "世界排名",
+    "countryRank": "国家/地区排名",
+    "eventsScored": "计分项目",
+    "worldDetail": "{{top}}，共 {{total}} 人",
+    "countryDetail": "{{country}} · 共 {{total}} 人",
+    "notRanked": "未上榜",
+    "eventsDetail": "有 WCA 成绩的项目"
+  },
+  "breakdown": {
+    "show": "显示 WPS 明细",
+    "hide": "隐藏 WPS 明细",
+    "intro": "每个项目按选手的世界排名与该项目排名总人数的关系计分，再乘以项目权重。标有“单次”的项目按单次排名计算，其他项目按平均排名计算。所有项目的得分相加即为 WPS。<link>WPS 如何计算</link>",
+    "event": "项目",
+    "worldRank": "世界排名",
+    "weight": "权重",
+    "wps": "WPS",
+    "contribution": "得分",
+    "ofTotal": "共 {{total}} 人",
+    "total": "WPS 总分",
+    "mostValuable": "得分最高的项目：",
+    "bestRank": "最佳世界排名："
+  },
+  "potential": {
+    "title": "WPS 最大提升空间",
+    "intro": "{{name}} 在所参加项目中的成绩中位数位于{{top}}。下表显示每个项目达到该水平后可增加多少 WPS。",
+    "event": "项目",
+    "now": "当前",
+    "target": "目标",
+    "gain": "提升",
+    "noResult": "暂无成绩",
+    "fromTo": "{{from}} → {{to}}",
+    "note": "目标为该项目排名中{{top}}所对应的世界排名。提升值以 WPS 分计。"
+  },
+  "singleTagTitle": "按 WCA 单次排名计分",
+  "chart": {
+    "title": "WPS 历史",
+    "loadError": "无法加载历史数据，请刷新页面重试。",
+    "empty": "最近 180 天没有历史数据。",
+    "needTwoDays": "图表至少需要两天的数据。每次每日更新后会增加一个数据点。",
+    "notEnough": "该时间范围内数据不足，请选择更长的范围。",
+    "range": {
+      "7d": "7天",
+      "30d": "30天",
+      "90d": "90天",
+      "all": "全部"
+    },
+    "wps": "WPS",
+    "rank": "排名",
+    "tooltipWps": "WPS：{{value}}",
+    "tooltipWorld": "世界排名：{{value}}",
+    "tooltipCountry": "国家/地区排名：{{value}}"
+  }
+}

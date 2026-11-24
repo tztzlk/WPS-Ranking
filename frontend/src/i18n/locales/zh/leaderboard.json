@@ -1,1 +1,24 @@
-{}
+{
+  "meta": {
+    "title": "{{title}} | WPS Ranking",
+    "description_other": "按 WPS 排名的世界顶尖魔方选手。WPS 是基于 {{n}} 个项目 WCA 官方排名的全能分数。",
+    "descriptionRegion": "按 WPS 排名的{{region}}顶尖魔方选手。WPS 是基于 WCA 官方排名的全能分数。"
+  },
+  "world": "世界",
+  "titleWorld": "世界排行榜",
+  "title": "{{region}}排行榜",
+  "updated": "更新于 {{date}}",
+  "rankedCount_other": "{{n}} 名上榜选手",
+  "loading": "排行榜加载中",
+  "filter": {
+    "label": "地区",
+    "continents": "大洲",
+    "countries": "国家和地区"
+  },
+  "empty": "没有上榜选手",
+  "emptyRegion": "{{region}}没有上榜选手",
+  "errors": {
+    "load": "无法加载排行榜。",
+    "empty": "排行榜暂时为空，下次每日更新后会填充。"
+  }
+}

@@ -22,7 +22,7 @@ export function CountryFlag({ iso2, name, className = '' }: CountryFlagProps) {
   if (iso2 && iso2.length === 2) {
     const code = iso2.toLowerCase();
     return (
-      <span className={`inline-flex items-center ${className}`.trim()} title={name ?? undefined}>
+      <span className={`inline-flex shrink-0 items-center ${className}`.trim()} title={name ?? undefined}>
         {failed ? (
           <span className="text-xs font-medium text-gray-400">{iso2.toUpperCase()}</span>
         ) : (
